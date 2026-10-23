@@ -108,7 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SelectionArea(child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text(context.tr('appName'), style: theme.textTheme.displaySmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Image.asset('assets/brand/logo_wordmark.png', height: 56, semanticLabel: context.tr('appName')),
+            ),
             const SizedBox(height: 4),
             Text(context.tr('tagline'), style: theme.textTheme.bodyLarge),
             const SizedBox(height: 24),

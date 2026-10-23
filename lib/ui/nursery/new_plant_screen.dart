@@ -23,13 +23,15 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
   final _nameAr = TextEditingController();
   final _nameEn = TextEditingController();
   final _scientific = TextEditingController();
-  final _days = TextEditingController(text: '7');
+  final _days = TextEditingController();
   final _descAr = TextEditingController();
   final _descEn = TextEditingController();
-  PlantCategory _category = PlantCategory.shrub;
-  final Set<Placement> _placements = {Placement.outdoor};
-  Sun _sun = Sun.full;
-  Water _water = Water.medium;
+  // Nothing is chosen for the nursery; each choice is required.
+  PlantCategory? _category;
+  final Set<Placement> _placements = {};
+  Sun? _sun;
+  Water? _water;
+  bool _triedSave = false;
   bool _toxic = false;
   String? _photo;
   bool _busy = false;
@@ -43,9 +45,10 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
   }
 
   Future<void> _save() async {
-    if (!_form.currentState!.validate()) return;
-    if (_placements.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('placementRequired'))));
+    setState(() => _triedSave = true);
+    final formOk = _form.currentState!.validate();
+    if (!formOk || _category == null || _placements.isEmpty || _sun == null || _water == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('completeRequired'))));
       return;
     }
     setState(() => _busy = true);
@@ -57,10 +60,10 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
             nameAr: _nameAr.text,
             nameEn: _nameEn.text,
             scientificName: _scientific.text,
-            category: _category,
+            category: _category!,
             placements: {..._placements},
-            sun: _sun,
-            water: _water,
+            sun: _sun!,
+            water: _water!,
             wateringEveryDays: int.parse(_days.text),
             toxic: _toxic,
             descriptionAr: _descAr.text,
@@ -81,6 +84,7 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
       _nameAr.text.trim().isEmpty && _nameEn.text.trim().isEmpty ? context.tr('nameOneRequired') : null;
 
   Widget _choices<T extends Enum>(String label, List<T> values, bool Function(T) selected, void Function(T) onTap) {
+    final missing = _triedSave && !values.any(selected);
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Column(
@@ -101,6 +105,11 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
                 ),
             ],
           ),
+          if (missing)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(context.tr('chooseOne'), style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
+            ),
         ],
       ),
     );

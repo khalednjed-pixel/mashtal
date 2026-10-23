@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mashtal/models/models.dart';
+import 'package:mashtal/ui/nursery/new_plant_screen.dart';
 
 import 'app_harness.dart';
 
@@ -91,13 +92,35 @@ void main() {
     await tester.tap(find.byKey(const Key('addNewPlant')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('newPlantNameEn')), 'Test Fern');
-    await tester.scrollUntilVisible(find.byKey(const Key('saveNewPlant')), 300, scrollable: find.byType(Scrollable).last);
-    await tester.tap(find.byKey(const Key('saveNewPlant')));
+    final form = find.byType(Scrollable).last;
+    Future<void> tapKey(String key) async {
+      await tester.scrollUntilVisible(find.byKey(Key(key)), 200, scrollable: form);
+      await tester.tap(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+    }
+
+    // Nothing is chosen by default, so saving straight away is refused.
+    for (final key in ['category-shrub', 'placement-outdoor', 'sun-full', 'water-low']) {
+      expect(tester.widget<FilterChip>(find.byKey(Key(key), skipOffstage: false)).selected, isFalse, reason: key);
+    }
+    await tapKey('saveNewPlant');
+    expect(find.text('Complete the required fields'), findsOneWidget);
+    expect(app.backend.plants.where((p) => p.nameEn == 'Test Fern'), isEmpty);
+    ScaffoldMessenger.of(tester.element(find.byType(NewPlantScreen))).removeCurrentSnackBar();
     await tester.pumpAndSettle();
+
+    for (final key in ['category-shrub', 'placement-outdoor', 'sun-full', 'water-low']) {
+      await tapKey(key);
+    }
+    await tester.scrollUntilVisible(find.byKey(const Key('newPlantDays')), 200, scrollable: form);
+    await tester.enterText(find.byKey(const Key('newPlantDays')), '7');
+    await tapKey('saveNewPlant');
     expect(find.text('Test Fern'), findsOneWidget);
     await tester.enterText(find.byKey(const Key('priceField')), '30');
+    final listingForm = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(find.byKey(const Key('quantityField')), 200, scrollable: listingForm);
     await tester.enterText(find.byKey(const Key('quantityField')), '4');
-    await tester.ensureVisible(find.byKey(const Key('saveListing')));
+    await tester.scrollUntilVisible(find.byKey(const Key('saveListing')), 200, scrollable: listingForm);
     await tester.tap(find.byKey(const Key('saveListing')));
     await tester.pumpAndSettle();
     final plant = app.backend.plants.firstWhere((p) => p.nameEn == 'Test Fern');

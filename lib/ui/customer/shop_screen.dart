@@ -70,7 +70,8 @@ class _ShopScreenState extends State<ShopScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.tr('buyPlants'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        // The Buy Plants tab is the home page, so it carries the logo.
+        title: Image.asset('assets/brand/logo_wordmark.png', height: 30, semanticLabel: context.tr('appName')),
         actions: [
           const LanguageButton(),
           if (app.user == null)

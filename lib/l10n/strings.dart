@@ -188,6 +188,7 @@ const Map<String, Map<String, String>> _strings = {
     'ar': 'حسابك قيد المراجعة. لن تظهر للعملاء حتى يتم التحقق منك.',
     'en': 'Your account is under review. Customers will not see you until you are verified.'
   },
+  'completeRequired': {'ar': 'أكمل الحقول المطلوبة', 'en': 'Complete the required fields'},
   'chooseOne': {'ar': 'اختر واحداً على الأقل', 'en': 'Choose at least one'},
   'editProfile': {'ar': 'تعديل بياناتي', 'en': 'Edit my details'},
   'cityDefaultHint': {'ar': 'تُستخدم مدينتك كتصفية افتراضية في شراء النباتات.', 'en': 'Your city is the default filter in Buy Plants.'},

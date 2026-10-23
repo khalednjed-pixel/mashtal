@@ -1,0 +1,34 @@
+name: Deploy web app
+
+# Builds the Flutter web app and publishes it to the gh-pages branch, which
+# GitHub Pages serves as the live link.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter build web --release --base-href /${{ github.event.repository.name }}/ --no-web-resources-cdn
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          enable_jekyll: false
+          commit_message: Deploy ${{ github.sha }}

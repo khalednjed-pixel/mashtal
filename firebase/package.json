@@ -1,0 +1,14 @@
+{
+  "name": "mashtal-firebase",
+  "private": true,
+  "description": "Firestore security rules and their emulator tests (TF-04, NFR-05).",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-mashtal \"node --test tests/rules.test.js\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0",
+    "firebase-tools": "^14.11.0"
+  }
+}

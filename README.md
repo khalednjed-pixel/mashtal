@@ -22,6 +22,17 @@ Mashtal is an Arabic-first app for households in Saudi Arabia. Customers find pl
 
 Arabic (right-to-left) is the default. English is one tap away.
 
+### Changes after the Sprint 1 review
+
+- The language button names the language you switch to, and every text in the app can be selected and copied.
+- Max price is a slider with stops (10, 15, 25, 50, 100, 250, 500, 1000, any) plus a field to type any price. Signed-in customers start with their own city as the filter.
+- Phone numbers are limited to 10 digits. Each account has its own cart.
+- The admin can open Buy Plants, edit or delete nurseries and professionals, and edit the service price ranges.
+- A nursery can delete listings, add its own photo, and add a plant that is missing from the list (labelled as added by a nursery). Everything that can be added can be deleted.
+- Plants show real photos from Wikipedia with a credit link.
+- The professional page shows status, rating and jobs, and lets the professional choose services (with the admin's price range) and cities.
+- Account → *Edit my details* changes your name and city.
+
 ## Try it
 
 Open the live demo and use a demo account. **There is no real SMS**: the code is shown on screen.

@@ -135,6 +135,89 @@ void main() {
     });
   });
 
+  group('review feedback: edit and delete', () {
+    test('the admin edits and deletes a nursery with its listings and account', () async {
+      await signInAs('0500000001');
+      await backend.updateNursery(backend.nurseryById('n2')!.copyWith(nameEn: 'Renamed'));
+      expect(backend.nurseryById('n2')!.nameEn, 'Renamed');
+      await backend.deleteNursery('n2');
+      expect(backend.nurseryById('n2'), isNull);
+      expect(backend.listings.where((l) => l.nurseryId == 'n2'), isEmpty);
+    });
+
+    test('the admin edits and deletes a professional', () async {
+      await signInAs('0500000001');
+      final pro = backend.professionals.firstWhere((p) => p.id == 'pr2');
+      await backend.updateProfessional(pro.copyWith(nameEn: 'New name'));
+      expect(backend.professionals.firstWhere((p) => p.id == 'pr2').nameEn, 'New name');
+      await backend.deleteProfessional('pr2');
+      expect(backend.professionals.where((p) => p.id == 'pr2'), isEmpty);
+    });
+
+    test('the admin edits a price range and bad ranges are rejected', () async {
+      await signInAs('0500000001');
+      await backend.updatePriceRange(ServiceType.pruning, min: 60, max: 300);
+      final r = backend.priceRanges.firstWhere((r) => r.service == ServiceType.pruning);
+      expect([r.min, r.max], [60, 300]);
+      expect(() => backend.updatePriceRange(ServiceType.pruning, min: 300, max: 60), throwsArgumentError);
+    });
+
+    test('only the admin edits price ranges or deletes partners (NFR-05)', () async {
+      await signInAs('0500000002');
+      expect(() => backend.updatePriceRange(ServiceType.pruning, min: 1, max: 2), throwsA(isA<PermissionDenied>()));
+      expect(() => backend.deleteNursery('n2'), throwsA(isA<PermissionDenied>()));
+    });
+
+    test('a nursery deletes its own listing but not another nursery\'s', () async {
+      await signInAs('0500000002');
+      final mine = backend.listings.firstWhere((l) => l.nurseryId == 'n1');
+      await backend.deleteListing(mine.id);
+      expect(backend.listings.where((l) => l.id == mine.id), isEmpty);
+      final other = backend.listings.firstWhere((l) => l.nurseryId == 'n2');
+      expect(() => backend.deleteListing(other.id), throwsA(isA<PermissionDenied>()));
+    });
+
+    test('a nursery adds a new plant, lists it with its own photo, then deletes it', () async {
+      await signInAs('0500000002');
+      final plant = await backend.addPlant(const Plant(
+        id: '', nameAr: 'نبتة تجربة', nameEn: '', scientificName: '', category: PlantCategory.shrub,
+        placements: {Placement.outdoor}, sun: Sun.full, water: Water.low, wateringEveryDays: 5, toxic: false,
+        descriptionAr: '', descriptionEn: '', source: '',
+      ));
+      expect(plant.guideBacked, isFalse);
+      expect(plant.addedBy, 'n1');
+      expect(plant.nameEn, 'نبتة تجربة');
+      final l = await backend.addListing(plantId: plant.id, price: 20, quantity: 2, photo: 'abc');
+      expect(l.photo, 'abc');
+      await backend.deletePlant(plant.id);
+      expect(backend.plantById(plant.id), isNull);
+      expect(backend.listings.where((x) => x.id == l.id), isEmpty);
+    });
+
+    test('guide plants cannot be deleted', () async {
+      await signInAs('0500000001');
+      expect(() => backend.deletePlant('p01'), throwsA(isA<PermissionDenied>()));
+    });
+
+    test('a professional changes only their own services and cities', () async {
+      await signInAs('0500000004');
+      final me = backend.professionals.firstWhere((p) => p.id == 'pr1');
+      await backend.updateProfessional(me.copyWith(services: {ServiceType.treatment}, nameEn: 'Hacked'));
+      final after = backend.professionals.firstWhere((p) => p.id == 'pr1');
+      expect(after.services, {ServiceType.treatment});
+      expect(after.nameEn, me.nameEn);
+      final other = backend.professionals.firstWhere((p) => p.id == 'pr2');
+      expect(() => backend.updateProfessional(other.copyWith(services: {ServiceType.treatment})), throwsA(isA<PermissionDenied>()));
+    });
+
+    test('a user updates their own name and city', () async {
+      await signInAs('0500000005');
+      await backend.updateProfile(name: 'Sara', city: 'jeddah');
+      expect(backend.currentUser!.city, 'jeddah');
+      expect(backend.currentUser!.name, 'Sara');
+    });
+  });
+
   test('reset restores the seed data and signs out', () async {
     await signInAs('0500000001');
     await backend.setNurseryStatus('n5', PartnerStatus.verified);

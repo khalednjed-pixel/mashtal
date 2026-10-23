@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 let env;
 
@@ -22,6 +22,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/admin'), { phone: '+966500000001', name: 'Admin', city: 'riyadh', role: 'admin' });
     await setDoc(doc(db, 'users/n1owner'), { phone: '+966500000002', name: 'Rawdah', city: 'riyadh', role: 'nursery', partnerId: 'n1' });
     await setDoc(doc(db, 'users/n5owner'), { phone: '+966500000003', name: 'Fajr', city: 'riyadh', role: 'nursery', partnerId: 'n5' });
+    await setDoc(doc(db, 'users/pr1owner'), { phone: '+966500000004', name: 'Abdullah', city: 'riyadh', role: 'professional', partnerId: 'pr1' });
+    await setDoc(doc(db, 'professionals/pr1'), { nameEn: 'Abdullah', status: 'verified', services: ['planting'], cities: ['riyadh'] });
     await setDoc(doc(db, 'users/cust'), { phone: '+966500000005', name: 'Sara', city: 'riyadh', role: 'customer' });
     await setDoc(doc(db, 'plants/p01'), { nameAr: 'الغاف', nameEn: 'Ghaf tree' });
     await setDoc(doc(db, 'plants/p05'), { nameAr: 'الأثل', nameEn: 'Athel tamarisk' });
@@ -122,5 +124,46 @@ describe('US-06 nursery listings', () => {
 
   test('a nursery cannot edit another nursery\'s listing', async () => {
     await assertFails(updateDoc(doc(as('n5owner'), 'listings/l1'), { price: 1 }));
+  });
+});
+
+describe('review feedback', () => {
+  const newPlant = (extra = {}) => ({ nameAr: 'نبتة', nameEn: 'Test plant', guideBacked: false, addedBy: 'n1', ...extra });
+
+  test('a nursery adds a plant that is not in the list, marked as not guide-backed', async () => {
+    await assertSucceeds(setDoc(doc(as('n1owner'), 'plants/c1'), newPlant()));
+    await assertFails(setDoc(doc(as('n1owner'), 'plants/c2'), newPlant({ guideBacked: true })));
+    await assertFails(setDoc(doc(as('n1owner'), 'plants/c3'), newPlant({ addedBy: 'n5' })));
+    await assertFails(setDoc(doc(as('cust'), 'plants/c4'), newPlant()));
+  });
+
+  test('only the nursery that added a plant, or the admin, can delete it', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'plants/c1'), newPlant()));
+    await assertFails(deleteDoc(doc(as('n5owner'), 'plants/c1')));
+    await assertFails(deleteDoc(doc(as('n1owner'), 'plants/p01')));
+    await assertSucceeds(deleteDoc(doc(as('n1owner'), 'plants/c1')));
+    await assertSucceeds(deleteDoc(doc(as('admin'), 'plants/p05')));
+  });
+
+  test('a nursery deletes its own listing only', async () => {
+    await assertFails(deleteDoc(doc(as('n5owner'), 'listings/l1')));
+    await assertSucceeds(deleteDoc(doc(as('n1owner'), 'listings/l1')));
+  });
+
+  test('a listing can carry the nursery\'s own photo', async () => {
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'listings/l1'), { photoUrl: 'https://example.com/a.jpg' }));
+  });
+
+  test('the admin edits and deletes partners and price ranges', async () => {
+    await assertSucceeds(updateDoc(doc(as('admin'), 'nurseries/n1'), { nameEn: 'Renamed' }));
+    await assertSucceeds(deleteDoc(doc(as('admin'), 'professionals/pr1')));
+    await assertSucceeds(setDoc(doc(as('admin'), 'priceRanges/pruning'), { min: 60, max: 300 }));
+    await assertFails(setDoc(doc(as('n1owner'), 'priceRanges/pruning'), { min: 60, max: 300 }));
+  });
+
+  test('a professional edits only their own services and cities', async () => {
+    await assertSucceeds(updateDoc(doc(as('pr1owner'), 'professionals/pr1'), { services: ['planting', 'treatment'], cities: ['riyadh', 'jeddah'] }));
+    await assertFails(updateDoc(doc(as('pr1owner'), 'professionals/pr1'), { status: 'verified', nameEn: 'X' }));
+    await assertFails(updateDoc(doc(as('pr1owner'), 'professionals/pr1'), { services: [] }));
   });
 });

@@ -6,6 +6,7 @@ import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/plant_photo.dart';
 import '../widgets/not_found.dart';
 
 /// A plant, what it needs, and the verified nurseries that sell it.
@@ -32,14 +33,31 @@ class PlantDetailScreen extends StatelessWidget {
       });
 
     return Scaffold(
-      appBar: AppBar(title: Text(plant.name(lang)), actions: const [LanguageButton()]),
+      appBar: AppBar(
+        title: Text(plant.name(lang)),
+        actions: [
+          // The admin removes plants that nurseries added (feedback 9).
+          if (app.role == Role.admin && plant.isCustom)
+            IconButton(
+              key: const Key('deletePlant'),
+              tooltip: context.tr('deletePlant'),
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                if (!await confirmDelete(context, plant.name(lang))) return;
+                await market.deletePlant(plant.id);
+                if (context.mounted) context.go('/shop');
+              },
+            ),
+          const LanguageButton(),
+        ],
+      ),
       body: Constrained(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Row(
               children: [
-                PlantAvatar(plant: plant, size: 80),
+                PlantPhoto(plant: plant, size: 112, radius: 16),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -48,6 +66,7 @@ class PlantDetailScreen extends StatelessWidget {
                       Text(plant.name(lang), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                       Text(plant.scientificName, style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic)),
                       Text(context.trEnum(plant.category), style: theme.textTheme.bodySmall),
+                      PhotoCredit(plant: plant),
                     ],
                   ),
                 ),
@@ -78,7 +97,9 @@ class PlantDetailScreen extends StatelessWidget {
             ],
             const SizedBox(height: 8),
             Text(
-              '${context.tr('source')}: ${plant.source}${plant.guideBacked ? '' : ' — ${context.tr('notGuideBacked')}'}',
+              plant.isCustom
+                  ? context.tr('addedByNursery')
+                  : '${context.tr('source')}: ${plant.source}${plant.guideBacked ? '' : ' — ${context.tr('notGuideBacked')}'}',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 24),
@@ -91,6 +112,7 @@ class PlantDetailScreen extends StatelessWidget {
                 child: Card(
                   child: ListTile(
                     onTap: () => context.go('/shop/nursery/${nursery.id}'),
+                    leading: listing.photo == null ? null : PlantPhoto(plant: plant, listingPhoto: listing.photo, size: 48),
                     title: Text(nursery.name(lang)),
                     subtitle: Row(
                       children: [
@@ -119,6 +141,7 @@ class _OfferAction extends StatelessWidget {
     if (!listing.isAvailable) {
       return Text(context.tr('notAvailable'), style: TextStyle(color: theme.colorScheme.error));
     }
+    if (!context.watch<AppState>().canShop) return Text(formatPrice(context, listing.price), style: theme.textTheme.titleSmall);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

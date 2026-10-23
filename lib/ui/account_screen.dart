@@ -32,6 +32,16 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Card(
+              child: ListTile(
+                key: const Key('editProfile'),
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(context.tr('editProfile')),
+                subtitle: Text(context.tr('cityDefaultHint')),
+                onTap: () => showDialog<void>(context: context, builder: (_) => _EditProfileDialog(app: app)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
               child: Column(
                 children: [
                   ListTile(
@@ -67,6 +77,58 @@ class AccountScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditProfileDialog extends StatefulWidget {
+  const _EditProfileDialog({required this.app});
+  final AppState app;
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  late final _name = TextEditingController(text: widget.app.user!.name);
+  late String _city = cityIds.contains(widget.app.user!.city) ? widget.app.user!.city : cityIds.first;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.tr('editProfile')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(key: const Key('profileName'), controller: _name, decoration: InputDecoration(labelText: context.tr('name'))),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            key: const Key('profileCity'),
+            initialValue: _city,
+            decoration: InputDecoration(labelText: context.tr('city')),
+            items: [for (final c in cityIds) DropdownMenuItem(value: c, child: Text(context.trCity(c)))],
+            onChanged: (v) => setState(() => _city = v!),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.tr('cancel'))),
+        FilledButton(
+          key: const Key('saveProfile'),
+          onPressed: () async {
+            if (_name.text.trim().isEmpty) return;
+            await widget.app.backend.updateProfile(name: _name.text, city: _city);
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: Text(context.tr('save')),
+        ),
+      ],
     );
   }
 }

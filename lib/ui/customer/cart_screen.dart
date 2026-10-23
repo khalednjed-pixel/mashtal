@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/strings.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/plant_photo.dart';
 
 /// Minimal cart so a guest's choices survive sign-in (US-01 AC-02). Grouping
 /// by nursery and reserving are Sprint 3 (US-15, US-16).
@@ -40,7 +41,7 @@ class CartScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Card(
                         child: ListTile(
-                          leading: PlantAvatar(plant: plant, size: 44),
+                          leading: PlantPhoto(plant: plant, listingPhoto: listing.photo, size: 48),
                           title: Text(plant.name(lang)),
                           subtitle: Text('${nursery.name(lang)} · ${formatPrice(context, listing.price)}'),
                           trailing: Row(
@@ -49,6 +50,12 @@ class CartScreen extends StatelessWidget {
                               IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => app.removeFromCart(listing.id)),
                               Text('$qty'),
                               IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => app.addToCart(listing.id)),
+                              IconButton(
+                                key: Key('removeLine-${listing.id}'),
+                                tooltip: context.tr('remove'),
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => app.removeFromCart(listing.id, all: true),
+                              ),
                             ],
                           ),
                         ),

@@ -45,6 +45,12 @@ void main() {
     });
   });
 
+  test('the admin can open Buy Plants to look at the shop', () {
+    expect(decideAccess('/shop', Role.admin), isA<Allowed>());
+    expect(decideAccess('/shop/plant/p01', Role.admin), isA<Allowed>());
+    expect(decideAccess('/garden', Role.admin), isA<Denied>());
+  });
+
   test('home of each role', () {
     expect(homeFor(null), '/shop');
     expect(homeFor(Role.customer), '/shop');

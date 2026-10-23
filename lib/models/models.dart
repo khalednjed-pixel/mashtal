@@ -38,6 +38,9 @@ class Plant {
     required this.descriptionEn,
     required this.source,
     this.guideBacked = true,
+    this.addedBy,
+    this.wikiTitle,
+    this.photo,
   });
 
   final String id;
@@ -61,6 +64,17 @@ class Plant {
   /// False for plants outside the official guides (OD-03); the UI labels them.
   final bool guideBacked;
 
+  /// Nursery that added this plant to the list, null for knowledge-base plants.
+  final String? addedBy;
+
+  /// Wikipedia article for the photo when it differs from [scientificName].
+  final String? wikiTitle;
+
+  /// Photo uploaded with a nursery-added plant, as base64 JPEG.
+  final String? photo;
+
+  bool get isCustom => addedBy != null;
+
   String name(String lang) => lang == 'ar' ? nameAr : nameEn;
   String description(String lang) => lang == 'ar' ? descriptionAr : descriptionEn;
 
@@ -79,6 +93,9 @@ class Plant {
         'descriptionEn': descriptionEn,
         'source': source,
         'guideBacked': guideBacked,
+        'addedBy': addedBy,
+        'wikiTitle': wikiTitle,
+        'photo': photo,
       };
 
   factory Plant.fromJson(Map<String, dynamic> j) => Plant(
@@ -96,6 +113,9 @@ class Plant {
         descriptionEn: j['descriptionEn'],
         source: j['source'],
         guideBacked: j['guideBacked'] ?? true,
+        addedBy: j['addedBy'],
+        wikiTitle: j['wikiTitle'],
+        photo: j['photo'],
       );
 }
 
@@ -119,6 +139,9 @@ class AppUser {
 
   /// The nursery or professional record this account manages, if any.
   final String? partnerId;
+
+  AppUser copyWith({String? name, String? city}) =>
+      AppUser(id: id, phone: phone, name: name ?? this.name, city: city ?? this.city, role: role, partnerId: partnerId);
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -167,14 +190,14 @@ class Nursery {
   String name(String lang) => lang == 'ar' ? nameAr : nameEn;
   bool get isVerified => status == PartnerStatus.verified;
 
-  Nursery copyWith({PartnerStatus? status}) => Nursery(
-        id: id,
-        nameAr: nameAr,
-        nameEn: nameEn,
-        city: city,
-        district: district,
-        phone: phone,
-        hours: hours,
+  Nursery copyWith({String? id, String? nameAr, String? nameEn, String? city, String? district, String? phone, String? hours, PartnerStatus? status}) => Nursery(
+        id: id ?? this.id,
+        nameAr: nameAr ?? this.nameAr,
+        nameEn: nameEn ?? this.nameEn,
+        city: city ?? this.city,
+        district: district ?? this.district,
+        phone: phone ?? this.phone,
+        hours: hours ?? this.hours,
         status: status ?? this.status,
         rating: rating,
         ratingCount: ratingCount,
@@ -232,13 +255,22 @@ class Professional {
 
   String name(String lang) => lang == 'ar' ? nameAr : nameEn;
 
-  Professional copyWith({PartnerStatus? status}) => Professional(
-        id: id,
-        nameAr: nameAr,
-        nameEn: nameEn,
-        cities: cities,
-        services: services,
-        phone: phone,
+  Professional copyWith({
+    String? id,
+    String? nameAr,
+    String? nameEn,
+    List<String>? cities,
+    Set<ServiceType>? services,
+    String? phone,
+    PartnerStatus? status,
+  }) =>
+      Professional(
+        id: id ?? this.id,
+        nameAr: nameAr ?? this.nameAr,
+        nameEn: nameEn ?? this.nameEn,
+        cities: cities ?? this.cities,
+        services: services ?? this.services,
+        phone: phone ?? this.phone,
         status: status ?? this.status,
         rating: rating,
         jobsDone: jobsDone,
@@ -278,6 +310,7 @@ class Listing {
     required this.price,
     required this.quantity,
     this.hidden = false,
+    this.photo,
   });
 
   final String id;
@@ -289,15 +322,19 @@ class Listing {
   final int quantity;
   final bool hidden;
 
+  /// The nursery's own photo of this plant, as base64 JPEG (US-06 feedback).
+  final String? photo;
+
   bool get isAvailable => !hidden && quantity > 0;
 
-  Listing copyWith({double? price, int? quantity, bool? hidden}) => Listing(
+  Listing copyWith({double? price, int? quantity, bool? hidden, String? Function()? photo}) => Listing(
         id: id,
         nurseryId: nurseryId,
         plantId: plantId,
         price: price ?? this.price,
         quantity: quantity ?? this.quantity,
         hidden: hidden ?? this.hidden,
+        photo: photo != null ? photo() : this.photo,
       );
 
   Map<String, dynamic> toJson() => {
@@ -307,6 +344,7 @@ class Listing {
         'price': price,
         'quantity': quantity,
         'hidden': hidden,
+        'photo': photo,
       };
 
   factory Listing.fromJson(Map<String, dynamic> j) => Listing(
@@ -316,6 +354,7 @@ class Listing {
         price: (j['price'] as num).toDouble(),
         quantity: j['quantity'],
         hidden: j['hidden'] ?? false,
+        photo: j['photo'],
       );
 }
 

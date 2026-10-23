@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/strings.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/plant_photo.dart';
 import '../widgets/not_found.dart';
 
 /// A verified nursery and the plants it lists.
@@ -57,7 +58,7 @@ class NurseryDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Card(
                     child: ListTile(
-                      leading: PlantAvatar(plant: plant, size: 44),
+                      leading: PlantPhoto(plant: plant, listingPhoto: l.photo, size: 48),
                       title: Text(plant.name(lang)),
                       subtitle: Text(l.isAvailable ? context.tr('inStock') : context.tr('notAvailable'),
                           style: TextStyle(color: l.isAvailable ? null : theme.colorScheme.error)),

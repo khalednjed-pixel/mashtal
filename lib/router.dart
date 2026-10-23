@@ -70,12 +70,18 @@ GoRouter buildRouter(AppState app) => GoRouter(
                 GoRoute(
                   path: 'nurseries',
                   builder: (_, _) => const AdminScreen(tab: AdminTab.nurseries),
-                  routes: [GoRoute(path: 'new', builder: (_, _) => const NurseryFormScreen())],
+                  routes: [
+                    GoRoute(path: 'new', builder: (_, _) => const NurseryFormScreen()),
+                    GoRoute(path: 'edit/:id', builder: (_, s) => NurseryFormScreen(nurseryId: s.pathParameters['id'])),
+                  ],
                 ),
                 GoRoute(
                   path: 'professionals',
                   builder: (_, _) => const AdminScreen(tab: AdminTab.professionals),
-                  routes: [GoRoute(path: 'new', builder: (_, _) => const ProfessionalFormScreen())],
+                  routes: [
+                    GoRoute(path: 'new', builder: (_, _) => const ProfessionalFormScreen()),
+                    GoRoute(path: 'edit/:id', builder: (_, s) => ProfessionalFormScreen(professionalId: s.pathParameters['id'])),
+                  ],
                 ),
               ],
             ),

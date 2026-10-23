@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: Constrained(
         maxWidth: 480,
-        child: ListView(
+        child: SelectionArea(child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             Text(context.tr('appName'), style: theme.textTheme.displaySmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
@@ -136,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
               });
             }),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -147,7 +147,8 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _phone,
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+٠-٩ ]')), LengthLimitingTextInputFormatter(16)],
+          inputFormatters: phoneInputFormatters,
+          maxLength: 10,
           decoration: InputDecoration(labelText: context.tr('phoneNumber'), hintText: context.tr('phoneHint'), prefixIcon: const Icon(Icons.phone_iphone)),
           onSubmitted: (_) => _sendCode(),
         ),

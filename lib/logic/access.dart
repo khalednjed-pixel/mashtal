@@ -26,6 +26,9 @@ String homeFor(Role? role) => switch (role) {
 bool _isCustomerArea(String path) =>
     path.startsWith('/shop') || path.startsWith('/cart') || path.startsWith('/garden');
 
+/// The admin may browse the shop to check what customers see, but has no cart.
+bool _adminMayBrowse(String path) => path.startsWith('/shop');
+
 sealed class AccessDecision {
   const AccessDecision();
 }
@@ -57,7 +60,7 @@ AccessDecision decideAccess(String location, Role? role) {
     };
   }
   final ok = switch (need) {
-    RouteAccess.public => role == Role.customer || !_isCustomerArea(path),
+    RouteAccess.public => role == Role.customer || !_isCustomerArea(path) || (role == Role.admin && _adminMayBrowse(path)),
     RouteAccess.signedIn => true,
     RouteAccess.customer => role == Role.customer,
     RouteAccess.nursery => role == Role.nursery,

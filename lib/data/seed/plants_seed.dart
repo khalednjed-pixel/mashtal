@@ -41,6 +41,7 @@ const List<Plant> seedPlants = [
     descriptionAr: 'النخلة المعروفة، تحتاج شمساً كاملة وري منتظم في الصيف.',
     descriptionEn: 'The classic date palm; full sun and regular summer watering.',
     source: _rcrc,
+    wikiTitle: 'Date palm',
   ),
   Plant(
     id: 'p05', nameAr: 'الأثل', nameEn: 'Athel tamarisk', scientificName: 'Tamarix aphylla',
@@ -129,6 +130,7 @@ const List<Plant> seedPlants = [
     descriptionAr: 'شجيرة مزهرة قوية التحمل، لكنها سامة لجميع أجزائها.',
     descriptionEn: 'Tough flowering shrub; every part of the plant is poisonous.',
     source: _rcrc,
+    wikiTitle: 'Nerium',
   ),
   Plant(
     id: 'p16', nameAr: 'الجهنمية', nameEn: 'Bougainvillea', scientificName: 'Bougainvillea spectabilis',
@@ -177,6 +179,7 @@ const List<Plant> seedPlants = [
     descriptionAr: 'شجيرة بأزهار صفراء وأسدية حمراء طويلة، بذورها سامة.',
     descriptionEn: 'Shrub with yellow flowers and long red stamens; seeds are toxic.',
     source: _rcrc,
+    wikiTitle: 'Erythrostemon gilliesii',
   ),
   Plant(
     id: 'p22', nameAr: 'الكاريسا', nameEn: 'Natal plum', scientificName: 'Carissa macrocarpa',
@@ -241,6 +244,7 @@ const List<Plant> seedPlants = [
     descriptionAr: 'عشب زينة بسنابل ريشية، يتحمل الجفاف.',
     descriptionEn: 'Ornamental grass with feathery plumes; drought tolerant.',
     source: _rcrc,
+    wikiTitle: 'Cenchrus setaceus',
   ),
   Plant(
     id: 'p30', nameAr: 'نجيلة البسبالم', nameEn: 'Seashore paspalum', scientificName: 'Paspalum vaginatum',
@@ -265,6 +269,7 @@ const List<Plant> seedPlants = [
     descriptionAr: 'عشبة عطرية للطبخ، تحب الشمس وتكره الري الزائد.',
     descriptionEn: 'Aromatic cooking herb; loves sun and hates over-watering.',
     source: _rcrc,
+    wikiTitle: 'Rosemary',
   ),
   Plant(
     id: 'p33', nameAr: 'السنا', nameEn: 'Port Royal senna', scientificName: 'Senna italica',
@@ -298,6 +303,7 @@ const List<Plant> seedPlants = [
     descriptionAr: 'نبات داخلي لامع الأوراق يناسب المكاتب والإضاءة الضعيفة.',
     descriptionEn: 'Glossy indoor plant for offices and low light.',
     source: _indoorSource, guideBacked: false,
+    wikiTitle: 'Zamioculcas',
   ),
   Plant(
     id: 'p37', nameAr: 'نبتة العنكبوت', nameEn: 'Spider plant', scientificName: 'Chlorophytum comosum',

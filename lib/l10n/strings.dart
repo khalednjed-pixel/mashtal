@@ -141,6 +141,57 @@ const Map<String, Map<String, String>> _strings = {
   'jobs': {'ar': 'الطلبات', 'en': 'Jobs'},
   'jobsSoon': {'ar': 'طلبات العملاء تظهر هنا في السبرنت الرابع.', 'en': 'Customer requests appear here in Sprint 4.'},
   'myProfile': {'ar': 'ملفي', 'en': 'My profile'},
+  // Feedback round 1
+  'edit': {'ar': 'تعديل', 'en': 'Edit'},
+  'delete': {'ar': 'حذف', 'en': 'Delete'},
+  'confirmDelete': {'ar': 'سيتم الحذف نهائياً ولا يمكن التراجع.', 'en': 'This is permanent and cannot be undone.'},
+  'deleted': {'ar': 'تم الحذف', 'en': 'Deleted'},
+  'remove': {'ar': 'إزالة', 'en': 'Remove'},
+  'editNursery': {'ar': 'تعديل المشتل', 'en': 'Edit nursery'},
+  'editProfessional': {'ar': 'تعديل المختص', 'en': 'Edit professional'},
+  'editPriceRange': {'ar': 'تعديل نطاق السعر', 'en': 'Edit price range'},
+  'min': {'ar': 'الحد الأدنى (ر.س)', 'en': 'Minimum (SAR)'},
+  'max': {'ar': 'الحد الأعلى (ر.س)', 'en': 'Maximum (SAR)'},
+  'invalidRange': {'ar': 'الحد الأدنى يجب أن يكون أكبر من صفر وأقل من الأعلى', 'en': 'Minimum must be above zero and below the maximum'},
+  'deleteListing': {'ar': 'حذف المنتج', 'en': 'Delete listing'},
+  'deletePlant': {'ar': 'حذف النبتة من القائمة', 'en': 'Delete plant from the list'},
+  'addNewPlant': {'ar': 'نبتة غير موجودة؟ أضفها', 'en': 'Not in the list? Add a new plant'},
+  'newPlant': {'ar': 'نبتة جديدة', 'en': 'New plant'},
+  'newPlantNote': {
+    'ar': 'النباتات التي تضيفها تظهر بعلامة "أضافها مشتل" لأنها ليست من الدليل الرسمي.',
+    'en': 'Plants you add are labelled "added by a nursery" because they are not from the official guide.'
+  },
+  'scientificName': {'ar': 'الاسم العلمي (اختياري)', 'en': 'Scientific name (optional)'},
+  'category': {'ar': 'النوع', 'en': 'Type'},
+  'wateringDays': {'ar': 'الري كل (أيام)', 'en': 'Water every (days)'},
+  'toxicSwitch': {'ar': 'سامة للأطفال أو الحيوانات', 'en': 'Toxic to children or pets'},
+  'descriptionAr': {'ar': 'وصف بالعربية', 'en': 'Description in Arabic'},
+  'descriptionEn': {'ar': 'وصف بالإنجليزية', 'en': 'Description in English'},
+  'nameOneRequired': {'ar': 'أدخل الاسم بالعربية أو الإنجليزية', 'en': 'Enter the Arabic or English name'},
+  'placementRequired': {'ar': 'اختر مكاناً واحداً على الأقل', 'en': 'Choose at least one place'},
+  'addedByNursery': {'ar': 'أضافها مشتل — ليست من الدليل الرسمي', 'en': 'Added by a nursery — not from the official guide'},
+  'photo': {'ar': 'الصورة', 'en': 'Photo'},
+  'addPhoto': {'ar': 'أضف صورة', 'en': 'Add photo'},
+  'changePhoto': {'ar': 'غيّر الصورة', 'en': 'Change photo'},
+  'removePhoto': {'ar': 'احذف الصورة', 'en': 'Remove photo'},
+  'camera': {'ar': 'الكاميرا', 'en': 'Camera'},
+  'gallery': {'ar': 'معرض الصور', 'en': 'Gallery'},
+  'storageFull': {'ar': 'مساحة التخزين ممتلئة. احذف بعض الصور وحاول مجدداً.', 'en': 'Storage is full. Remove some photos and try again.'},
+  'photoCredit': {'ar': 'الصورة: ويكيبيديا', 'en': 'Photo: Wikipedia'},
+  'nurseryPhoto': {'ar': 'صورة المشتل', 'en': 'Nursery photo'},
+  'typeMaxPrice': {'ar': 'أو اكتب أعلى سعر', 'en': 'Or type a max price'},
+  'anyPrice': {'ar': 'أي سعر', 'en': 'Any price'},
+  'upTo': {'ar': 'حتى', 'en': 'up to'},
+  'coverage': {'ar': 'المدن التي أغطيها', 'en': 'Cities I cover'},
+  'myServices': {'ar': 'خدماتي ونطاق أسعارها', 'en': 'My services and their price ranges'},
+  'pendingPro': {
+    'ar': 'حسابك قيد المراجعة. لن تظهر للعملاء حتى يتم التحقق منك.',
+    'en': 'Your account is under review. Customers will not see you until you are verified.'
+  },
+  'chooseOne': {'ar': 'اختر واحداً على الأقل', 'en': 'Choose at least one'},
+  'editProfile': {'ar': 'تعديل بياناتي', 'en': 'Edit my details'},
+  'cityDefaultHint': {'ar': 'تُستخدم مدينتك كتصفية افتراضية في شراء النباتات.', 'en': 'Your city is the default filter in Buy Plants.'},
+  'shopPreview': {'ar': 'تتصفح المتجر كمدير. السلة متاحة للعملاء فقط.', 'en': 'You are browsing the shop as admin. The cart is for customers only.'},
   'notFound': {'ar': 'الصفحة غير موجودة', 'en': 'Page not found'},
   'goHome': {'ar': 'الرئيسية', 'en': 'Home'},
 };
@@ -188,11 +239,10 @@ const Map<String, Map<String, String>> _enums = {
 
 String translate(String lang, String key) => _strings[key]?[lang] ?? key;
 
-/// Text lookups. The language is read without listening; the app is rebuilt
-/// from the root when the language changes (see app.dart), so screens and
-/// callbacks can both use these.
+/// Text lookups. The language comes from the app's locale, so any widget that
+/// shows text rebuilds when the language changes. Safe in callbacks too.
 extension Tr on BuildContext {
-  String get lang => Provider.of<AppState>(this, listen: false).lang;
+  String get lang => Localizations.maybeLocaleOf(this)?.languageCode ?? Provider.of<AppState>(this, listen: false).lang;
 
   String tr(String key) => translate(lang, key);
 

@@ -28,12 +28,13 @@ List<_Tab> _tabsFor(Role? role) => switch (role) {
           _Tab('/account', 'account', Icons.person_outline, Icons.person),
         ],
       Role.professional => const [
-          _Tab('/pro', 'jobs', Icons.handyman_outlined, Icons.handyman),
+          _Tab('/pro', 'myProfile', Icons.handyman_outlined, Icons.handyman),
           _Tab('/account', 'account', Icons.person_outline, Icons.person),
         ],
       Role.admin => const [
           _Tab('/admin/nurseries', 'nurseries', Icons.storefront_outlined, Icons.storefront),
           _Tab('/admin/professionals', 'professionals', Icons.engineering_outlined, Icons.engineering),
+          _Tab('/shop', 'buyPlants', Icons.local_florist_outlined, Icons.local_florist),
           _Tab('/account', 'account', Icons.person_outline, Icons.person),
         ],
     };
@@ -91,7 +92,7 @@ class _RoleShellState extends State<RoleShell> {
     }
 
     return Scaffold(
-      body: widget.child,
+      body: SelectionArea(child: widget.child),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index < 0 ? 0 : index,
         onDestinationSelected: (i) => context.go(tabs[i].path),

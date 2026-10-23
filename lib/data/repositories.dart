@@ -53,6 +53,11 @@ class PermissionDenied implements Exception {
   String toString() => 'PermissionDenied($action)';
 }
 
+/// The device ran out of storage (the browser keeps about 5 MB).
+class StorageFull implements Exception {
+  const StorageFull();
+}
+
 abstract interface class AuthRepository {
   static const resendDelay = Duration(seconds: 60);
   static const codeLifetime = Duration(minutes: 5);
@@ -69,6 +74,9 @@ abstract interface class AuthRepository {
   Future<AppUser> completeProfile({required String phone, required String name, required String city});
 
   Future<void> signOut();
+
+  /// Lets the signed-in user change their own name and city.
+  Future<void> updateProfile({required String name, required String city});
 }
 
 abstract interface class MarketRepository {
@@ -83,11 +91,30 @@ abstract interface class MarketRepository {
 
   // Admin only (US-03).
   Future<Nursery> createNursery(Nursery draft);
+  Future<void> updateNursery(Nursery nursery);
   Future<void> setNurseryStatus(String nurseryId, PartnerStatus status);
+
+  /// Removes the nursery, its listings and its sign-in account.
+  Future<void> deleteNursery(String nurseryId);
   Future<Professional> createProfessional(Professional draft);
+
+  /// Admin edits any professional; a professional edits their own services
+  /// and cities only.
+  Future<void> updateProfessional(Professional professional);
   Future<void> setProfessionalStatus(String professionalId, PartnerStatus status);
+  Future<void> deleteProfessional(String professionalId);
+  Future<void> updatePriceRange(ServiceType service, {required double min, required double max});
 
   // Nursery only, for its own listings (US-06).
-  Future<Listing> addListing({required String plantId, required double price, required int quantity});
+  Future<Listing> addListing({required String plantId, required double price, required int quantity, String? photo});
   Future<void> updateListing(Listing listing);
+  Future<void> deleteListing(String listingId);
+
+  /// A nursery adds a plant that is not in the knowledge base. It is labelled
+  /// as not guide-backed.
+  Future<Plant> addPlant(Plant draft);
+
+  /// The admin, or the nursery that added it, removes a nursery-added plant
+  /// together with its listings. Knowledge-base plants cannot be deleted.
+  Future<void> deletePlant(String plantId);
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mashtal/app.dart';
 import 'package:mashtal/data/local_backend.dart';
 import 'package:mashtal/state/app_state.dart';
+import 'package:mashtal/ui/widgets/plant_photo.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// the English labels. Returns the app state for direct checks.
 Future<AppState> pumpMashtal(WidgetTester tester, {String lang = 'en'}) async {
   SharedPreferences.setMockInitialValues({'flutter.mashtal.lang': lang});
+  WikiPhotos.enabled = false;
   tester.view.physicalSize = const Size(1200, 2400);
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);

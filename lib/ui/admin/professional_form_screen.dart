@@ -10,7 +10,10 @@ import '../widgets/common.dart';
 import 'partner_form_fields.dart';
 
 class ProfessionalFormScreen extends StatefulWidget {
-  const ProfessionalFormScreen({super.key});
+  const ProfessionalFormScreen({super.key, this.professionalId});
+
+  /// Null when adding a new professional.
+  final String? professionalId;
 
   @override
   State<ProfessionalFormScreen> createState() => _ProfessionalFormScreenState();
@@ -18,11 +21,14 @@ class ProfessionalFormScreen extends StatefulWidget {
 
 class _ProfessionalFormScreenState extends State<ProfessionalFormScreen> {
   final _form = GlobalKey<FormState>();
-  final _nameAr = TextEditingController();
-  final _nameEn = TextEditingController();
-  final _phone = TextEditingController();
-  final Set<String> _cities = {'riyadh'};
-  final Set<ServiceType> _services = {};
+  late final Professional? _existing = widget.professionalId == null
+      ? null
+      : Provider.of<AppState>(context, listen: false).backend.professionals.where((p) => p.id == widget.professionalId).firstOrNull;
+  late final _nameAr = TextEditingController(text: _existing?.nameAr);
+  late final _nameEn = TextEditingController(text: _existing?.nameEn);
+  late final _phone = TextEditingController(text: _existing?.phone);
+  late final Set<String> _cities = {...?_existing?.cities, if (_existing == null) 'riyadh'};
+  late final Set<ServiceType> _services = {...?_existing?.services};
   bool _showErrors = false;
 
   @override
@@ -36,15 +42,23 @@ class _ProfessionalFormScreenState extends State<ProfessionalFormScreen> {
   Future<void> _save() async {
     setState(() => _showErrors = true);
     if (!_form.currentState!.validate() || _services.isEmpty || _cities.isEmpty) return;
-    await context.read<AppState>().backend.createProfessional(Professional(
-          id: '',
-          nameAr: _nameAr.text.trim(),
-          nameEn: _nameEn.text.trim(),
-          cities: [for (final c in cityIds) if (_cities.contains(c)) c],
-          services: _services,
-          phone: SaudiPhone.normalize(_phone.text)!,
-          status: PartnerStatus.pending,
-        ));
+    final backend = context.read<AppState>().backend;
+    final draft = Professional(
+      id: _existing?.id ?? '',
+      nameAr: _nameAr.text.trim(),
+      nameEn: _nameEn.text.trim(),
+      cities: [for (final c in cityIds) if (_cities.contains(c)) c],
+      services: {..._services},
+      phone: SaudiPhone.normalize(_phone.text)!,
+      status: _existing?.status ?? PartnerStatus.pending,
+      rating: _existing?.rating ?? 0,
+      jobsDone: _existing?.jobsDone ?? 0,
+    );
+    if (_existing == null) {
+      await backend.createProfessional(draft);
+    } else {
+      await backend.updateProfessional(draft);
+    }
     if (mounted) context.go('/admin/professionals');
   }
 
@@ -52,7 +66,7 @@ class _ProfessionalFormScreenState extends State<ProfessionalFormScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('addProfessional'))),
+      appBar: AppBar(title: Text(context.tr(_existing == null ? 'addProfessional' : 'editProfessional'))),
       body: Constrained(
         maxWidth: 560,
         child: Form(
@@ -60,7 +74,7 @@ class _ProfessionalFormScreenState extends State<ProfessionalFormScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const PendingNote(),
+              if (_existing == null) const PendingNote(),
               const SizedBox(height: 16),
               TextFormField(controller: _nameAr, decoration: InputDecoration(labelText: context.tr('nameAr')), validator: (v) => requiredField(context, v)),
               const SizedBox(height: 12),
@@ -70,6 +84,7 @@ class _ProfessionalFormScreenState extends State<ProfessionalFormScreen> {
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 textDirection: TextDirection.ltr,
+                inputFormatters: phoneInputFormatters,
                 decoration: InputDecoration(labelText: context.tr('phoneNumber'), hintText: '05XXXXXXXX'),
                 validator: (v) => phoneField(context, v),
               ),

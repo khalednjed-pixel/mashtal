@@ -6,6 +6,7 @@ import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
+import '../widgets/plant_photo.dart';
 
 /// Nursery home: its listings, prices and availability (US-06).
 class ListingsScreen extends StatelessWidget {
@@ -74,7 +75,7 @@ class _ListingTile extends StatelessWidget {
       child: Card(
         child: ListTile(
           key: Key('listing-${listing.id}'),
-          leading: Opacity(opacity: listing.isAvailable ? 1 : 0.4, child: PlantAvatar(plant: plant, size: 44)),
+          leading: Opacity(opacity: listing.isAvailable ? 1 : 0.4, child: PlantPhoto(plant: plant, size: 44, listingPhoto: listing.photo)),
           title: Text(plant.name(context.lang)),
           subtitle: Text(status, style: TextStyle(color: listing.isAvailable ? null : theme.colorScheme.error)),
           trailing: Row(

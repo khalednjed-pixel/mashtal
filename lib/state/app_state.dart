@@ -6,22 +6,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/local_backend.dart';
 import '../models/models.dart';
 
-/// App-wide UI state: language, the guest/customer cart and one-off notices.
+/// App-wide UI state: language, carts and one-off notices.
 ///
-/// The cart lives here, not on the account, so a guest keeps it through
-/// sign-in (US-01 AC-02).
+/// Each account has its own cart. A guest's cart is moved into the account
+/// they sign in to, so it survives sign-in (US-01 AC-02); signing out shows
+/// an empty guest cart again.
 class AppState extends ChangeNotifier {
   AppState._(this.backend, this._prefs) {
     _lang = _prefs.getString(_langKey) ?? 'ar';
-    final rawCart = _prefs.getString(_cartKey);
-    if (rawCart != null) {
-      _cart.addAll(Map<String, int>.from(jsonDecode(rawCart) as Map));
+    final raw = _prefs.getString(_cartsKey);
+    if (raw != null) {
+      final j = jsonDecode(raw) as Map<String, dynamic>;
+      for (final e in j.entries) {
+        _carts[e.key] = Map<String, int>.from(e.value as Map);
+      }
     }
-    backend.addListener(notifyListeners);
+    _owner = _ownerFor(backend.currentUser);
+    backend.addListener(_onBackendChanged);
   }
 
   static const _langKey = 'mashtal.lang';
-  static const _cartKey = 'mashtal.cart';
+  static const _cartsKey = 'mashtal.carts.v2';
+  static const _guest = 'guest';
 
   static Future<AppState> create(LocalBackend backend) async =>
       AppState._(backend, await SharedPreferences.getInstance());
@@ -30,13 +36,38 @@ class AppState extends ChangeNotifier {
   final SharedPreferences _prefs;
 
   late String _lang;
-  final Map<String, int> _cart = {};
+  final Map<String, Map<String, int>> _carts = {};
+  late String _owner;
 
   String get lang => _lang;
   bool get isArabic => _lang == 'ar';
 
   AppUser? get user => backend.currentUser;
   Role? get role => user?.role;
+
+  /// Guests and customers shop; partners and the admin do not have a cart.
+  bool get canShop => role == null || role == Role.customer;
+
+  static String _ownerFor(AppUser? u) => u?.id ?? _guest;
+
+  void _onBackendChanged() {
+    // Drop cart lines whose listing was deleted.
+    final ids = {for (final l in backend.listings) l.id};
+    for (final c in _carts.values) {
+      c.removeWhere((id, _) => !ids.contains(id));
+    }
+    final owner = _ownerFor(user);
+    if (owner != _owner) {
+      final guestCart = _carts.remove(_guest);
+      if (_owner == _guest && owner != _guest && guestCart != null && user?.role == Role.customer) {
+        final mine = _carts.putIfAbsent(owner, () => {});
+        guestCart.forEach((id, q) => mine.update(id, (v) => v + q, ifAbsent: () => q));
+      }
+      _owner = owner;
+      _saveCarts(notify: false);
+    }
+    notifyListeners();
+  }
 
   Future<void> toggleLanguage() async {
     _lang = isArabic ? 'en' : 'ar';
@@ -46,33 +77,35 @@ class AppState extends ChangeNotifier {
 
   // ---------------------------------------------------------------- Cart
 
-  Map<String, int> get cart => Map.unmodifiable(_cart);
-  int get cartCount => _cart.values.fold(0, (a, b) => a + b);
+  Map<String, int> get _cart => _carts.putIfAbsent(_owner, () => {});
+  Map<String, int> get cart => Map.unmodifiable(_carts[_owner] ?? const {});
+  int get cartCount => cart.values.fold(0, (a, b) => a + b);
 
   void addToCart(String listingId) {
     _cart.update(listingId, (q) => q + 1, ifAbsent: () => 1);
-    _saveCart();
+    _saveCarts();
   }
 
-  void removeFromCart(String listingId) {
+  void removeFromCart(String listingId, {bool all = false}) {
     final q = _cart[listingId];
     if (q == null) return;
-    if (q <= 1) {
+    if (all || q <= 1) {
       _cart.remove(listingId);
     } else {
       _cart[listingId] = q - 1;
     }
-    _saveCart();
+    _saveCarts();
   }
 
-  void _saveCart() {
-    _prefs.setString(_cartKey, jsonEncode(_cart));
-    notifyListeners();
+  void _saveCarts({bool notify = true}) {
+    _carts.removeWhere((_, c) => c.isEmpty);
+    _prefs.setString(_cartsKey, jsonEncode(_carts));
+    if (notify) notifyListeners();
   }
 
   Future<void> resetDemo() async {
-    _cart.clear();
-    await _prefs.remove(_cartKey);
+    _carts.clear();
+    await _prefs.remove(_cartsKey);
     await backend.resetDemoData();
   }
 

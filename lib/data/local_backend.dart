@@ -28,6 +28,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   late List<Professional> _professionals;
   late List<Listing> _listings;
   late List<PriceRange> _priceRanges;
+  late List<Plant> _customPlants;
   AppUser? _currentUser;
 
   final Map<String, _PendingCode> _pending = {};
@@ -50,6 +51,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       _professionals = _list(j['professionals'], Professional.fromJson);
       _listings = _list(j['listings'], Listing.fromJson);
       _priceRanges = _list(j['priceRanges'], PriceRange.fromJson);
+      _customPlants = _list(j['customPlants'] ?? [], Plant.fromJson);
     }
     final sessionId = _prefs.getString(_sessionKey);
     _currentUser = sessionId == null ? null : _users.where((u) => u.id == sessionId).firstOrNull;
@@ -64,10 +66,11 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _professionals = [...seedProfessionals];
     _listings = [...seedListings];
     _priceRanges = [...seedPriceRanges];
+    _customPlants = [];
   }
 
   Future<void> _save() async {
-    await _prefs.setString(
+    final ok = await _prefs.setString(
       _dbKey,
       jsonEncode({
         'users': _users.map((e) => e.toJson()).toList(),
@@ -75,9 +78,12 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         'professionals': _professionals.map((e) => e.toJson()).toList(),
         'listings': _listings.map((e) => e.toJson()).toList(),
         'priceRanges': _priceRanges.map((e) => e.toJson()).toList(),
+        'customPlants': _customPlants.map((e) => e.toJson()).toList(),
       }),
-    );
+    ).catchError((_) => false);
     notifyListeners();
+    // Browser storage is about 5 MB; photos are what fill it.
+    if (!ok) throw const StorageFull();
   }
 
   /// Restores the seed data and signs out. Used from the account screen.
@@ -152,10 +158,21 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     notifyListeners();
   }
 
+  @override
+  Future<void> updateProfile({required String name, required String city}) async {
+    final me = _currentUser;
+    if (me == null) throw const PermissionDenied('updateProfile');
+    if (name.trim().isEmpty) throw ArgumentError('name');
+    final updated = me.copyWith(name: name.trim(), city: city);
+    _users[_users.indexWhere((u) => u.id == me.id)] = updated;
+    _currentUser = updated;
+    await _save();
+  }
+
   // -------------------------------------------------------------- Market
 
   @override
-  List<Plant> get plants => seedPlants;
+  List<Plant> get plants => [...seedPlants, ..._customPlants];
   @override
   List<Nursery> get nurseries => List.unmodifiable(_nurseries);
   @override
@@ -166,7 +183,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   List<PriceRange> get priceRanges => List.unmodifiable(_priceRanges);
 
   @override
-  Plant? plantById(String id) => seedPlants.where((p) => p.id == id).firstOrNull;
+  Plant? plantById(String id) => plants.where((p) => p.id == id).firstOrNull;
   @override
   Nursery? nurseryById(String id) => _nurseries.where((n) => n.id == id).firstOrNull;
 
@@ -195,6 +212,38 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     }
     await _save();
     return n;
+  }
+
+  @override
+  Future<void> updateNursery(Nursery nursery) async {
+    _require(Role.admin, 'updateNursery');
+    final i = _nurseries.indexWhere((n) => n.id == nursery.id);
+    if (i < 0) return;
+    final oldPhone = _nurseries[i].phone;
+    _nurseries[i] = nursery;
+    _relinkAccount(oldPhone, nursery.phone, nursery.id, Role.nursery, nursery.nameAr, nursery.city);
+    await _save();
+  }
+
+  @override
+  Future<void> deleteNursery(String nurseryId) async {
+    _require(Role.admin, 'deleteNursery');
+    _nurseries.removeWhere((n) => n.id == nurseryId);
+    _listings.removeWhere((l) => l.nurseryId == nurseryId);
+    _customPlants.removeWhere((p) => p.addedBy == nurseryId && !_listings.any((l) => l.plantId == p.id));
+    _users.removeWhere((u) => u.partnerId == nurseryId);
+    await _save();
+  }
+
+  /// Keeps the partner's sign-in account on the partner's phone number.
+  void _relinkAccount(String oldPhone, String newPhone, String partnerId, Role role, String name, String city) {
+    final i = _users.indexWhere((u) => u.partnerId == partnerId);
+    if (i >= 0 && oldPhone != newPhone) {
+      final u = _users[i];
+      _users[i] = AppUser(id: u.id, phone: newPhone, name: u.name, city: city, role: role, partnerId: partnerId);
+    } else if (i < 0 && !_users.any((u) => u.phone == newPhone)) {
+      _users.add(AppUser(id: _newId('u'), phone: newPhone, name: name, city: city, role: role, partnerId: partnerId));
+    }
   }
 
   @override
@@ -227,6 +276,47 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   }
 
   @override
+  Future<void> updateProfessional(Professional professional) async {
+    final me = _currentUser;
+    final i = _professionals.indexWhere((p) => p.id == professional.id);
+    if (i < 0) return;
+    final old = _professionals[i];
+    if (me?.role == Role.admin) {
+      _professionals[i] = professional;
+      _relinkAccount(old.phone, professional.phone, professional.id, Role.professional, professional.nameAr, professional.cities.first);
+    } else if (me?.role == Role.professional && me!.partnerId == professional.id) {
+      // Professionals choose what they offer and where; the rest is the admin's.
+      if (professional.services.isEmpty || professional.cities.isEmpty) throw ArgumentError('services');
+      _professionals[i] = old.copyWith(services: professional.services, cities: professional.cities);
+    } else {
+      throw const PermissionDenied('updateProfessional');
+    }
+    await _save();
+  }
+
+  @override
+  Future<void> deleteProfessional(String professionalId) async {
+    _require(Role.admin, 'deleteProfessional');
+    _professionals.removeWhere((p) => p.id == professionalId);
+    _users.removeWhere((u) => u.partnerId == professionalId);
+    await _save();
+  }
+
+  @override
+  Future<void> updatePriceRange(ServiceType service, {required double min, required double max}) async {
+    _require(Role.admin, 'updatePriceRange');
+    if (min <= 0 || min >= max) throw ArgumentError('range');
+    final i = _priceRanges.indexWhere((r) => r.service == service);
+    final range = PriceRange(service: service, min: min, max: max);
+    if (i < 0) {
+      _priceRanges.add(range);
+    } else {
+      _priceRanges[i] = range;
+    }
+    await _save();
+  }
+
+  @override
   Future<void> setProfessionalStatus(String professionalId, PartnerStatus status) async {
     _require(Role.admin, 'setProfessionalStatus');
     final i = _professionals.indexWhere((p) => p.id == professionalId);
@@ -236,12 +326,12 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   }
 
   @override
-  Future<Listing> addListing({required String plantId, required double price, required int quantity}) async {
+  Future<Listing> addListing({required String plantId, required double price, required int quantity, String? photo}) async {
     _require(Role.nursery, 'addListing');
     final nurseryId = _currentUser!.partnerId!;
     if (plantById(plantId) == null) throw ArgumentError('Unknown plant $plantId');
     _validateListing(price, quantity);
-    final l = Listing(id: _newId('l'), nurseryId: nurseryId, plantId: plantId, price: price, quantity: quantity);
+    final l = Listing(id: _newId('l'), nurseryId: nurseryId, plantId: plantId, price: price, quantity: quantity, photo: photo);
     _listings.add(l);
     await _save();
     return l;
@@ -257,6 +347,56 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     }
     _validateListing(listing.price, listing.quantity);
     _listings[i] = listing;
+    await _save();
+  }
+
+  @override
+  Future<void> deleteListing(String listingId) async {
+    _require(Role.nursery, 'deleteListing');
+    final i = _listings.indexWhere((l) => l.id == listingId);
+    if (i < 0) return;
+    if (_listings[i].nurseryId != _currentUser!.partnerId) throw const PermissionDenied('deleteListing');
+    _listings.removeAt(i);
+    await _save();
+  }
+
+  @override
+  Future<Plant> addPlant(Plant draft) async {
+    _require(Role.nursery, 'addPlant');
+    if (draft.nameAr.trim().isEmpty && draft.nameEn.trim().isEmpty) throw ArgumentError('name');
+    final nursery = nurseryById(_currentUser!.partnerId!)!;
+    final plant = Plant(
+      id: _newId('c'),
+      nameAr: draft.nameAr.trim().isEmpty ? draft.nameEn.trim() : draft.nameAr.trim(),
+      nameEn: draft.nameEn.trim().isEmpty ? draft.nameAr.trim() : draft.nameEn.trim(),
+      scientificName: draft.scientificName.trim(),
+      category: draft.category,
+      placements: draft.placements,
+      sun: draft.sun,
+      water: draft.water,
+      wateringEveryDays: draft.wateringEveryDays,
+      toxic: draft.toxic,
+      descriptionAr: draft.descriptionAr.trim(),
+      descriptionEn: draft.descriptionEn.trim(),
+      source: 'Added by ${nursery.nameEn} — ${nursery.nameAr}',
+      guideBacked: false,
+      addedBy: nursery.id,
+      photo: draft.photo,
+    );
+    _customPlants.add(plant);
+    await _save();
+    return plant;
+  }
+
+  @override
+  Future<void> deletePlant(String plantId) async {
+    final plant = _customPlants.where((p) => p.id == plantId).firstOrNull;
+    if (plant == null) throw const PermissionDenied('deletePlant');
+    final me = _currentUser;
+    final allowed = me?.role == Role.admin || (me?.role == Role.nursery && me!.partnerId == plant.addedBy);
+    if (!allowed) throw const PermissionDenied('deletePlant');
+    _customPlants.remove(plant);
+    _listings.removeWhere((l) => l.plantId == plantId);
     await _save();
   }
 

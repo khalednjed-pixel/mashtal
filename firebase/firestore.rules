@@ -31,10 +31,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Plant knowledge base: public, edited by the admin (US-14).
+    // Plant knowledge base: public, edited by the admin (US-14). A nursery may
+    // add a plant missing from the list; it is marked as not guide-backed and
+    // only that nursery or the admin can delete it.
     match /plants/{plantId} {
       allow read: if true;
       allow write: if isAdmin();
+      allow create: if hasRole('nursery')
+        && request.resource.data.guideBacked == false
+        && request.resource.data.addedBy == me().partnerId
+        && (request.resource.data.nameAr is string || request.resource.data.nameEn is string);
+      allow delete: if hasRole('nursery') && resource.data.get('addedBy', null) == me().partnerId;
     }
 
     // US-03: only verified partners are visible to customers and guests.
@@ -48,6 +55,9 @@ service cloud.firestore {
       allow read: if resource.data.status == 'verified' || isAdmin() || managesPartner(id);
       allow create: if isAdmin() && request.resource.data.status == 'pending';
       allow update, delete: if isAdmin();
+      // A professional chooses the services they offer and the cities they cover.
+      allow update: if hasRole('professional') && managesPartner(id) && onlyChanges(['services', 'cities'])
+        && request.resource.data.services.size() > 0 && request.resource.data.cities.size() > 0;
     }
 
     // US-06: a nursery manages its own listings. `public` is true only when the
@@ -55,7 +65,7 @@ service cloud.firestore {
     // filter on it; the admin updates it when a nursery's status changes.
     match /listings/{id} {
       function validListing(d) {
-        return d.keys().hasOnly(['nurseryId', 'plantId', 'price', 'quantity', 'hidden', 'public', 'updatedAt'])
+        return d.keys().hasOnly(['nurseryId', 'plantId', 'price', 'quantity', 'hidden', 'public', 'photoUrl', 'updatedAt'])
           && d.price is number && d.price > 0 && d.price <= 100000
           && d.quantity is int && d.quantity >= 0
           && d.hidden is bool

@@ -26,10 +26,7 @@ class _MashtalAppState extends State<MashtalApp> {
   @override
   Widget build(BuildContext context) {
     final lang = context.select<AppState, String>((a) => a.lang);
-    // Keyed by language so every screen rebuilds with the new text and
-    // direction; the router keeps the current page.
     return MaterialApp.router(
-      key: ValueKey(lang),
       title: lang == 'ar' ? 'مشتل' : 'Mashtal',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),

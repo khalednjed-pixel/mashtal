@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
@@ -82,9 +83,12 @@ class LanguageButton extends StatelessWidget {
   const LanguageButton({super.key});
 
   @override
-  Widget build(BuildContext context) => TextButton(
+  Widget build(BuildContext context) => TextButton.icon(
+        key: const Key('languageButton'),
         onPressed: () => context.read<AppState>().toggleLanguage(),
-        child: Text(context.tr('switchLanguage')),
+        icon: const Icon(Icons.translate, size: 18),
+        // Names the language you switch to: "English" in Arabic, "العربية" in English.
+        label: Text(context.tr('switchLanguage')),
       );
 }
 
@@ -131,3 +135,30 @@ class Constrained extends StatelessWidget {
         child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth), child: child),
       );
 }
+
+/// Asks before deleting. Returns true when the user confirms.
+Future<bool> confirmDelete(BuildContext context, String what) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text('${c.tr('delete')}: $what'),
+      content: Text(c.tr('confirmDelete')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(c.tr('cancel'))),
+        FilledButton(
+          key: const Key('confirmDelete'),
+          style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error, minimumSize: const Size(88, 40)),
+          onPressed: () => Navigator.pop(c, true),
+          child: Text(c.tr('delete')),
+        ),
+      ],
+    ),
+  );
+  return ok ?? false;
+}
+
+/// Phone input limited to a 10-digit Saudi mobile number (05XXXXXXXX).
+final List<TextInputFormatter> phoneInputFormatters = [
+  FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]')),
+  LengthLimitingTextInputFormatter(10),
+];

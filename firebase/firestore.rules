@@ -1,0 +1,85 @@
+rules_version = '2';
+
+// Mashtal Firestore security rules (TF-04, NFR-05).
+// Roles are enforced here, on the server, not only in the app UI.
+// Data model: docs/data-model.md
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function hasRole(role) { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && me().role == role; }
+    function isAdmin() { return hasRole('admin'); }
+    function managesPartner(id) { return (hasRole('nursery') || hasRole('professional')) && me().partnerId == id; }
+    function nurseryVerified(id) {
+      return get(/databases/$(database)/documents/nurseries/$(id)).data.status == 'verified';
+    }
+    function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    // US-02: a user creates their own customer profile after phone sign-in.
+    // Role and partner link are set by the admin only.
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['phone', 'name', 'city', 'role', 'createdAt'])
+        && request.resource.data.role == 'customer'
+        && request.resource.data.phone == request.auth.token.phone_number
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60;
+      allow update: if (signedIn() && request.auth.uid == uid && onlyChanges(['name', 'city']))
+        || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Plant knowledge base: public, edited by the admin (US-14).
+    match /plants/{plantId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // US-03: only verified partners are visible to customers and guests.
+    match /nurseries/{id} {
+      allow read: if resource.data.status == 'verified' || isAdmin() || managesPartner(id);
+      allow create: if isAdmin() && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    match /professionals/{id} {
+      allow read: if resource.data.status == 'verified' || isAdmin() || managesPartner(id);
+      allow create: if isAdmin() && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // US-06: a nursery manages its own listings. `public` is true only when the
+    // listing is not hidden and its nursery is verified, so customer queries can
+    // filter on it; the admin updates it when a nursery's status changes.
+    match /listings/{id} {
+      function validListing(d) {
+        return d.keys().hasOnly(['nurseryId', 'plantId', 'price', 'quantity', 'hidden', 'public', 'updatedAt'])
+          && d.price is number && d.price > 0 && d.price <= 100000
+          && d.quantity is int && d.quantity >= 0
+          && d.hidden is bool
+          && exists(/databases/$(database)/documents/plants/$(d.plantId))
+          && d.public == (!d.hidden && nurseryVerified(d.nurseryId));
+      }
+
+      allow read: if resource.data.public == true || isAdmin() || managesPartner(resource.data.nurseryId);
+      allow create: if hasRole('nursery') && managesPartner(request.resource.data.nurseryId)
+        && validListing(request.resource.data);
+      allow update: if hasRole('nursery') && managesPartner(resource.data.nurseryId)
+        && request.resource.data.nurseryId == resource.data.nurseryId
+        && request.resource.data.plantId == resource.data.plantId
+        && validListing(request.resource.data);
+      allow update: if isAdmin() && onlyChanges(['public']);
+      allow delete: if hasRole('nursery') && managesPartner(resource.data.nurseryId);
+    }
+
+    // Admin-set service price ranges (US-13).
+    match /priceRanges/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.min is number && request.resource.data.max is number
+        && request.resource.data.min < request.resource.data.max;
+    }
+  }
+}

@@ -91,6 +91,24 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
               ),
+            // Sprint 2 entry point to the suitability questions (US-07).
+            if (_query.text.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                sliver: SliverToBoxAdapter(
+                  child: Card(
+                    color: theme.colorScheme.primaryContainer,
+                    child: ListTile(
+                      key: const Key('chooseBanner'),
+                      leading: Icon(Icons.quiz_outlined, color: theme.colorScheme.onPrimaryContainer),
+                      title: Text(context.tr('chooseBannerTitle'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(context.tr('chooseBannerBody')),
+                      trailing: FilledButton(onPressed: () => context.go('/choose'), child: Text(context.tr('chooseStart'))),
+                      onTap: () => context.go('/choose'),
+                    ),
+                  ),
+                ),
+              ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               sliver: SliverToBoxAdapter(

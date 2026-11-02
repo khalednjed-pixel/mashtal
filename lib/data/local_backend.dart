@@ -29,6 +29,10 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   late List<Listing> _listings;
   late List<PriceRange> _priceRanges;
   late List<Plant> _customPlants;
+
+  /// Admin edits to knowledge-base plants, by plant id (US-14).
+  late Map<String, Plant> _plantOverrides;
+  late List<PlantEdit> _plantEdits;
   AppUser? _currentUser;
 
   final Map<String, _PendingCode> _pending = {};
@@ -52,6 +56,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       _listings = _list(j['listings'], Listing.fromJson);
       _priceRanges = _list(j['priceRanges'], PriceRange.fromJson);
       _customPlants = _list(j['customPlants'] ?? [], Plant.fromJson);
+      _plantOverrides = {for (final p in _list(j['plantOverrides'] ?? [], Plant.fromJson)) p.id: p};
+      _plantEdits = _list(j['plantEdits'] ?? [], PlantEdit.fromJson);
     }
     final sessionId = _prefs.getString(_sessionKey);
     _currentUser = sessionId == null ? null : _users.where((u) => u.id == sessionId).firstOrNull;
@@ -67,6 +73,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _listings = [...seedListings];
     _priceRanges = [...seedPriceRanges];
     _customPlants = [];
+    _plantOverrides = {};
+    _plantEdits = [];
   }
 
   Future<void> _save() async {
@@ -79,6 +87,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         'listings': _listings.map((e) => e.toJson()).toList(),
         'priceRanges': _priceRanges.map((e) => e.toJson()).toList(),
         'customPlants': _customPlants.map((e) => e.toJson()).toList(),
+        'plantOverrides': _plantOverrides.values.map((e) => e.toJson()).toList(),
+        'plantEdits': _plantEdits.map((e) => e.toJson()).toList(),
       }),
     ).catchError((_) => false);
     notifyListeners();
@@ -172,7 +182,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   // -------------------------------------------------------------- Market
 
   @override
-  List<Plant> get plants => [...seedPlants, ..._customPlants];
+  List<Plant> get plants => [for (final p in seedPlants) _plantOverrides[p.id] ?? p, ..._customPlants];
   @override
   List<Nursery> get nurseries => List.unmodifiable(_nurseries);
   @override
@@ -399,6 +409,59 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _listings.removeWhere((l) => l.plantId == plantId);
     await _save();
   }
+
+  @override
+  Future<void> updatePlant(Plant plant) async {
+    _require(Role.admin, 'updatePlant');
+    final old = plantById(plant.id);
+    if (old == null) throw ArgumentError('plant');
+    if (plant.placements.isEmpty) throw ArgumentError('placements');
+    if (plant.wateringEveryDays < 1 || plant.wateringEveryDays > 60) throw ArgumentError('wateringEveryDays');
+
+    // Only the fields the admin may edit are taken from [plant].
+    final updated = old.copyWith(
+      placements: plant.placements,
+      sun: plant.sun,
+      water: plant.water,
+      wateringEveryDays: plant.wateringEveryDays,
+      toxic: plant.toxic,
+    );
+    String places(Plant p) => (p.placements.map((e) => e.name).toList()..sort()).join(', ');
+    final changes = <(String, String, String)>[
+      if (places(old) != places(updated)) ('placements', places(old), places(updated)),
+      if (old.sun != updated.sun) ('sun', old.sun.name, updated.sun.name),
+      if (old.water != updated.water) ('water', old.water.name, updated.water.name),
+      if (old.wateringEveryDays != updated.wateringEveryDays)
+        ('wateringEveryDays', '${old.wateringEveryDays}', '${updated.wateringEveryDays}'),
+      if (old.toxic != updated.toxic) ('toxic', '${old.toxic}', '${updated.toxic}'),
+    ];
+    if (changes.isEmpty) return;
+
+    final me = _currentUser!;
+    final at = _now();
+    for (final (field, before, after) in changes) {
+      _plantEdits.add(PlantEdit(
+        plantId: old.id,
+        field: field,
+        oldValue: before,
+        newValue: after,
+        editorId: me.id,
+        editorName: me.name,
+        at: at,
+      ));
+    }
+    final i = _customPlants.indexWhere((p) => p.id == old.id);
+    if (i >= 0) {
+      _customPlants[i] = updated;
+    } else {
+      _plantOverrides[old.id] = updated;
+    }
+    await _save();
+  }
+
+  @override
+  List<PlantEdit> plantEditsFor(String plantId) =>
+      _plantEdits.where((e) => e.plantId == plantId).toList().reversed.toList();
 
   static void _validateListing(double price, int quantity) {
     if (price <= 0 || price > 100000) throw ArgumentError('price');

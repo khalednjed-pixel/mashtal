@@ -225,4 +225,58 @@ void main() {
     expect(backend.nurseryById('n5')!.status, PartnerStatus.pending);
     expect(backend.currentUser, isNull);
   });
+
+  group('US-14 plant data edits', () {
+    test('the admin edits a plant; it is used at once and each change is logged', () async {
+      await signInAs('0500000001');
+      final before = backend.plantById('p37')!;
+      expect(before.toxic, isFalse);
+      now = DateTime(2026, 11, 2, 9, 30);
+      await backend.updatePlant(before.copyWith(toxic: true, water: Water.low));
+
+      final after = backend.plantById('p37')!;
+      expect(after.toxic, isTrue);
+      expect(after.water, Water.low);
+      expect(after.nameEn, before.nameEn);
+
+      final log = backend.plantEditsFor('p37');
+      expect(log.map((e) => e.field).toSet(), {'toxic', 'water'});
+      final toxic = log.firstWhere((e) => e.field == 'toxic');
+      expect(toxic.oldValue, 'false');
+      expect(toxic.newValue, 'true');
+      expect(toxic.editorId, 'u-admin');
+      expect(toxic.at, DateTime(2026, 11, 2, 9, 30));
+    });
+
+    test('saving without changes logs nothing', () async {
+      await signInAs('0500000001');
+      await backend.updatePlant(backend.plantById('p01')!);
+      expect(backend.plantEditsFor('p01'), isEmpty);
+    });
+
+    test('edits survive a restart and reset clears them', () async {
+      await signInAs('0500000001');
+      await backend.updatePlant(backend.plantById('p01')!.copyWith(wateringEveryDays: 12));
+      final reopened = await LocalBackend.open(clock: () => now, random: Random(7));
+      expect(reopened.plantById('p01')!.wateringEveryDays, 12);
+      expect(reopened.plantEditsFor('p01'), hasLength(1));
+      await reopened.resetDemoData();
+      expect(reopened.plantById('p01')!.wateringEveryDays, isNot(12));
+      expect(reopened.plantEditsFor('p01'), isEmpty);
+    });
+
+    test('only the admin can edit plant data (NFR-05)', () async {
+      await signInAs('0500000002');
+      expect(() => backend.updatePlant(backend.plantById('p01')!.copyWith(toxic: true)), throwsA(isA<PermissionDenied>()));
+      await signInAs('0500000005');
+      expect(() => backend.updatePlant(backend.plantById('p01')!.copyWith(toxic: true)), throwsA(isA<PermissionDenied>()));
+    });
+
+    test('invalid values are rejected', () async {
+      await signInAs('0500000001');
+      final p = backend.plantById('p01')!;
+      expect(() => backend.updatePlant(p.copyWith(wateringEveryDays: 0)), throwsArgumentError);
+      expect(() => backend.updatePlant(p.copyWith(placements: {})), throwsArgumentError);
+    });
+  });
 }

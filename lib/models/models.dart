@@ -41,6 +41,7 @@ class Plant {
     this.addedBy,
     this.wikiTitle,
     this.photo,
+    this.guideSection,
   });
 
   final String id;
@@ -73,7 +74,33 @@ class Plant {
   /// Photo uploaded with a nursery-added plant, as base64 JPEG.
   final String? photo;
 
+  /// Section of the guide this entry was taken from (US-10). Filled in as
+  /// TF-06 checks each entry; until then the citation uses the plant type.
+  final String? guideSection;
+
   bool get isCustom => addedBy != null;
+
+  /// Fields the admin can edit in the knowledge base (US-14).
+  Plant copyWith({Set<Placement>? placements, Sun? sun, Water? water, int? wateringEveryDays, bool? toxic}) => Plant(
+        id: id,
+        nameAr: nameAr,
+        nameEn: nameEn,
+        scientificName: scientificName,
+        category: category,
+        placements: placements ?? this.placements,
+        sun: sun ?? this.sun,
+        water: water ?? this.water,
+        wateringEveryDays: wateringEveryDays ?? this.wateringEveryDays,
+        toxic: toxic ?? this.toxic,
+        descriptionAr: descriptionAr,
+        descriptionEn: descriptionEn,
+        source: source,
+        guideBacked: guideBacked,
+        addedBy: addedBy,
+        wikiTitle: wikiTitle,
+        photo: photo,
+        guideSection: guideSection,
+      );
 
   String name(String lang) => lang == 'ar' ? nameAr : nameEn;
   String description(String lang) => lang == 'ar' ? descriptionAr : descriptionEn;
@@ -96,6 +123,7 @@ class Plant {
         'addedBy': addedBy,
         'wikiTitle': wikiTitle,
         'photo': photo,
+        'guideSection': guideSection,
       };
 
   factory Plant.fromJson(Map<String, dynamic> j) => Plant(
@@ -116,6 +144,7 @@ class Plant {
         addedBy: j['addedBy'],
         wikiTitle: j['wikiTitle'],
         photo: j['photo'],
+        guideSection: j['guideSection'],
       );
 }
 
@@ -372,5 +401,48 @@ class PriceRange {
         service: _enumByName(ServiceType.values, j['service']),
         min: (j['min'] as num).toDouble(),
         max: (j['max'] as num).toDouble(),
+      );
+}
+
+/// One change the admin made to a knowledge-base field (US-14 AC-02).
+class PlantEdit {
+  const PlantEdit({
+    required this.plantId,
+    required this.field,
+    required this.oldValue,
+    required this.newValue,
+    required this.editorId,
+    required this.editorName,
+    required this.at,
+  });
+
+  final String plantId;
+
+  /// One of: placements, sun, water, wateringEveryDays, toxic.
+  final String field;
+  final String oldValue;
+  final String newValue;
+  final String editorId;
+  final String editorName;
+  final DateTime at;
+
+  Map<String, dynamic> toJson() => {
+        'plantId': plantId,
+        'field': field,
+        'oldValue': oldValue,
+        'newValue': newValue,
+        'editorId': editorId,
+        'editorName': editorName,
+        'at': at.toIso8601String(),
+      };
+
+  factory PlantEdit.fromJson(Map<String, dynamic> j) => PlantEdit(
+        plantId: j['plantId'],
+        field: j['field'],
+        oldValue: j['oldValue'],
+        newValue: j['newValue'],
+        editorId: j['editorId'],
+        editorName: j['editorName'],
+        at: DateTime.parse(j['at']),
       );
 }

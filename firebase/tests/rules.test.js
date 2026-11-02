@@ -167,3 +167,22 @@ describe('review feedback', () => {
     await assertFails(updateDoc(doc(as('pr1owner'), 'professionals/pr1'), { services: [] }));
   });
 });
+
+describe('US-14 plant data edits', () => {
+  const edit = (editorId) => ({ plantId: 'p01', field: 'water', oldValue: 'low', newValue: 'medium', editorId, editorName: 'Admin', at: '2026-11-02T10:00:00Z' });
+
+  test('the admin edits a plant and logs the change as themselves', async () => {
+    await assertSucceeds(updateDoc(doc(as('admin'), 'plants/p01'), { water: 'medium' }));
+    await assertSucceeds(setDoc(doc(as('admin'), 'plantEdits/e1'), edit('admin')));
+  });
+
+  test('nobody else edits plants or writes the log, and the log cannot be changed', async () => {
+    await assertFails(updateDoc(doc(as('n1owner'), 'plants/p01'), { water: 'medium' }));
+    await assertFails(setDoc(doc(as('cust'), 'plantEdits/e2'), edit('cust')));
+    await assertFails(setDoc(doc(as('admin'), 'plantEdits/e3'), edit('someoneElse')));
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'plantEdits/e4'), edit('admin')));
+    await assertFails(updateDoc(doc(as('admin'), 'plantEdits/e4'), { newValue: 'high' }));
+    await assertFails(deleteDoc(doc(as('admin'), 'plantEdits/e4')));
+    await assertFails(getDoc(doc(as('cust'), 'plantEdits/e4')));
+  });
+});

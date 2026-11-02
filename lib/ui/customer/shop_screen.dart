@@ -103,7 +103,12 @@ class _ShopScreenState extends State<ShopScreen> {
                       leading: Icon(Icons.quiz_outlined, color: theme.colorScheme.onPrimaryContainer),
                       title: Text(context.tr('chooseBannerTitle'), style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(context.tr('chooseBannerBody')),
-                      trailing: FilledButton(onPressed: () => context.go('/choose'), child: Text(context.tr('chooseStart'))),
+                      trailing: FilledButton(
+                        // The theme makes filled buttons full width; a ListTile trailing must be sized.
+                        style: FilledButton.styleFrom(minimumSize: const Size(88, 40)),
+                        onPressed: () => context.go('/choose'),
+                        child: Text(context.tr('chooseStart')),
+                      ),
                       onTap: () => context.go('/choose'),
                     ),
                   ),

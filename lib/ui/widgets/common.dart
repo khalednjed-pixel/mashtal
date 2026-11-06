@@ -158,7 +158,38 @@ Future<bool> confirmDelete(BuildContext context, String what) async {
 }
 
 /// Phone input limited to a 10-digit Saudi mobile number (05XXXXXXXX).
-final List<TextInputFormatter> phoneInputFormatters = [
-  FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]')),
-  LengthLimitingTextInputFormatter(10),
-];
+final List<TextInputFormatter> phoneInputFormatters = [SaudiPhoneInputFormatter()];
+
+/// Keeps a phone field to the local form 05XXXXXXXX (10 digits), but turns a
+/// typed or pasted international number (+966…, 00966…, 966…) into that form
+/// first instead of cutting it off (QA BUG-7). Eastern Arabic digits become
+/// Western ones.
+class SaudiPhoneInputFormatter extends TextInputFormatter {
+  static const _eastern = '٠١٢٣٤٥٦٧٨٩';
+
+  static String format(String input) {
+    final b = StringBuffer();
+    for (final ch in input.split('')) {
+      final e = _eastern.indexOf(ch);
+      if (e >= 0) {
+        b.write(e);
+      } else if (RegExp('[0-9]').hasMatch(ch)) {
+        b.write(ch);
+      }
+    }
+    var d = b.toString();
+    if (d.startsWith('00966')) {
+      d = '0${d.substring(5)}';
+    } else if (d.startsWith('966') && d.length > 3) {
+      d = '0${d.substring(3)}';
+    }
+    return d.length > 10 ? d.substring(0, 10) : d;
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = format(newValue.text);
+    if (text == newValue.text) return newValue;
+    return TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
+  }
+}

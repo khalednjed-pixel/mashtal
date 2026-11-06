@@ -321,7 +321,7 @@ class _ResultCard extends StatelessWidget {
                           child: Text(
                             citation == null
                                 ? context.tr(p.isCustom ? 'addedByNursery' : 'notGuideBacked')
-                                : '${citation.guide} · ${citation.edition} · ${context.tr('section')}: ${citation.section}',
+                                : '${citation.guideIn(context.lang)} · ${citation.editionIn(context.lang)} · ${context.tr('section')}: ${citation.sectionIn(context.lang)}',
                             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
                           ),
                         ),
@@ -427,8 +427,8 @@ Future<void> showScoreExplanation(BuildContext context, PlantScore score, Suitab
                 const SizedBox(height: 4),
                 Text(
                   citation == null
-                      ? '${c.tr('source')}: ${p.source}'
-                      : '${citation.publisher} — ${citation.guide}\n${c.tr('edition')}: ${citation.edition} · ${c.tr('section')}: ${citation.section}',
+                      ? '${c.tr('source')}: ${sourceText(c.lang, p)}'
+                      : '${citation.publisherIn(c.lang)} — ${citation.guideIn(c.lang)}\n${c.tr('edition')}: ${citation.editionIn(c.lang)} · ${c.tr('section')}: ${citation.sectionIn(c.lang)}',
                   style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),

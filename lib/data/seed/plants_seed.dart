@@ -1,7 +1,7 @@
 import '../../models/models.dart';
 
-const _rcrc = 'RCRC — Manual of Riyadh Plants';
-const _indoorSource = 'Not in the Riyadh guide — common houseplant (OD-03); toxicity from ASPCA list';
+const rcrcSource = 'RCRC — Manual of Riyadh Plants';
+const houseplantSource = 'Not in the Riyadh guide — common houseplant (OD-03); toxicity from ASPCA list';
 
 /// Plant knowledge base v1 (TF-06).
 ///
@@ -16,7 +16,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجرة محلية دائمة الخضرة تتحمل الحر والجفاف، مناسبة للظل في الحدائق والاستراحات.',
     descriptionEn: 'Native evergreen that tolerates heat and drought; good shade tree for gardens.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p02', nameAr: 'السمر', nameEn: 'Umbrella thorn acacia', scientificName: 'Vachellia tortilis',
@@ -24,7 +24,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: false,
     descriptionAr: 'شجرة صحراوية مظلية الشكل، تحتاج ماءً قليلاً جداً بعد أن تثبت.',
     descriptionEn: 'Umbrella-shaped desert tree; needs very little water once established.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p03', nameAr: 'السدر', nameEn: 'Christ\'s thorn jujube', scientificName: 'Ziziphus spina-christi',
@@ -32,7 +32,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجرة محلية معمرة تعطي ثمر النبق وظلاً كثيفاً وتتحمل ملوحة التربة.',
     descriptionEn: 'Long-lived native tree with edible fruit and dense shade; tolerates salty soil.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p04', nameAr: 'نخلة التمر', nameEn: 'Date palm', scientificName: 'Phoenix dactylifera',
@@ -40,7 +40,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: false,
     descriptionAr: 'النخلة المعروفة، تحتاج شمساً كاملة وري منتظم في الصيف.',
     descriptionEn: 'The classic date palm; full sun and regular summer watering.',
-    source: _rcrc,
+    source: rcrcSource,
     wikiTitle: 'Date palm',
   ),
   Plant(
@@ -49,7 +49,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجرة سريعة النمو تستخدم كمصدات رياح، تتحمل الملوحة.',
     descriptionEn: 'Fast-growing windbreak tree that tolerates salinity.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p06', nameAr: 'الطلح', nameEn: 'Gerrard\'s acacia', scientificName: 'Vachellia gerrardii',
@@ -57,7 +57,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: false,
     descriptionAr: 'شجرة برية محلية من شجر الروضات، قليلة الاحتياج للماء.',
     descriptionEn: 'Native wild acacia of the Najd meadows; low water needs.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p07', nameAr: 'البان', nameEn: 'Wild moringa', scientificName: 'Moringa peregrina',
@@ -65,7 +65,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجرة محلية رشيقة بأوراق دقيقة وأزهار عطرية.',
     descriptionEn: 'Slender native tree with fine leaves and fragrant flowers.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p08', nameAr: 'الباركنسونيا', nameEn: 'Jerusalem thorn', scientificName: 'Parkinsonia aculeata',
@@ -73,7 +73,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجرة صغيرة بأزهار صفراء، تتحمل الحر والجفاف.',
     descriptionEn: 'Small tree with yellow flowers; heat and drought tolerant.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p09', nameAr: 'اللبخ', nameEn: 'Siris tree', scientificName: 'Albizia lebbeck',
@@ -81,7 +81,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: false,
     descriptionAr: 'شجرة ظل كبيرة سريعة النمو، تحتاج مساحة واسعة.',
     descriptionEn: 'Large fast-growing shade tree; needs plenty of space.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p10', nameAr: 'البونسيانا', nameEn: 'Royal poinciana', scientificName: 'Delonix regia',
@@ -89,7 +89,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 5, toxic: false,
     descriptionAr: 'شجرة زينة بأزهار حمراء زاهية في الصيف.',
     descriptionEn: 'Ornamental tree with bright red summer flowers.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p11', nameAr: 'نخيل الواشنطونيا', nameEn: 'California fan palm', scientificName: 'Washingtonia filifera',
@@ -97,7 +97,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: false,
     descriptionAr: 'نخلة مروحية الأوراق للشوارع والحدائق الكبيرة.',
     descriptionEn: 'Fan-leaf palm for streets and large gardens.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p12', nameAr: 'الشث', nameEn: 'Hopbush', scientificName: 'Dodonaea viscosa',
@@ -105,7 +105,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: false,
     descriptionAr: 'شجيرة محلية تصلح كسياج أخضر، تتحمل الحر.',
     descriptionEn: 'Native shrub that makes a good hedge; heat tolerant.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p13', nameAr: 'الليوكوفيلم', nameEn: 'Texas sage', scientificName: 'Leucophyllum frutescens',
@@ -113,7 +113,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: false,
     descriptionAr: 'شجيرة فضية الأوراق بأزهار بنفسجية، قليلة الري.',
     descriptionEn: 'Silver-leaved shrub with purple flowers; little watering.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p14', nameAr: 'التيكوما', nameEn: 'Yellow bells', scientificName: 'Tecoma stans',
@@ -121,7 +121,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 4, toxic: false,
     descriptionAr: 'شجيرة مزهرة بأزهار صفراء جرسية معظم السنة.',
     descriptionEn: 'Flowering shrub with yellow bell flowers most of the year.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p15', nameAr: 'الدفلة', nameEn: 'Oleander', scientificName: 'Nerium oleander',
@@ -129,7 +129,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: true,
     descriptionAr: 'شجيرة مزهرة قوية التحمل، لكنها سامة لجميع أجزائها.',
     descriptionEn: 'Tough flowering shrub; every part of the plant is poisonous.',
-    source: _rcrc,
+    source: rcrcSource,
     wikiTitle: 'Nerium',
   ),
   Plant(
@@ -138,7 +138,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 5, toxic: false,
     descriptionAr: 'متسلقة مزهرة بألوان زاهية على الأسوار، تحب الشمس.',
     descriptionEn: 'Colourful flowering climber for walls; loves sun.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p17', nameAr: 'اللانتانا', nameEn: 'Lantana', scientificName: 'Lantana camara',
@@ -146,7 +146,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 4, toxic: true,
     descriptionAr: 'شجيرة صغيرة بأزهار ملونة تجذب الفراشات، ثمارها سامة.',
     descriptionEn: 'Small shrub with colourful flowers; its berries are toxic.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p18', nameAr: 'العشار', nameEn: 'Sodom apple', scientificName: 'Calotropis procera',
@@ -154,7 +154,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: true,
     descriptionAr: 'شجيرة برية محلية، عصارتها اللبنية مهيجة وسامة.',
     descriptionEn: 'Native wild shrub; its milky sap is irritant and toxic.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p19', nameAr: 'العرفج', nameEn: 'Arfaj', scientificName: 'Rhanterium epapposum',
@@ -162,7 +162,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: false,
     descriptionAr: 'شجيرة صحراوية محلية بأزهار صفراء، رمز للنباتات البرية في نجد.',
     descriptionEn: 'Native desert shrub with yellow flowers, typical of Najd.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p20', nameAr: 'المرخ', nameEn: 'Broom bush', scientificName: 'Leptadenia pyrotechnica',
@@ -170,7 +170,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: false,
     descriptionAr: 'شجيرة صحراوية بسيقان خضراء بلا أوراق تقريباً، تثبت الرمال.',
     descriptionEn: 'Desert shrub with green, almost leafless stems; stabilises sand.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p21', nameAr: 'السيزالبينا', nameEn: 'Bird of paradise bush', scientificName: 'Caesalpinia gilliesii',
@@ -178,7 +178,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: true,
     descriptionAr: 'شجيرة بأزهار صفراء وأسدية حمراء طويلة، بذورها سامة.',
     descriptionEn: 'Shrub with yellow flowers and long red stamens; seeds are toxic.',
-    source: _rcrc,
+    source: rcrcSource,
     wikiTitle: 'Erythrostemon gilliesii',
   ),
   Plant(
@@ -187,7 +187,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 4, toxic: false,
     descriptionAr: 'شجيرة دائمة الخضرة بأزهار بيضاء عطرية، تصلح للأسوار.',
     descriptionEn: 'Evergreen shrub with fragrant white flowers; good for hedges.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p23', nameAr: 'الفل', nameEn: 'Arabian jasmine', scientificName: 'Jasminum sambac',
@@ -195,7 +195,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 3, toxic: false,
     descriptionAr: 'شجيرة عطرية بأزهار بيضاء، تحب الشمس الجزئية والري المنتظم.',
     descriptionEn: 'Fragrant white-flowered shrub; likes part sun and regular watering.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p24', nameAr: 'الهبسكس', nameEn: 'Chinese hibiscus', scientificName: 'Hibiscus rosa-sinensis',
@@ -203,7 +203,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 2, toxic: false,
     descriptionAr: 'شجيرة بأزهار كبيرة ملونة، تحتاج ماءً أكثر من غيرها.',
     descriptionEn: 'Shrub with large colourful flowers; needs more water than most.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p25', nameAr: 'كف مريم', nameEn: 'Chaste tree', scientificName: 'Vitex agnus-castus',
@@ -211,7 +211,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: false,
     descriptionAr: 'شجيرة كبيرة بأزهار بنفسجية عطرية، تتحمل الحر.',
     descriptionEn: 'Large shrub with fragrant purple flowers; heat tolerant.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p26', nameAr: 'الصبار (الألوة)', nameEn: 'Aloe vera', scientificName: 'Aloe vera',
@@ -219,7 +219,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: true,
     descriptionAr: 'نبات عصاري سهل العناية، سام للقطط والكلاب.',
     descriptionEn: 'Easy-care succulent; toxic to cats and dogs.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p27', nameAr: 'الأغاف', nameEn: 'Century plant', scientificName: 'Agave americana',
@@ -227,7 +227,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 21, toxic: true,
     descriptionAr: 'نبات عصاري كبير بأوراق شوكية، يحتاج ري نادر جداً.',
     descriptionEn: 'Large spiny succulent; needs very rare watering.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p28', nameAr: 'البورتيولاكاريا', nameEn: 'Elephant bush', scientificName: 'Portulacaria afra',
@@ -235,7 +235,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجيرة عصارية صغيرة الأوراق، تصلح للأحواض والشرفات.',
     descriptionEn: 'Small-leaved succulent shrub for pots and balconies.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p29', nameAr: 'حشيشة النافورة', nameEn: 'Fountain grass', scientificName: 'Pennisetum setaceum',
@@ -243,7 +243,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 5, toxic: false,
     descriptionAr: 'عشب زينة بسنابل ريشية، يتحمل الجفاف.',
     descriptionEn: 'Ornamental grass with feathery plumes; drought tolerant.',
-    source: _rcrc,
+    source: rcrcSource,
     wikiTitle: 'Cenchrus setaceus',
   ),
   Plant(
@@ -252,7 +252,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 2, toxic: false,
     descriptionAr: 'عشب للمسطحات الخضراء يتحمل الماء المالح، لكنه يحتاج رياً متكرراً.',
     descriptionEn: 'Lawn grass that tolerates salty water but needs frequent watering.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p31', nameAr: 'السيسوفيوم', nameEn: 'Sea purslane', scientificName: 'Sesuvium portulacastrum',
@@ -260,7 +260,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 5, toxic: false,
     descriptionAr: 'غطاء أرضي عصاري يتحمل الملوحة، بديل موفر للماء عن النجيل.',
     descriptionEn: 'Salt-tolerant succulent groundcover; water-saving lawn alternative.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   Plant(
     id: 'p32', nameAr: 'إكليل الجبل', nameEn: 'Rosemary', scientificName: 'Salvia rosmarinus',
@@ -268,7 +268,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 5, toxic: false,
     descriptionAr: 'عشبة عطرية للطبخ، تحب الشمس وتكره الري الزائد.',
     descriptionEn: 'Aromatic cooking herb; loves sun and hates over-watering.',
-    source: _rcrc,
+    source: rcrcSource,
     wikiTitle: 'Rosemary',
   ),
   Plant(
@@ -277,7 +277,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 10, toxic: false,
     descriptionAr: 'شجيرة محلية صغيرة بأزهار صفراء.',
     descriptionEn: 'Small native shrub with yellow flowers.',
-    source: _rcrc,
+    source: rcrcSource,
   ),
   // Indoor set (OD-03): not covered by the Riyadh guide, labelled as such.
   Plant(
@@ -286,7 +286,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 7, toxic: true,
     descriptionAr: 'نبات داخلي متدلٍ سهل العناية، يتحمل الإضاءة المنخفضة.',
     descriptionEn: 'Easy trailing houseplant that copes with low light.',
-    source: _indoorSource, guideBacked: false,
+    source: houseplantSource, guideBacked: false,
   ),
   Plant(
     id: 'p35', nameAr: 'جلد النمر', nameEn: 'Snake plant', scientificName: 'Dracaena trifasciata',
@@ -294,7 +294,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: true,
     descriptionAr: 'نبات داخلي قوي يتحمل الإهمال وقلة الري.',
     descriptionEn: 'Tough indoor plant that tolerates neglect and little water.',
-    source: _indoorSource, guideBacked: false,
+    source: houseplantSource, guideBacked: false,
   ),
   Plant(
     id: 'p36', nameAr: 'الزاميا', nameEn: 'ZZ plant', scientificName: 'Zamioculcas zamiifolia',
@@ -302,7 +302,7 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 14, toxic: true,
     descriptionAr: 'نبات داخلي لامع الأوراق يناسب المكاتب والإضاءة الضعيفة.',
     descriptionEn: 'Glossy indoor plant for offices and low light.',
-    source: _indoorSource, guideBacked: false,
+    source: houseplantSource, guideBacked: false,
     wikiTitle: 'Zamioculcas',
   ),
   Plant(
@@ -311,6 +311,6 @@ const List<Plant> seedPlants = [
     wateringEveryDays: 5, toxic: false,
     descriptionAr: 'نبات داخلي آمن للأطفال والحيوانات الأليفة.',
     descriptionEn: 'Indoor plant that is safe around children and pets.',
-    source: _indoorSource, guideBacked: false,
+    source: houseplantSource, guideBacked: false,
   ),
 ];

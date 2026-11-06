@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/catalog_search.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
@@ -24,13 +25,9 @@ class PlantDetailScreen extends StatelessWidget {
     final lang = context.lang;
 
     final offers = [
-      for (final l in market.listings)
-        if (l.plantId == plantId && !l.hidden)
-          if (market.nurseryById(l.nurseryId) case final n? when n.isVerified) (l, n),
-    ]..sort((a, b) {
-        if (a.$1.isAvailable != b.$1.isAvailable) return a.$1.isAvailable ? -1 : 1;
-        return a.$1.price.compareTo(b.$1.price);
-      });
+      for (final o in customerOffers(listings: market.listings, nurseryById: market.nurseryById, plantId: plantId))
+        (o.listing, o.nursery),
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -99,7 +96,7 @@ class PlantDetailScreen extends StatelessWidget {
             Text(
               plant.isCustom
                   ? context.tr('addedByNursery')
-                  : '${context.tr('source')}: ${plant.source}${plant.guideBacked ? '' : ' — ${context.tr('notGuideBacked')}'}',
+                  : '${context.tr('source')}: ${sourceText(lang, plant)}${plant.guideBacked ? '' : ' — ${context.tr('notGuideBacked')}'}',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 24),
@@ -152,10 +149,13 @@ class _OfferAction extends StatelessWidget {
           tooltip: context.tr('addToCart'),
           icon: const Icon(Icons.add_shopping_cart),
           onPressed: () {
-            context.read<AppState>().addToCart(listing.id);
+            final added = context.read<AppState>().addToCart(listing.id);
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(context.tr('addedToCart')), duration: const Duration(seconds: 1)));
+              ..showSnackBar(SnackBar(
+                content: Text(context.tr(added ? 'addedToCart' : 'maxStockReached')),
+                duration: const Duration(seconds: 1),
+              ));
           },
         ),
       ],

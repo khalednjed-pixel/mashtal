@@ -20,6 +20,7 @@ class ChooseScreen extends StatefulWidget {
   static void resetSaved() {
     _ChooseScreenState._savedAnswers = null;
     _ChooseScreenState._savedStep = 0;
+    _ChooseScreenState._savedFor = null;
   }
 
   @override
@@ -30,6 +31,10 @@ class _ChooseScreenState extends State<ChooseScreen> {
   // Kept across visits so coming back from a plant page keeps the results.
   static SuitabilityAnswers? _savedAnswers;
   static int _savedStep = 0;
+
+  /// Who the saved answers belong to (null for a guest). Another account on
+  /// the same device starts fresh instead of seeing them.
+  static String? _savedFor;
 
   late SuitabilityAnswers _answers;
   late int _step;
@@ -42,6 +47,11 @@ class _ChooseScreenState extends State<ChooseScreen> {
   void initState() {
     super.initState();
     final user = context.read<AppState>().user;
+    if (_savedFor != user?.id) {
+      _savedAnswers = null;
+      _savedStep = 0;
+      _savedFor = user?.id;
+    }
     _answers = _savedAnswers ?? SuitabilityAnswers(city: user?.city);
     _step = _savedStep;
   }
@@ -280,7 +290,7 @@ class _ResultCard extends StatelessWidget {
         child: InkWell(
           key: Key('result-${p.id}'),
           borderRadius: BorderRadius.circular(14),
-          onTap: () => showNurseryCompare(context, p),
+          onTap: () => showNurseryCompare(context, p, city: answers.city),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
@@ -469,15 +479,20 @@ Widget _cell(BuildContext c, String text, {bool bold = false}) => Padding(
       child: Text(text, style: bold ? Theme.of(c).textTheme.labelLarge : Theme.of(c).textTheme.bodyMedium),
     );
 
-/// US-12: verified nurseries that have the plant in stock, cheapest first,
-/// with price, rating and city.
-Future<void> showNurseryCompare(BuildContext context, Plant plant) {
+/// US-12: verified nurseries that have the plant in stock, with price,
+/// rating and city. Nurseries in the customer's [city] come first, then the
+/// rest; cheapest first within each group.
+Future<void> showNurseryCompare(BuildContext context, Plant plant, {String? city}) {
   final market = context.read<AppState>().backend;
   final offers = [
     for (final l in market.listings)
       if (l.plantId == plant.id && l.isAvailable)
         if (market.nurseryById(l.nurseryId) case final n? when n.isVerified) (l, n),
-  ]..sort((a, b) => a.$1.price.compareTo(b.$1.price));
+  ]..sort((a, b) {
+      final aHere = a.$2.city == city, bHere = b.$2.city == city;
+      if (aHere != bHere) return aHere ? -1 : 1;
+      return a.$1.price.compareTo(b.$1.price);
+    });
 
   return showModalBottomSheet<void>(
     context: context,

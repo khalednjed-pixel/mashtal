@@ -187,7 +187,7 @@ class _PlantEditScreenState extends State<PlantEditScreen> {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.history),
-                  title: Text('${context.tr('field.${e.field}')}: ${e.oldValue} → ${e.newValue}'),
+                  title: Text('${context.tr('field.${e.field}')}: ${editValue(context, e.field, e.oldValue)} → ${editValue(context, e.field, e.newValue)}'),
                   subtitle: Text('${e.editorName} · ${when.format(e.at)}'),
                 ),
             ],
@@ -196,4 +196,18 @@ class _PlantEditScreenState extends State<PlantEditScreen> {
       ),
     );
   }
+}
+
+/// A logged value in the current language: the log stores enum names and
+/// true/false so it stays language-neutral.
+String editValue(BuildContext context, String field, String raw) {
+  T? byName<T extends Enum>(List<T> values, String name) => values.where((v) => v.name == name).firstOrNull;
+  String en(Enum? v) => v == null ? raw : context.trEnum(v);
+  return switch (field) {
+    'placements' => raw.isEmpty ? raw : raw.split(', ').map((n) => en(byName(Placement.values, n))).join(context.lang == 'ar' ? '، ' : ', '),
+    'sun' => en(byName(Sun.values, raw)),
+    'water' => en(byName(Water.values, raw)),
+    'toxic' => context.tr(raw == 'true' ? 'yes' : 'no'),
+    _ => raw,
+  };
 }

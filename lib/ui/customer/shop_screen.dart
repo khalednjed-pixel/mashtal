@@ -120,7 +120,12 @@ class _ShopScreenState extends State<ShopScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      // Keeps the field's accessible name once it has text
+                      // (QA BUG-3); the hint alone disappears when typing.
+                      child: Semantics(
+                        label: context.tr('searchHint'),
+                        textField: true,
+                        child: TextField(
                         key: const Key('searchField'),
                         controller: _query,
                         decoration: InputDecoration(
@@ -129,6 +134,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           suffixIcon: _query.text.isEmpty
                               ? null
                               : IconButton(
+                                  tooltip: context.tr('clearSearch'),
                                   icon: const Icon(Icons.close),
                                   onPressed: () => setState(() {
                                     _query.clear();
@@ -137,6 +143,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                 ),
                         ),
                         onChanged: (v) => setState(() => _savedQuery = v),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -234,7 +241,8 @@ class _PlantCard extends StatelessWidget {
     final p = result.plant;
     final theme = Theme.of(context);
     final price = result.lowestPrice;
-    final nurseries = result.offers.map((o) => o.nursery.id).toSet().length;
+    // Only nurseries with the plant in stock count (QA BUG-5).
+    final nurseries = result.offers.where((o) => o.listing.isAvailable).map((o) => o.nursery.id).toSet().length;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -253,7 +261,7 @@ class _PlantCard extends StatelessWidget {
                     Text(p.scientificName, style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
                     const SizedBox(height: 4),
                     Text(
-                      '${context.trEnum(p.sun)} · ${context.tr('water')}: ${context.trEnum(p.water)} · ${nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}'}',
+                      '${context.trEnum(p.sun)} · ${context.tr('water')}: ${context.trEnum(p.water)}${nurseries == 0 ? '' : ' · ${nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}'}'}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],

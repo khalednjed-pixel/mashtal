@@ -1,3 +1,4 @@
+import '../data/seed/plant_media.g.dart';
 import '../models/models.dart';
 import 'text_match.dart';
 
@@ -61,6 +62,15 @@ class SearchResults {
   bool get isEmpty => plants.isEmpty && nurseries.isEmpty;
 }
 
+/// The app's own names first, then Wikidata's labels as extra search terms
+/// (docs/plant-data.md), so the app's names still rank as the closest match.
+List<String> _searchNames(Plant p) => [
+      p.nameAr,
+      p.nameEn,
+      p.scientificName,
+      if (!p.isCustom) ...?plantMedia[p.id]?.aliases,
+    ];
+
 /// Buy Plants search (US-05): plants sold by verified nurseries first, then
 /// matching verified nurseries. Hidden listings never appear; listings with
 /// quantity 0 appear as not available (US-06 AC-02). Unverified nurseries and
@@ -92,12 +102,12 @@ SearchResults searchCatalog({
     if (filters.placement != null && !p.placements.contains(filters.placement)) continue;
     if (filters.sun != null && p.sun != filters.sun) continue;
     if (filters.water != null && p.water != filters.water) continue;
-    if (!matchesQuery(query, [p.nameAr, p.nameEn, p.scientificName])) continue;
+    if (!matchesQuery(query, _searchNames(p))) continue;
     offers.sort((a, b) => a.listing.price.compareTo(b.listing.price));
     plantResults.add(PlantResult(p, offers));
   }
   // Closest name match first, then available plants, then by lowest price.
-  int rank(Plant p) => matchRank(query, [p.nameAr, p.nameEn, p.scientificName]);
+  int rank(Plant p) => matchRank(query, _searchNames(p));
   plantResults.sort((a, b) {
     final byRank = rank(a.plant).compareTo(rank(b.plant));
     if (byRank != 0) return byRank;
@@ -110,4 +120,27 @@ SearchResults searchCatalog({
       : verified.values.where((n) => matchesQuery(query, [n.nameAr, n.nameEn, n.district])).toList();
 
   return SearchResults(plantResults, nurseryResults);
+}
+
+/// One rule for every customer screen (QA BUG-5, US-06 AC-02): a listing is
+/// shown when its nursery is verified and the nursery has not hidden it.
+/// Listings with quantity 0 are shown as "not available", after the ones in
+/// stock, on both the plant page and the nursery page. Counts of "nurseries
+/// that have it" use only listings in stock.
+List<Offer> customerOffers({
+  required List<Listing> listings,
+  required Nursery? Function(String id) nurseryById,
+  String? plantId,
+  String? nurseryId,
+}) {
+  final offers = [
+    for (final l in listings)
+      if (!l.hidden && (plantId == null || l.plantId == plantId) && (nurseryId == null || l.nurseryId == nurseryId))
+        if (nurseryById(l.nurseryId) case final n? when n.isVerified) Offer(l, n),
+  ];
+  offers.sort((a, b) {
+    if (a.listing.isAvailable != b.listing.isAvailable) return a.listing.isAvailable ? -1 : 1;
+    return a.listing.price.compareTo(b.listing.price);
+  });
+  return offers;
 }

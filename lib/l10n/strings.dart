@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
+import '../data/seed/plants_seed.dart' show houseplantSource, rcrcSource;
 import '../models/models.dart';
 import '../state/app_state.dart';
 
@@ -178,6 +179,22 @@ const Map<String, Map<String, String>> _strings = {
   'gallery': {'ar': 'معرض الصور', 'en': 'Gallery'},
   'storageFull': {'ar': 'مساحة التخزين ممتلئة. احذف بعض الصور وحاول مجدداً.', 'en': 'Storage is full. Remove some photos and try again.'},
   'photoCredit': {'ar': 'الصورة: ويكيبيديا', 'en': 'Photo: Wikipedia'},
+  'photoBy': {'ar': 'الصورة', 'en': 'Photo'},
+  'photoLicence': {'ar': 'الترخيص', 'en': 'Licence'},
+  'dataCredits': {'ar': 'مصادر البيانات والصور', 'en': 'Data and photo sources'},
+  'dataCreditsBody': {
+    'ar': 'بيانات العناية (الشمس والماء والمكان): دليل نباتات الرياض من الهيئة الملكية لمدينة الرياض. السمية: قائمة ASPCA. الأسماء العلمية ومعرّفات الأنواع: ويكي بيانات (CC0). الصور: ويكيميديا كومنز، ولكل صورة صاحبها وترخيصها كما يظهر تحتها.',
+    'en': 'Care data (sun, water, place): RCRC Manual of Riyadh Plants. Toxicity: ASPCA list. Scientific names and species ids: Wikidata (CC0). Photos: Wikimedia Commons; each photo shows its author and licence under it.'
+  },
+  'close': {'ar': 'إغلاق', 'en': 'Close'},
+  'clearSearch': {'ar': 'مسح البحث', 'en': 'Clear search'},
+  'increase': {'ar': 'زيادة الكمية', 'en': 'Increase quantity'},
+  'decrease': {'ar': 'إنقاص الكمية', 'en': 'Decrease quantity'},
+  'maxStockReached': {'ar': 'هذه كل الكمية المتوفرة في المشتل', 'en': 'That is all the stock this nursery has'},
+  'onlyLeft': {'ar': 'المتوفر', 'en': 'In stock'},
+  'cartAdjusted': {'ar': 'عدّلنا سلتك لأن كمية بعض النباتات تغيّرت في المشتل', 'en': 'We updated your cart because a nursery\'s stock changed'},
+  'srcRcrc': {'ar': 'الهيئة الملكية لمدينة الرياض — دليل نباتات الرياض', 'en': 'RCRC — Manual of Riyadh Plants'},
+  'srcHouseplant': {'ar': 'نبات منزلي شائع؛ السمية من قائمة ASPCA', 'en': 'Common houseplant; toxicity from the ASPCA list'},
   'nurseryPhoto': {'ar': 'صورة المشتل', 'en': 'Nursery photo'},
   'typeMaxPrice': {'ar': 'أو اكتب أعلى سعر', 'en': 'Or type a max price'},
   'anyPrice': {'ar': 'أي سعر', 'en': 'Any price'},
@@ -326,6 +343,14 @@ const Map<String, Map<String, String>> _enums = {
   'periodicCare': {'ar': 'عناية دورية', 'en': 'Periodic care'},
   'treatment': {'ar': 'علاج', 'en': 'Treatment'},
 };
+
+/// The plant's source in the current language (QA BUG-4). Known seed
+/// sources have translations; anything else is shown as stored.
+String sourceText(String lang, Plant p) => switch (p.source) {
+      rcrcSource => translate(lang, 'srcRcrc'),
+      houseplantSource => translate(lang, 'srcHouseplant'),
+      _ => p.source,
+    };
 
 String translate(String lang, String key) => _strings[key]?[lang] ?? key;
 

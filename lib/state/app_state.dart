@@ -22,6 +22,7 @@ class AppState extends ChangeNotifier {
       }
     }
     _owner = _ownerFor(backend.currentUser);
+    _fitCartsToStock();
     backend.addListener(_onBackendChanged);
   }
 
@@ -50,12 +51,28 @@ class AppState extends ChangeNotifier {
 
   static String _ownerFor(AppUser? u) => u?.id ?? _guest;
 
-  void _onBackendChanged() {
-    // Drop cart lines whose listing was deleted.
-    final ids = {for (final l in backend.listings) l.id};
+  /// Cart lines never ask for more than the nursery has (QA BUG-1): lines
+  /// whose listing was deleted, hidden or sold out are dropped, the rest are
+  /// capped at the listing's quantity. Returns true if anything changed.
+  bool _fitCartsToStock() {
+    final stock = {for (final l in backend.listings) if (l.isAvailable) l.id: l.quantity};
+    var changed = false;
     for (final c in _carts.values) {
-      c.removeWhere((id, _) => !ids.contains(id));
+      for (final id in c.keys.toList()) {
+        final max = stock[id];
+        if (max == null) {
+          c.remove(id);
+          changed = true;
+        } else if (c[id]! > max) {
+          c[id] = max;
+          changed = true;
+        }
+      }
     }
+    return changed;
+  }
+
+  void _onBackendChanged() {
     final owner = _ownerFor(user);
     if (owner != _owner) {
       final guestCart = _carts.remove(_guest);
@@ -64,8 +81,9 @@ class AppState extends ChangeNotifier {
         guestCart.forEach((id, q) => mine.update(id, (v) => v + q, ifAbsent: () => q));
       }
       _owner = owner;
-      _saveCarts(notify: false);
     }
+    if (_fitCartsToStock() && cart.isNotEmpty) cartAdjusted = true;
+    _saveCarts(notify: false);
     notifyListeners();
   }
 
@@ -81,9 +99,24 @@ class AppState extends ChangeNotifier {
   Map<String, int> get cart => Map.unmodifiable(_carts[_owner] ?? const {});
   int get cartCount => cart.values.fold(0, (a, b) => a + b);
 
-  void addToCart(String listingId) {
+  /// Set when stock changes forced a cart line down; the cart screen shows
+  /// it once and clears it.
+  bool cartAdjusted = false;
+
+  /// How many more of [listingId] can go in the cart (0 if none).
+  int roomFor(String listingId) {
+    final l = backend.listings.where((l) => l.id == listingId).firstOrNull;
+    if (l == null || !l.isAvailable) return 0;
+    return l.quantity - (_carts[_owner]?[listingId] ?? 0);
+  }
+
+  /// Adds one unit, up to the listing's quantity (QA BUG-1). Returns false
+  /// and changes nothing when the cart already holds all the stock.
+  bool addToCart(String listingId) {
+    if (roomFor(listingId) <= 0) return false;
     _cart.update(listingId, (q) => q + 1, ifAbsent: () => 1);
     _saveCarts();
+    return true;
   }
 
   void removeFromCart(String listingId, {bool all = false}) {

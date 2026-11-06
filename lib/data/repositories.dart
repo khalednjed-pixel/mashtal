@@ -117,4 +117,13 @@ abstract interface class MarketRepository {
   /// The admin, or the nursery that added it, removes a nursery-added plant
   /// together with its listings. Knowledge-base plants cannot be deleted.
   Future<void> deletePlant(String plantId);
+
+  /// Admin only (US-14): changes where a plant can live, its sun and water
+  /// needs, watering interval and toxicity. Each changed field is logged
+  /// with the editor, time and previous value. Results use it at once, with
+  /// no new app release.
+  Future<void> updatePlant(Plant plant);
+
+  /// Edit log of one plant, newest first.
+  List<PlantEdit> plantEditsFor(String plantId);
 }

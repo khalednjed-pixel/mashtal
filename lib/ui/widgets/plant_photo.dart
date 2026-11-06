@@ -5,18 +5,28 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../data/seed/plant_media.g.dart';
 import '../../l10n/strings.dart';
 import '../../models/models.dart';
+import '../../models/plant_media.dart';
 import 'common.dart';
 
 /// A freely licensed photo of a species from Wikipedia / Wikimedia Commons.
 class WikiPhoto {
-  const WikiPhoto(this.imageUrl, this.pageUrl);
+  const WikiPhoto(this.imageUrl, this.pageUrl, {this.media});
   final String imageUrl;
   final String pageUrl;
+
+  /// Author and licence, when the photo comes from the imported dataset.
+  final PlantMedia? media;
 }
 
-/// Looks up plant photos through the Wikipedia REST API, once per species.
+/// Imported Wikidata / Commons record of a knowledge-base plant, if any.
+PlantMedia? mediaFor(Plant p) => p.isCustom ? null : plantMedia[p.id];
+
+/// Plant photos: the imported Commons photo with its credit
+/// (docs/plant-data.md), else a lookup through the Wikipedia REST API, once
+/// per species.
 class WikiPhotos {
   WikiPhotos._();
 
@@ -28,6 +38,10 @@ class WikiPhotos {
 
   static Future<WikiPhoto?> of(Plant p) {
     if (!enabled || p.isCustom || p.scientificName.isEmpty) return Future.value(null);
+    final media = mediaFor(p);
+    if (media != null && media.hasPhoto) {
+      return Future.value(WikiPhoto(media.photoUrl!, media.photoPageUrl!, media: media));
+    }
     final title = titleFor(p);
     return _cache.putIfAbsent(title, () => _fetch(title));
   }
@@ -97,10 +111,13 @@ class PlantPhoto extends StatelessWidget {
   }
 }
 
-/// "Photo: Wikipedia" link under a species photo (licence attribution).
+/// Credit under a species photo. Imported Commons photos show author and
+/// licence (CC BY / BY-SA need both); others show "Photo: Wikipedia".
 class PhotoCredit extends StatelessWidget {
   const PhotoCredit({super.key, required this.plant});
   final Plant plant;
+
+  static void _open(String url) => launchUrl(Uri.parse(url), webOnlyWindowName: kIsWeb ? '_blank' : null);
 
   @override
   Widget build(BuildContext context) {
@@ -110,11 +127,35 @@ class PhotoCredit extends StatelessWidget {
       builder: (context, snap) {
         final photo = snap.data;
         if (photo == null) return const SizedBox.shrink();
-        return TextButton.icon(
-          style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
-          icon: const Icon(Icons.photo_camera_outlined, size: 16),
-          label: Text(context.tr('photoCredit'), style: Theme.of(context).textTheme.bodySmall),
-          onPressed: () => launchUrl(Uri.parse(photo.pageUrl), webOnlyWindowName: kIsWeb ? '_blank' : null),
+        final small = Theme.of(context).textTheme.bodySmall;
+        final media = photo.media;
+        final style = TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact, minimumSize: const Size(0, 32));
+        if (media == null) {
+          return TextButton.icon(
+            style: style,
+            icon: const Icon(Icons.photo_camera_outlined, size: 16),
+            label: Text(context.tr('photoCredit'), style: small),
+            onPressed: () => _open(photo.pageUrl),
+          );
+        }
+        return Wrap(
+          key: const Key('photoCredit'),
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 4,
+          children: [
+            TextButton.icon(
+              style: style,
+              icon: const Icon(Icons.photo_camera_outlined, size: 16),
+              label: Text('${context.tr('photoBy')}: ${media.photoAuthor ?? 'Wikimedia Commons'}', style: small),
+              onPressed: () => _open(photo.pageUrl),
+            ),
+            if (media.photoLicence != null)
+              TextButton(
+                style: style,
+                onPressed: media.photoLicenceUrl == null ? null : () => _open(media.photoLicenceUrl!),
+                child: Text(media.photoLicence!, style: small),
+              ),
+          ],
         );
       },
     );

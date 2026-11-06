@@ -52,6 +52,20 @@ class AccountScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    key: const Key('dataCredits'),
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(context.tr('dataCredits')),
+                    onTap: () => showDialog<void>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                        title: Text(c.tr('dataCredits')),
+                        content: Text(c.tr('dataCreditsBody')),
+                        actions: [TextButton(onPressed: () => Navigator.pop(c), child: Text(c.tr('close')))],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
                     leading: const Icon(Icons.restart_alt),
                     title: Text(context.tr('resetDemo')),
                     onTap: () async {

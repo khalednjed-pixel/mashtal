@@ -23,6 +23,12 @@ class CartScreen extends StatelessWidget {
           (listing, qty, market.plantById(listing.plantId)!, market.nurseryById(listing.nurseryId)!),
     ];
     final total = lines.fold<double>(0, (sum, l) => sum + l.$1.price * l.$2);
+    if (app.cartAdjusted) {
+      app.cartAdjusted = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('cartAdjusted'))));
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('cart')), actions: const [LanguageButton()]),
@@ -43,13 +49,27 @@ class CartScreen extends StatelessWidget {
                         child: ListTile(
                           leading: PlantPhoto(plant: plant, listingPhoto: listing.photo, size: 48),
                           title: Text(plant.name(lang)),
-                          subtitle: Text('${nursery.name(lang)} · ${formatPrice(context, listing.price)}'),
+                          subtitle: Text(
+                            '${nursery.name(lang)} · ${formatPrice(context, listing.price)}\n${context.tr('onlyLeft')}: ${listing.quantity}',
+                          ),
+                          isThreeLine: true,
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => app.removeFromCart(listing.id)),
-                              Text('$qty'),
-                              IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => app.addToCart(listing.id)),
+                              IconButton(
+                                key: Key('decrease-${listing.id}'),
+                                tooltip: context.tr('decrease'),
+                                icon: const Icon(Icons.remove_circle_outline),
+                                onPressed: () => app.removeFromCart(listing.id),
+                              ),
+                              Semantics(label: context.tr('quantity'), child: Text('$qty')),
+                              IconButton(
+                                key: Key('increase-${listing.id}'),
+                                // Disabled once the cart holds all the stock (QA BUG-1, BUG-2).
+                                tooltip: qty >= listing.quantity ? context.tr('maxStockReached') : context.tr('increase'),
+                                icon: const Icon(Icons.add_circle_outline),
+                                onPressed: qty >= listing.quantity ? null : () => app.addToCart(listing.id),
+                              ),
                               IconButton(
                                 key: Key('removeLine-${listing.id}'),
                                 tooltip: context.tr('remove'),

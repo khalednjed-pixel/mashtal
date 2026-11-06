@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/catalog_search.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
@@ -21,8 +22,9 @@ class NurseryDetailScreen extends StatelessWidget {
     if (nursery == null || !nursery.isVerified) return const NotFoundScreen();
     final lang = context.lang;
     final theme = Theme.of(context);
-    final listings = market.listings.where((l) => l.nurseryId == nurseryId && !l.hidden).toList()
-      ..sort((a, b) => (b.isAvailable ? 1 : 0) - (a.isAvailable ? 1 : 0));
+    final listings = [
+      for (final o in customerOffers(listings: market.listings, nurseryById: market.nurseryById, nurseryId: nurseryId)) o.listing,
+    ];
 
     return Scaffold(
       appBar: AppBar(title: Text(nursery.name(lang)), actions: const [LanguageButton()]),

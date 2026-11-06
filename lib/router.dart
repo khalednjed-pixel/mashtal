@@ -5,10 +5,12 @@ import 'state/app_state.dart';
 import 'ui/account_screen.dart';
 import 'ui/admin/admin_screen.dart';
 import 'ui/admin/nursery_form_screen.dart';
+import 'ui/admin/plant_data_screen.dart';
 import 'ui/admin/professional_form_screen.dart';
 import 'ui/auth/login_screen.dart';
 import 'ui/auth/profile_screen.dart';
 import 'ui/customer/cart_screen.dart';
+import 'ui/customer/choose_screen.dart';
 import 'ui/customer/garden_screen.dart';
 import 'ui/customer/nursery_detail_screen.dart';
 import 'ui/customer/plant_detail_screen.dart';
@@ -51,6 +53,7 @@ GoRouter buildRouter(AppState app) => GoRouter(
                 GoRoute(path: 'nursery/:id', builder: (_, s) => NurseryDetailScreen(nurseryId: s.pathParameters['id']!)),
               ],
             ),
+            GoRoute(path: '/choose', builder: (_, _) => const ChooseScreen()),
             GoRoute(path: '/cart', builder: (_, _) => const CartScreen()),
             GoRoute(path: '/garden', builder: (_, _) => const GardenScreen()),
             GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
@@ -73,6 +76,13 @@ GoRouter buildRouter(AppState app) => GoRouter(
                   routes: [
                     GoRoute(path: 'new', builder: (_, _) => const NurseryFormScreen()),
                     GoRoute(path: 'edit/:id', builder: (_, s) => NurseryFormScreen(nurseryId: s.pathParameters['id'])),
+                  ],
+                ),
+                GoRoute(
+                  path: 'plants',
+                  builder: (_, _) => const PlantDataScreen(),
+                  routes: [
+                    GoRoute(path: 'edit/:id', builder: (_, s) => PlantEditScreen(plantId: s.pathParameters['id']!)),
                   ],
                 ),
                 GoRoute(

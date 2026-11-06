@@ -34,6 +34,7 @@ List<_Tab> _tabsFor(Role? role) => switch (role) {
       Role.admin => const [
           _Tab('/admin/nurseries', 'nurseries', Icons.storefront_outlined, Icons.storefront),
           _Tab('/admin/professionals', 'professionals', Icons.engineering_outlined, Icons.engineering),
+          _Tab('/admin/plants', 'plantData', Icons.eco_outlined, Icons.eco),
           _Tab('/shop', 'buyPlants', Icons.local_florist_outlined, Icons.local_florist),
           _Tab('/account', 'account', Icons.person_outline, Icons.person),
         ],

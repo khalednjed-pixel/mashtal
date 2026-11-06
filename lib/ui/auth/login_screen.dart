@@ -196,8 +196,9 @@ class _LoginScreenState extends State<LoginScreen> {
       const SizedBox(height: 16),
       FilledButton(key: const Key('verify'), onPressed: _busy ? null : _verify, child: Text(context.tr('verify'))),
       const SizedBox(height: 8),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      // Wraps instead of overflowing on narrow phones in Arabic.
+      Wrap(
+        alignment: WrapAlignment.spaceBetween,
         children: [
           TextButton(
             onPressed: () => setState(() {

@@ -178,7 +178,7 @@ class _PlantEditScreenState extends State<PlantEditScreen> {
               const SizedBox(height: 8),
               FilledButton(key: const Key('savePlant'), onPressed: _saving ? null : _save, child: Text(context.tr('save'))),
               const SizedBox(height: 24),
-              Text(context.tr('editHistory'), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(context.tr('editHistory'), style: theme.textTheme.titleLarge),
               const SizedBox(height: 4),
               if (history.isEmpty) Text(context.tr('noEdits'), style: theme.textTheme.bodySmall),
               for (final e in history)

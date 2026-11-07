@@ -7,6 +7,7 @@ import '../../l10n/strings.dart';
 import '../../logic/catalog_search.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 
@@ -71,11 +72,16 @@ class _ShopScreenState extends State<ShopScreen> {
     return Scaffold(
       appBar: AppBar(
         // The Buy Plants tab is the home page, so it carries the logo.
-        title: Image.asset('assets/brand/logo_wordmark.png', height: 30, semanticLabel: context.tr('appName')),
+        // Tapping the logo always comes back to the plants home page.
+        title: InkWell(
+          key: const Key('homeLogo'),
+          onTap: () => context.go('/shop'),
+          borderRadius: BorderRadius.circular(MashtalSpace.sm),
+          child: Image.asset('assets/brand/logo_wordmark.png', height: 30, semanticLabel: context.tr('appName')),
+        ),
         actions: [
           const LanguageButton(),
-          if (app.user == null)
-            TextButton(onPressed: () => context.go('/login?from=/shop'), child: Text(context.tr('signIn'))),
+          if (app.user == null) TextButton(onPressed: () => context.go('/login?from=/shop'), child: Text(context.tr('signIn'))),
         ],
       ),
       body: Constrained(
@@ -87,35 +93,22 @@ class _ShopScreenState extends State<ShopScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Card(
                     color: theme.colorScheme.secondaryContainer,
-                    child: ListTile(dense: true, leading: const Icon(Icons.admin_panel_settings_outlined), title: Text(context.tr('shopPreview'))),
+                    child: ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.admin_panel_settings_outlined),
+                      title: Text(context.tr('shopPreview')),
+                    ),
                   ),
                 ),
               ),
             // Sprint 2 entry point to the suitability questions (US-07).
             if (_query.text.isEmpty)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                sliver: SliverToBoxAdapter(
-                  child: Card(
-                    color: theme.colorScheme.primaryContainer,
-                    child: ListTile(
-                      key: const Key('chooseBanner'),
-                      leading: Icon(Icons.quiz_outlined, color: theme.colorScheme.onPrimaryContainer),
-                      title: Text(context.tr('chooseBannerTitle'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(context.tr('chooseBannerBody')),
-                      trailing: FilledButton(
-                        // The theme makes filled buttons full width; a ListTile trailing must be sized.
-                        style: FilledButton.styleFrom(minimumSize: const Size(88, 40)),
-                        onPressed: () => context.go('/choose'),
-                        child: Text(context.tr('chooseStart')),
-                      ),
-                      onTap: () => context.go('/choose'),
-                    ),
-                  ),
-                ),
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.lg),
+                sliver: SliverToBoxAdapter(child: _ChooseBanner()),
               ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, 0, MashtalSpace.screen, MashtalSpace.sm),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
@@ -126,35 +119,42 @@ class _ShopScreenState extends State<ShopScreen> {
                         label: context.tr('searchHint'),
                         textField: true,
                         child: TextField(
-                        key: const Key('searchField'),
-                        controller: _query,
-                        decoration: InputDecoration(
-                          hintText: context.tr('searchHint'),
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _query.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: context.tr('clearSearch'),
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () => setState(() {
-                                    _query.clear();
-                                    _savedQuery = '';
-                                  }),
-                                ),
-                        ),
-                        onChanged: (v) => setState(() => _savedQuery = v),
+                          key: const Key('searchField'),
+                          controller: _query,
+                          decoration: InputDecoration(
+                            hintText: context.tr('searchHint'),
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _query.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: context.tr('clearSearch'),
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => setState(() {
+                                      _query.clear();
+                                      _savedQuery = '';
+                                    }),
+                                  ),
+                          ),
+                          onChanged: (v) => setState(() => _savedQuery = v),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: MashtalSpace.sm),
                     Badge(
                       isLabelVisible: _filters.activeCount > 0,
                       label: Text('${_filters.activeCount}'),
-                      child: IconButton.filledTonal(
+                      child: IconButton.outlined(
                         key: const Key('filtersButton'),
                         tooltip: context.tr('filters'),
                         onPressed: _openFilters,
                         icon: const Icon(Icons.tune),
+                        style: IconButton.styleFrom(
+                          backgroundColor: _filters.isEmpty ? MashtalColors.surface : MashtalColors.mint,
+                          foregroundColor: MashtalColors.forest,
+                          fixedSize: const Size(48, 48),
+                          side: const BorderSide(color: MashtalColors.line),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+                        ),
                       ),
                     ),
                   ],
@@ -189,25 +189,60 @@ class _ShopScreenState extends State<ShopScreen> {
                 child: EmptyState(icon: Icons.search_off, title: context.tr('noResults')),
               ),
             if (results.plants.isNotEmpty) _header(context, context.tr('plants'), results.plants.length),
-            SliverList.separated(
-              itemCount: results.plants.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _PlantCard(result: results.plants[i]),
+            // Browsing: one shelf per plant type that swipes sideways, the first
+            // shelf with bigger cards. Searching or filtering shows the grid.
+            if (_query.text.isEmpty && _filters.isEmpty)
+              for (final (i, (category, plants)) in _shelves(results.plants).indexed)
+                SliverToBoxAdapter(
+                  child: _Shelf(title: context.tr('shelf_${category.name}'), plants: plants, large: i == 0),
+                )
+            else
+              SliverLayoutBuilder(
+                builder: (context, constraints) {
+                  // Two photo cards per row on phones, three on wide web.
+                  final columns = constraints.crossAxisExtent >= 600 ? 3 : 2;
+                  final rows = (results.plants.length / columns).ceil();
+                  return SliverList.separated(
+                    itemCount: rows,
+                    separatorBuilder: (_, _) => const SizedBox(height: MashtalSpace.md),
+                    itemBuilder: (_, r) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.screen),
+                      // Equal-height cards in a row, so prices line up.
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var c = 0; c < columns; c++) ...[
+                              if (c > 0) const SizedBox(width: MashtalSpace.md),
+                              Expanded(
+                                child: r * columns + c < results.plants.length
+                                    ? _PlantCard(result: results.plants[r * columns + c])
+                                    : const SizedBox.shrink(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
             if (results.nurseries.isNotEmpty) _header(context, context.tr('nurseries'), results.nurseries.length),
             SliverList.separated(
               itemCount: results.nurseries.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: MashtalSpace.sm),
               itemBuilder: (_, i) {
                 final n = results.nurseries[i];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.screen),
                   child: Card(
                     child: ListTile(
-                      leading: CircleAvatar(backgroundColor: theme.colorScheme.secondaryContainer, child: const Icon(Icons.storefront)),
+                      leading: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(color: MashtalColors.ground, borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+                        child: const Icon(Icons.storefront_outlined),
+                      ),
                       title: Text(n.name(context.lang)),
                       subtitle: Text('${context.trCity(n.city)} · ${n.district}'),
                       trailing: RatingLabel(rating: n.rating),
@@ -217,7 +252,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 );
               },
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: MashtalSpace.xl)),
           ],
         ),
       ),
@@ -225,13 +260,122 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _header(BuildContext context, String title, int count) => SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        sliver: SliverToBoxAdapter(
-          child: Text('$title ($count)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xl, MashtalSpace.screen, MashtalSpace.md),
+    sliver: SliverToBoxAdapter(child: Text('$title ($count)', style: Theme.of(context).textTheme.titleLarge)),
+  );
 }
 
+/// Entry point to the suitability questions (US-07): the one strong block on
+/// the shop, carrying the screen's single primary (emerald) action.
+class _ChooseBanner extends StatelessWidget {
+  const _ChooseBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    // A soft mint wave with a leaf sprig painted on the end side: the green
+    // backdrop that says "this is about what grows at your place".
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        key: const Key('chooseBanner'),
+        onTap: () => context.go('/choose'),
+        borderRadius: BorderRadius.circular(MashtalSpace.radius),
+        child: CustomPaint(
+          painter: _WavePainter(rtl: Directionality.of(context) == TextDirection.rtl),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(MashtalSpace.lg, MashtalSpace.xl, 112, MashtalSpace.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.tr('chooseBannerTitle'), style: text.titleLarge),
+                const SizedBox(height: MashtalSpace.xs),
+                Text(context.tr('chooseBannerBody'), style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep)),
+                const SizedBox(height: MashtalSpace.lg),
+                FilledButton(
+                  // The theme makes filled buttons full width; size this one to its label.
+                  style: FilledButton.styleFrom(minimumSize: const Size(128, 48)),
+                  onPressed: () => context.go('/choose'),
+                  child: Text(context.tr('chooseStart')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Mint panel with a gently waving bottom edge and a three-leaf sprig.
+class _WavePainter extends CustomPainter {
+  const _WavePainter({required this.rtl});
+  final bool rtl;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    const r = MashtalSpace.radius;
+    final panel = Path()
+      ..moveTo(0, r)
+      ..quadraticBezierTo(0, 0, r, 0)
+      ..lineTo(w - r, 0)
+      ..quadraticBezierTo(w, 0, w, r)
+      ..lineTo(w, h - 28)
+      ..cubicTo(w * 0.72, h + 6, w * 0.38, h - 34, 0, h - 8)
+      ..close();
+    canvas.drawPath(
+      panel,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [MashtalColors.mint, MashtalColors.ground],
+        ).createShader(Offset.zero & size),
+    );
+
+    // Sprig on the end side (left in Arabic, right in English).
+    canvas.save();
+    final x = rtl ? 56.0 : w - 56.0;
+    canvas.translate(x, h * 0.52);
+    final stem = Paint()
+      ..color = MashtalColors.leaf
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(const Offset(0, 54), const Offset(0, -6), stem);
+    void leaf(double angle, double length, Color color) {
+      canvas.save();
+      canvas.rotate(angle);
+      final half = length * 0.32;
+      final shape = Path()
+        ..moveTo(0, 0)
+        ..quadraticBezierTo(half, -length * 0.5, 0, -length)
+        ..quadraticBezierTo(-half, -length * 0.5, 0, 0)
+        ..close();
+      canvas.drawPath(shape, Paint()..color = color);
+      canvas.drawLine(
+        Offset.zero,
+        Offset(0, -length * 0.85),
+        Paint()
+          ..color = MashtalColors.surface.withValues(alpha: 0.35)
+          ..strokeWidth = 1.5,
+      );
+      canvas.restore();
+    }
+
+    leaf(-0.75, 58, MashtalColors.leaf);
+    leaf(0.75, 58, MashtalColors.emeraldDeep);
+    leaf(0, 78, MashtalColors.emerald);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_WavePainter old) => old.rtl != rtl;
+}
+
+/// Photo-first plant card: square photo, name, botanical name, one line of
+/// facts, then the lowest price.
 class _PlantCard extends StatelessWidget {
   const _PlantCard({required this.result});
   final PlantResult result;
@@ -239,48 +383,177 @@ class _PlantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = result.plant;
-    final theme = Theme.of(context);
+    final text = Theme.of(context).textTheme;
     final price = result.lowestPrice;
+    final inStock = result.offers.where((o) => o.listing.isAvailable).toList()..sort((a, b) => a.listing.price.compareTo(b.listing.price));
+    final cheapest = inStock.isEmpty ? null : inStock.first.listing;
     // Only nurseries with the plant in stock count (QA BUG-5).
     final nurseries = result.offers.where((o) => o.listing.isAvailable).map((o) => o.nursery.id).toSet().length;
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => context.go('/shop/plant/${p.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              PlantPhoto(plant: p),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(p.name(context.lang), style: theme.textTheme.titleMedium),
-                    Text(p.scientificName, style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${context.trEnum(p.sun)} · ${context.tr('water')}: ${context.trEnum(p.water)}${nurseries == 0 ? '' : ' · ${nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}'}'}',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
+    // White product box with a soft shadow; the photo sits inset with its own
+    // rounded corners, then name, facts, price and one emerald dot.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: MashtalColors.surface,
+        borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+        boxShadow: const [BoxShadow(color: MashtalColors.shadow, blurRadius: 16, offset: Offset(0, 4))],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => context.go('/shop/plant/${p.id}'),
+          borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+          child: Padding(
+            padding: const EdgeInsets.all(MashtalSpace.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: PlantPhoto.fill(plant: p, radius: MashtalSpace.radius),
                 ),
-              ),
-              const SizedBox(width: 8),
-              price == null
-                  ? Text(context.tr('notAvailable'), style: TextStyle(color: theme.colorScheme.error))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(MashtalSpace.xs, MashtalSpace.sm, MashtalSpace.xs, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(context.tr('from'), style: theme.textTheme.bodySmall),
-                        Text(formatPrice(context, price), style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
+                        Text(p.name(context.lang), style: text.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(
+                          p.scientificName,
+                          textDirection: TextDirection.ltr,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.bodySmall?.copyWith(fontSize: 13, fontStyle: FontStyle.italic),
+                        ),
+                        const SizedBox(height: MashtalSpace.xs),
+                        Text(
+                          '${context.trEnum(p.sun)} · ${context.tr('water')}: ${context.trEnum(p.water)}${nurseries == 0 ? '' : ' · ${nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}'}'}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.bodySmall,
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: MashtalSpace.sm),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: price == null
+                                  ? Text(context.tr('notAvailable'), style: text.labelMedium?.copyWith(color: MashtalColors.error))
+                                  : Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(context.tr('from'), style: text.bodySmall),
+                                        const SizedBox(width: MashtalSpace.xs),
+                                        Flexible(
+                                          child: Text(
+                                            formatPrice(context, price),
+                                            style: text.titleLarge?.copyWith(color: MashtalColors.forestDeep),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                            // Quick add: the cheapest in-stock offer, the same one the
+                            // "from" price shows. Opening the card still compares nurseries.
+                            if (cheapest != null && context.watch<AppState>().canShop) _QuickAdd(listing: cheapest),
+                          ],
+                        ),
                       ],
                     ),
-            ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Round emerald "+" on a product box: adds that offer to the cart.
+class _QuickAdd extends StatelessWidget {
+  const _QuickAdd({required this.listing});
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    key: Key('quickAdd-${listing.id}'),
+    tooltip: context.tr('addToCart'),
+    padding: EdgeInsets.zero,
+    // 48x48 tap area around a 36 px dot.
+    constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+    icon: const DecoratedBox(
+      decoration: BoxDecoration(gradient: MashtalColors.emeraldBlend, shape: BoxShape.circle),
+      child: SizedBox.square(dimension: 36, child: Icon(Icons.add, size: 22, color: MashtalColors.forestDeep)),
+    ),
+    onPressed: () {
+      final added = context.read<AppState>().addToCart(listing.id);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.tr(added ? 'addedToCart' : 'maxStockReached')), duration: const Duration(seconds: 1)),
+        );
+    },
+  );
+}
+
+/// Plants grouped by type, in the order a Riyadh household browses them.
+List<(PlantCategory, List<PlantResult>)> _shelves(List<PlantResult> plants) => [
+  for (final c in const [
+    PlantCategory.palm,
+    PlantCategory.tree,
+    PlantCategory.houseplant,
+    PlantCategory.shrub,
+    PlantCategory.succulent,
+    PlantCategory.herb,
+    PlantCategory.climber,
+    PlantCategory.groundcover,
+    PlantCategory.grass,
+  ])
+    if (plants.where((r) => r.plant.category == c).toList() case final list when list.isNotEmpty) (c, list),
+];
+
+/// One titled row of product boxes that swipes sideways.
+class _Shelf extends StatelessWidget {
+  const _Shelf({required this.title, required this.plants, required this.large});
+  final String title;
+  final List<PlantResult> plants;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = large ? 220.0 : 164.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.lg, MashtalSpace.screen, MashtalSpace.sm),
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+        ),
+        // A short row (a few boxes per type), so build it all and let the
+        // boxes share the height of the tallest one.
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          // Room for the boxes' shadows.
+          padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.lg),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (i, r) in plants.indexed) ...[
+                  if (i > 0) const SizedBox(width: MashtalSpace.md),
+                  SizedBox(
+                    width: width,
+                    child: _PlantCard(result: r),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -346,7 +619,9 @@ class _FilterSheetState extends State<_FilterSheet> {
           min: 0,
           max: _priceSteps.length.toDouble(),
           divisions: _priceSteps.length,
-          label: _sliderIndex.round() == _priceSteps.length ? context.tr('anyPrice') : formatPrice(context, _priceSteps[_sliderIndex.round()]),
+          label: _sliderIndex.round() == _priceSteps.length
+              ? context.tr('anyPrice')
+              : formatPrice(context, _priceSteps[_sliderIndex.round()]),
           onChanged: (v) {
             final i = v.round();
             final price = i >= _priceSteps.length ? null : _priceSteps[i];
@@ -382,14 +657,16 @@ class _FilterSheetState extends State<_FilterSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(padding: const EdgeInsets.only(top: 12, bottom: 6), child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
+        Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 6),
+          child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+        ),
         Wrap(
           spacing: 8,
           runSpacing: 4,
           children: [
             ChoiceChip(label: Text(context.tr('any')), selected: selected == null, onSelected: (_) => onSelect(null)),
-            for (final v in values)
-              ChoiceChip(label: Text(label(v)), selected: selected == v, onSelected: (_) => onSelect(v)),
+            for (final v in values) ChoiceChip(label: Text(label(v)), selected: selected == v, onSelected: (_) => onSelect(v)),
           ],
         ),
       ],
@@ -398,26 +675,36 @@ class _FilterSheetState extends State<_FilterSheet> {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(context.tr('filters'), style: Theme.of(context).textTheme.titleLarge),
-                _group<Placement>(context.tr('placement'), Placement.values, f.placement, context.trEnum,
-                    (v) => setState(() => f = f.copyWith(placement: () => v))),
-                _group<Sun>(context.tr('sun'), Sun.values, f.sun, context.trEnum, (v) => setState(() => f = f.copyWith(sun: () => v))),
-                _group<Water>(context.tr('water'), Water.values, f.water, context.trEnum,
-                    (v) => setState(() => f = f.copyWith(water: () => v))),
-                _priceSlider(context),
-                _group<String>(context.tr('city'), cityIds, f.city, context.trCity, (v) => setState(() => f = f.copyWith(city: () => v))),
-                const SizedBox(height: 20),
-                FilledButton(key: const Key('applyFilters'), onPressed: () => Navigator.pop(context, f), child: Text(context.tr('apply'))),
-                TextButton(onPressed: () => Navigator.pop(context, const SearchFilters()), child: Text(context.tr('clearFilters'))),
-              ],
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(context.tr('filters'), style: Theme.of(context).textTheme.titleLarge),
+            _group<Placement>(
+              context.tr('placement'),
+              Placement.values,
+              f.placement,
+              context.trEnum,
+              (v) => setState(() => f = f.copyWith(placement: () => v)),
             ),
-          ),
+            _group<Sun>(context.tr('sun'), Sun.values, f.sun, context.trEnum, (v) => setState(() => f = f.copyWith(sun: () => v))),
+            _group<Water>(
+              context.tr('water'),
+              Water.values,
+              f.water,
+              context.trEnum,
+              (v) => setState(() => f = f.copyWith(water: () => v)),
+            ),
+            _priceSlider(context),
+            _group<String>(context.tr('city'), cityIds, f.city, context.trCity, (v) => setState(() => f = f.copyWith(city: () => v))),
+            const SizedBox(height: 20),
+            FilledButton(key: const Key('applyFilters'), onPressed: () => Navigator.pop(context, f), child: Text(context.tr('apply'))),
+            TextButton(onPressed: () => Navigator.pop(context, const SearchFilters()), child: Text(context.tr('clearFilters'))),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

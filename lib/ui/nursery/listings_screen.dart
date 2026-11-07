@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
+import '../theme.dart';
 
 /// Nursery home: its listings, prices and availability (US-06).
 class ListingsScreen extends StatelessWidget {
@@ -41,11 +42,11 @@ class ListingsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Card(
-                  color: const Color(0xFFFFF0C9),
+                  color: MashtalColors.sand,
                   child: ListTile(leading: const Icon(Icons.hourglass_top), title: Text(context.tr('pendingNursery'))),
                 ),
               ),
-            Text('${context.tr('myListings')} (${listings.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text('${context.tr('myListings')} (${listings.length})', style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             if (listings.isEmpty) EmptyState(icon: Icons.inventory_2_outlined, title: context.tr('noListings')),
             for (final l in listings)

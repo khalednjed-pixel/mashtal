@@ -110,7 +110,13 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: Image.asset('assets/brand/logo_wordmark.png', height: 56, semanticLabel: context.tr('appName')),
+              // Tapping the logo goes to the plants home page.
+              child: InkWell(
+                key: const Key('homeLogo'),
+                onTap: () => context.go('/shop'),
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset('assets/brand/logo_wordmark.png', height: 56, semanticLabel: context.tr('appName')),
+              ),
             ),
             const SizedBox(height: 4),
             Text(context.tr('tagline'), style: theme.textTheme.bodyLarge),

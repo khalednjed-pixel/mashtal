@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/strings.dart';
 import '../../logic/phone.dart';
+import '../theme.dart';
 
 String? requiredField(BuildContext context, String? v) => (v == null || v.trim().isEmpty) ? context.tr('required') : null;
 
@@ -13,7 +14,7 @@ class PendingNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        color: const Color(0xFFFFF0C9),
+        color: MashtalColors.sand,
         child: ListTile(leading: const Icon(Icons.info_outline), title: Text(context.tr('newPartnerPending'))),
       );
 }

@@ -5,13 +5,17 @@ import 'package:provider/provider.dart';
 import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../theme.dart';
 
-/// Coloured icon standing in for a plant photo until real photos are added.
+/// Icon on a ground-tinted tile, standing in for a plant photo.
 class PlantAvatar extends StatelessWidget {
-  const PlantAvatar({super.key, required this.plant, this.size = 56});
+  const PlantAvatar({super.key, required this.plant, double this.size = 56});
+
+  /// Fills its parent; the icon keeps a fixed size.
+  const PlantAvatar.fill({super.key, required this.plant}) : size = null;
 
   final Plant plant;
-  final double size;
+  final double? size;
 
   static IconData iconFor(PlantCategory c) => switch (c) {
         PlantCategory.tree => Icons.park,
@@ -27,12 +31,14 @@ class PlantAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final size = this.size;
+    final icon = Icon(iconFor(plant.category), color: MashtalColors.leaf, size: size == null ? 48 : size * 0.5);
+    if (size == null) return ColoredBox(color: MashtalColors.ground, child: Center(child: icon));
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(size / 4)),
-      child: Icon(iconFor(plant.category), color: scheme.onPrimaryContainer, size: size * 0.55),
+      decoration: BoxDecoration(color: MashtalColors.ground, borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+      child: icon,
     );
   }
 }
@@ -46,7 +52,7 @@ class RatingLabel extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, size: 18, color: Color(0xFFE0A100)),
+          const Icon(Icons.star_rounded, size: 18, color: MashtalColors.leaf),
           const SizedBox(width: 2),
           Text(rating == 0 ? '—' : rating.toStringAsFixed(1)),
           if (count != null && count! > 0) Text(' ($count)', style: Theme.of(context).textTheme.bodySmall),
@@ -61,14 +67,17 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (status) {
-      PartnerStatus.verified => (const Color(0xFFDDF0E1), const Color(0xFF1D5A2C)),
-      PartnerStatus.pending => (const Color(0xFFFFF0C9), const Color(0xFF7A5600)),
-      PartnerStatus.suspended => (const Color(0xFFFADAD7), const Color(0xFF8C1D12)),
+      PartnerStatus.verified => (MashtalColors.mint, MashtalColors.forestDeep),
+      PartnerStatus.pending => (MashtalColors.ground, MashtalColors.forestDeep),
+      PartnerStatus.suspended => (MashtalColors.errorSoft, MashtalColors.error),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(context.trEnum(status), style: TextStyle(color: fg, fontWeight: FontWeight.w500, fontSize: 13)),
+      padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.md, vertical: MashtalSpace.xs),
+      decoration: ShapeDecoration(
+        color: bg,
+        shape: StadiumBorder(side: status == PartnerStatus.pending ? const BorderSide(color: MashtalColors.line) : BorderSide.none),
+      ),
+      child: Text(context.trEnum(status), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg)),
     );
   }
 }

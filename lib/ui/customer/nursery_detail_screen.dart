@@ -52,7 +52,7 @@ class NurseryDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text('${context.tr('plants')} (${listings.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text('${context.tr('plants')} (${listings.length})', style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             for (final l in listings)
               if (market.plantById(l.plantId) case final plant?)

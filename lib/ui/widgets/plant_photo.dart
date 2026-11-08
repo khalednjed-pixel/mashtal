@@ -9,6 +9,7 @@ import '../../data/seed/plant_media.g.dart';
 import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../models/plant_media.dart';
+import '../theme.dart';
 import 'common.dart';
 
 /// A freely licensed photo of a species from Wikipedia / Wikimedia Commons.
@@ -73,19 +74,26 @@ Uint8List decodePhoto(String base64Photo) =>
     _decoded.putIfAbsent(Object.hash(base64Photo.length, base64Photo.hashCode), () => base64Decode(base64Photo));
 
 /// Square plant picture: the nursery's own photo if given, else the plant's
-/// uploaded photo, else its Wikipedia photo, else a coloured icon.
+/// uploaded photo, else its Wikipedia photo, else a placeholder icon.
+/// Photos are cropped to cover on a ground-tinted placeholder, so uneven
+/// photos still look like a set.
 class PlantPhoto extends StatelessWidget {
-  const PlantPhoto({super.key, required this.plant, this.size = 56, this.listingPhoto, this.radius});
+  const PlantPhoto({super.key, required this.plant, double this.size = 56, this.listingPhoto, this.radius});
+
+  /// Fills its parent (give it a fixed aspect, e.g. with [AspectRatio]).
+  /// Used for the photo-first shop cards.
+  const PlantPhoto.fill({super.key, required this.plant, this.listingPhoto, this.radius}) : size = null;
 
   final Plant plant;
-  final double size;
+  final double? size;
   final String? listingPhoto;
   final double? radius;
 
   @override
   Widget build(BuildContext context) {
     final own = listingPhoto ?? plant.photo;
-    final fallback = PlantAvatar(plant: plant, size: size);
+    final size = this.size;
+    final Widget fallback = size == null ? PlantAvatar.fill(plant: plant) : PlantAvatar(plant: plant, size: size);
     Widget child;
     if (own != null) {
       child = Image.memory(decodePhoto(own), width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true);
@@ -107,7 +115,14 @@ class PlantPhoto extends StatelessWidget {
         },
       );
     }
-    return ClipRRect(borderRadius: BorderRadius.circular(radius ?? size / 4), child: SizedBox(width: size, height: size, child: child));
+    final r = radius ?? (size == null ? 0 : MashtalSpace.radius);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(r),
+      child: ColoredBox(
+        color: MashtalColors.ground,
+        child: size == null ? SizedBox.expand(child: child) : SizedBox(width: size, height: size, child: child),
+      ),
+    );
   }
 }
 

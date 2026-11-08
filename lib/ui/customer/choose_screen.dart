@@ -7,6 +7,7 @@ import '../../logic/citation.dart';
 import '../../logic/suitability.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 
@@ -97,7 +98,11 @@ class _ChooseScreenState extends State<ChooseScreen> {
     final done = step >= questions.length && _answers.isComplete;
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.tr(done ? 'resultsTitle' : 'chooseTitle')),
+        // The results title is long; it is shown in the page instead, where it
+        // can wrap rather than be cut off.
+        title: done ? null : Text(context.tr('chooseTitle')),
+        // Next to the back arrow, no extra gap, so the title fits at 375 px.
+        titleSpacing: step > 0 ? 0 : null,
         leading: step > 0
             ? IconButton(
                 key: const Key('chooseBack'),
@@ -250,15 +255,17 @@ class _Results extends StatelessWidget {
           ],
         ),
       Ranked(:final results) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, 0, MashtalSpace.screen, MashtalSpace.xl),
           children: [
+            Text(context.tr('resultsTitle'), style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: MashtalSpace.xs),
             Text(context.tr('resultsHint'), style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 12),
+            const SizedBox(height: MashtalSpace.lg),
             for (final (i, r) in results.indexed) _ResultCard(rank: i + 1, score: r, answers: answers),
-            const SizedBox(height: 8),
+            const SizedBox(height: MashtalSpace.sm),
             Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
+              spacing: MashtalSpace.sm,
+              runSpacing: MashtalSpace.sm,
               children: [
                 OutlinedButton.icon(onPressed: onRestart, icon: const Icon(Icons.restart_alt), label: Text(context.tr('startOver'))),
                 TextButton(onPressed: () => context.go('/shop'), child: Text(context.tr('browseShop'))),
@@ -282,61 +289,133 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = score.plant;
-    final theme = Theme.of(context);
+    final text = Theme.of(context).textTheme;
     final citation = citationFor(p);
+    // Same offers the nursery compare sheet lists: verified nurseries with the
+    // plant in stock.
+    final market = context.watch<AppState>().backend;
+    final offers = [
+      for (final l in market.listings)
+        if (l.plantId == p.id && l.isAvailable)
+          if (market.nurseryById(l.nurseryId) case final n? when n.isVerified) (l, n),
+    ];
+    final lowest = offers.isEmpty ? null : offers.map((o) => o.$1.price).reduce((a, b) => a < b ? a : b);
+    final nurseries = offers.map((o) => o.$2.id).toSet().length;
+    void compare() => showNurseryCompare(context, p, city: answers.city);
+
+    // Photo-led and frameless, like the shop grid: a wide photo tile carrying the
+    // match score, then the plant, its price and the way to buy it.
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Card(
+      padding: const EdgeInsets.only(bottom: MashtalSpace.xl),
+      child: Material(
+        type: MaterialType.transparency,
         child: InkWell(
           key: Key('result-${p.id}'),
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => showNurseryCompare(context, p, city: answers.city),
+          onTap: compare,
+          borderRadius: BorderRadius.circular(MashtalSpace.radius),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.only(bottom: MashtalSpace.xs),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
+                Stack(
                   children: [
-                    PlantPhoto(plant: p),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('$rank. ${p.name(context.lang)}', style: theme.textTheme.titleMedium),
-                          Text(p.description(context.lang), maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
-                        ],
+                    // Fixed height, cover-cropped: about 2:1 on a phone, so two results fit on screen.
+                    SizedBox(height: 168, width: double.infinity, child: PlantPhoto.fill(plant: p, radius: MashtalSpace.radius)),
+                    PositionedDirectional(
+                      top: MashtalSpace.sm,
+                      end: MashtalSpace.sm,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: MashtalColors.surface, borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(MashtalSpace.sm, MashtalSpace.sm, MashtalSpace.sm, MashtalSpace.xs),
+                          child: _ScoreRing(total: score.total),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _ScoreBadge(total: score.total),
                   ],
                 ),
-                const SizedBox(height: 10),
-                // US-09 AC-01: per-factor breakdown.
-                for (final f in Factor.values) _FactorBar(label: factorLabel(context, f, answers), value: score.factors[f]!),
-                const SizedBox(height: 6),
+                const SizedBox(height: MashtalSpace.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.xs),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$rank. ${p.name(context.lang)}', style: text.titleLarge),
+                      const SizedBox(height: MashtalSpace.xs),
+                      Text(p.description(context.lang), maxLines: 2, overflow: TextOverflow.ellipsis, style: text.bodyMedium?.copyWith(color: MashtalColors.muted)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: MashtalSpace.md),
+                // Price from, nursery count and the one action: where to buy.
+                Row(
+                  children: [
+                    Expanded(
+                      child: lowest == null
+                          ? Text(context.tr('notAvailable'), style: text.labelMedium?.copyWith(color: MashtalColors.error))
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: [
+                                    Text(context.tr('from'), style: text.bodySmall),
+                                    const SizedBox(width: MashtalSpace.xs),
+                                    Flexible(child: Text(formatPrice(context, lowest), style: text.titleMedium)),
+                                  ],
+                                ),
+                                Text(
+                                  nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}',
+                                  style: text.bodySmall,
+                                ),
+                              ],
+                            ),
+                    ),
+                    const SizedBox(width: MashtalSpace.sm),
+                    OutlinedButton.icon(
+                      onPressed: compare,
+                      icon: const Icon(Icons.storefront_outlined, size: 20),
+                      label: Text(context.tr('whereToBuy')),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: MashtalSpace.md),
                 // US-10 AC-01 / US-11: citation, or a label for non-guide plants.
-                InkWell(
-                  key: Key('citation-${p.id}'),
-                  onTap: () => showScoreExplanation(context, score, answers),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Icon(citation == null ? Icons.info_outline : Icons.menu_book_outlined, size: 16, color: theme.colorScheme.primary),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            citation == null
-                                ? context.tr(p.isCustom ? 'addedByNursery' : 'notGuideBacked')
-                                : '${citation.guideIn(context.lang)} · ${citation.editionIn(context.lang)} · ${context.tr('section')}: ${citation.sectionIn(context.lang)}',
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+                // Opens "Why this score?" with the per-factor breakdown (US-09).
+                Material(
+                  color: MashtalColors.ground,
+                  borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: Key('citation-${p.id}'),
+                    onTap: () => showScoreExplanation(context, score, answers),
+                    child: Padding(
+                      padding: const EdgeInsets.all(MashtalSpace.md),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(citation == null ? Icons.info_outline : Icons.menu_book_outlined, size: 20, color: MashtalColors.leaf),
+                          const SizedBox(width: MashtalSpace.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  citation == null
+                                      ? context.tr(p.isCustom ? 'addedByNursery' : 'notGuideBacked')
+                                      : '${citation.guideIn(context.lang)} · ${citation.editionIn(context.lang)} · ${context.tr('section')}: ${citation.sectionIn(context.lang)}',
+                                  style: text.bodySmall?.copyWith(color: MashtalColors.forestDeep),
+                                ),
+                                const SizedBox(height: MashtalSpace.xs),
+                                Text(context.tr('whyThisScore'), style: text.labelMedium?.copyWith(color: MashtalColors.leaf)),
+                              ],
+                            ),
                           ),
-                        ),
-                        Text(context.tr('whyThisScore'), style: theme.textTheme.labelSmall),
-                      ],
+                          const Icon(Icons.chevron_right, size: 20, color: MashtalColors.leaf),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -349,46 +428,70 @@ class _ResultCard extends StatelessWidget {
   }
 }
 
-class _ScoreBadge extends StatelessWidget {
-  const _ScoreBadge({required this.total});
+/// Colour for a 0–100 score: strong, middling or weak.
+Color scoreColor(int value) => value >= 70 ? MashtalColors.sprout : (value >= 40 ? MashtalColors.muted : MashtalColors.error);
+
+/// The match percentage as a ring: the one visual anchor of a result card.
+class _ScoreRing extends StatelessWidget {
+  const _ScoreRing({required this.total});
   final int total;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
     return Column(
       children: [
-        Text('$total%', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.primary, fontWeight: FontWeight.bold)),
-        Text(context.tr('match'), style: Theme.of(context).textTheme.labelSmall),
+        SizedBox(
+          width: 60,
+          height: 60,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: CircularProgressIndicator(
+                  value: total / 100,
+                  strokeWidth: 4,
+                  color: scoreColor(total),
+                  backgroundColor: MashtalColors.line,
+                  strokeCap: StrokeCap.round,
+                ),
+              ),
+              Text('$total%', style: text.titleMedium?.copyWith(color: MashtalColors.forest)),
+            ],
+          ),
+        ),
+        const SizedBox(height: MashtalSpace.xs),
+        Text(context.tr('match'), style: text.labelSmall),
       ],
     );
   }
 }
 
+/// One factor in "Why this score?": a short bar and the number.
 class _FactorBar extends StatelessWidget {
-  const _FactorBar({required this.label, required this.value});
-  final String label;
+  const _FactorBar({required this.value});
   final int value;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = value >= 70 ? theme.colorScheme.primary : (value >= 40 ? const Color(0xFFE0A100) : theme.colorScheme.error);
+    final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: EdgeInsets.zero,
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(width: 72, child: Text(label, style: theme.textTheme.bodySmall)),
-          Expanded(
+          SizedBox(
+            width: 48,
             child: LinearProgressIndicator(
               value: value / 100,
               minHeight: 6,
-              color: color,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(3),
+              color: scoreColor(value),
+              backgroundColor: MashtalColors.line,
+              borderRadius: BorderRadius.circular(MashtalSpace.pill),
             ),
           ),
-          SizedBox(width: 40, child: Text('$value', textAlign: TextAlign.end, style: theme.textTheme.bodySmall)),
+          const SizedBox(width: MashtalSpace.sm),
+          SizedBox(width: 28, child: Text('$value', textAlign: TextAlign.end, style: text.labelMedium)),
         ],
       ),
     );
@@ -441,30 +544,38 @@ Future<void> showScoreExplanation(BuildContext context, PlantScore score, Suitab
                       : '${citation.publisherIn(c.lang)} — ${citation.guideIn(c.lang)}\n${c.tr('edition')}: ${citation.editionIn(c.lang)} · ${c.tr('section')}: ${citation.sectionIn(c.lang)}',
                   style: theme.textTheme.bodySmall,
                 ),
-                const SizedBox(height: 12),
-                Table(
-                  columnWidths: const {0: IntrinsicColumnWidth(), 3: IntrinsicColumnWidth()},
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                const SizedBox(height: MashtalSpace.lg),
+                // Column headings once; each factor below is its name and bar,
+                // then the answer next to what the plant needs.
+                Row(
                   children: [
-                    TableRow(
-                      children: [
-                        const SizedBox(),
-                        _cell(c, c.tr('yourAnswer'), bold: true),
-                        _cell(c, c.tr('plantNeeds'), bold: true),
-                        const SizedBox(),
-                      ],
-                    ),
-                    for (final (label, mine, needs, value) in rows)
-                      TableRow(
-                        children: [
-                          _cell(c, label, bold: true),
-                          _cell(c, mine),
-                          _cell(c, needs),
-                          _cell(c, value == null ? '✓' : '$value'),
-                        ],
-                      ),
+                    Expanded(child: Text(c.tr('yourAnswer'), style: theme.textTheme.labelSmall)),
+                    const SizedBox(width: MashtalSpace.md),
+                    Expanded(child: Text(c.tr('plantNeeds'), style: theme.textTheme.labelSmall)),
                   ],
                 ),
+                for (final (label, mine, needs, value) in rows) ...[
+                  const SizedBox(height: MashtalSpace.md),
+                  const Divider(),
+                  const SizedBox(height: MashtalSpace.md),
+                  Row(
+                    children: [
+                      Expanded(child: Text(label, style: theme.textTheme.titleMedium)),
+                      value == null
+                          ? Text('✓', style: theme.textTheme.titleMedium?.copyWith(color: MashtalColors.sprout))
+                          : _FactorBar(value: value),
+                    ],
+                  ),
+                  const SizedBox(height: MashtalSpace.xs),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: Text(mine, style: theme.textTheme.bodyMedium)),
+                      const SizedBox(width: MashtalSpace.md),
+                      Expanded(child: Text(needs, style: theme.textTheme.bodyMedium?.copyWith(color: MashtalColors.muted))),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -473,11 +584,6 @@ Future<void> showScoreExplanation(BuildContext context, PlantScore score, Suitab
     },
   );
 }
-
-Widget _cell(BuildContext c, String text, {bool bold = false}) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-      child: Text(text, style: bold ? Theme.of(c).textTheme.labelLarge : Theme.of(c).textTheme.bodyMedium),
-    );
 
 /// US-12: verified nurseries that have the plant in stock, with price,
 /// rating and city. Nurseries in the customer's [city] come first, then the

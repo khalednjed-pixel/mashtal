@@ -36,7 +36,7 @@ void main() {
     expect(find.text('3'), findsOneWidget);
     final plus = tester.widget<IconButton>(find.byKey(const Key('increase-$listing')));
     expect(plus.onPressed, isNull);
-    expect(find.text('720 SAR'), findsOneWidget);
+    expect(find.text('720 \u20C1'), findsOneWidget); // Saudi riyal sign U+20C1
   });
 
   testWidgets('BUG-1 a cart line shrinks when the nursery lowers its stock', (tester) async {

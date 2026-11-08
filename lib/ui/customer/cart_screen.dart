@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
 import '../../state/app_state.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 
@@ -30,6 +31,15 @@ class CartScreen extends StatelessWidget {
       });
     }
 
+    void reserve() {
+      if (app.user == null) {
+        context.go('/login?from=/cart');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('reserveSoon'))));
+      }
+    }
+
+    final text = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('cart')), actions: const [LanguageButton()]),
       body: lines.isEmpty
@@ -40,61 +50,109 @@ class CartScreen extends StatelessWidget {
             )
           : Constrained(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl),
                 children: [
                   for (final (listing, qty, plant, nursery) in lines)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: MashtalSpace.md),
+                      // Frameless white line on the page, photo tile first, like the shop.
                       child: Card(
-                        child: ListTile(
-                          leading: PlantPhoto(plant: plant, listingPhoto: listing.photo, size: 48),
-                          title: Text(plant.name(lang)),
-                          subtitle: Text(
-                            '${nursery.name(lang)} · ${formatPrice(context, listing.price)}\n${context.tr('onlyLeft')}: ${listing.quantity}',
-                          ),
-                          isThreeLine: true,
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(MashtalSpace.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              IconButton(
-                                key: Key('decrease-${listing.id}'),
-                                tooltip: context.tr('decrease'),
-                                icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: () => app.removeFromCart(listing.id),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  PlantPhoto(plant: plant, listingPhoto: listing.photo, size: 88),
+                                  const SizedBox(width: MashtalSpace.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(plant.name(lang), style: text.titleMedium),
+                                        const SizedBox(height: MashtalSpace.xs),
+                                        Text(
+                                          '${nursery.name(lang)} · ${formatPrice(context, listing.price)}\n${context.tr('onlyLeft')}: ${listing.quantity}',
+                                          style: text.bodyMedium?.copyWith(color: MashtalColors.muted),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Semantics(label: context.tr('quantity'), child: Text('$qty')),
-                              IconButton(
-                                key: Key('increase-${listing.id}'),
-                                // Disabled once the cart holds all the stock (QA BUG-1, BUG-2).
-                                tooltip: qty >= listing.quantity ? context.tr('maxStockReached') : context.tr('increase'),
-                                icon: const Icon(Icons.add_circle_outline),
-                                onPressed: qty >= listing.quantity ? null : () => app.addToCart(listing.id),
-                              ),
-                              IconButton(
-                                key: Key('removeLine-${listing.id}'),
-                                tooltip: context.tr('remove'),
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () => app.removeFromCart(listing.id, all: true),
+                              const SizedBox(height: MashtalSpace.sm),
+                              Row(
+                                children: [
+                                  // Quantity stepper in one pill.
+                                  DecoratedBox(
+                                    decoration: const ShapeDecoration(shape: StadiumBorder(), color: MashtalColors.ground),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          key: Key('decrease-${listing.id}'),
+                                          tooltip: context.tr('decrease'),
+                                          icon: const Icon(Icons.remove),
+                                          onPressed: () => app.removeFromCart(listing.id),
+                                        ),
+                                        SizedBox(
+                                          width: 24,
+                                          child: Semantics(
+                                            label: context.tr('quantity'),
+                                            child: Text('$qty', textAlign: TextAlign.center, style: text.titleMedium),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          key: Key('increase-${listing.id}'),
+                                          // Disabled once the cart holds all the stock (QA BUG-1, BUG-2).
+                                          tooltip: qty >= listing.quantity ? context.tr('maxStockReached') : context.tr('increase'),
+                                          icon: const Icon(Icons.add),
+                                          onPressed: qty >= listing.quantity ? null : () => app.addToCart(listing.id),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    key: Key('removeLine-${listing.id}'),
+                                    tooltip: context.tr('remove'),
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: MashtalColors.muted,
+                                    onPressed: () => app.removeFromCart(listing.id, all: true),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Text(formatPrice(context, total), style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.end),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    key: const Key('reserve'),
-                    icon: const Icon(Icons.event_available),
-                    label: Text(context.tr('reserve')),
-                    onPressed: () {
-                      if (app.user == null) {
-                        context.go('/login?from=/cart');
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('reserveSoon'))));
-                      }
-                    },
+                  // Total and the screen's one primary action. Kept in the list,
+                  // not pinned to the bottom, so the "added" message never covers it.
+                  const SizedBox(height: MashtalSpace.sm),
+                  Card(
+                    color: MashtalColors.ground,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(MashtalSpace.lg),
+                      child: Row(
+                        children: [
+                          Text(formatPrice(context, total), style: text.titleLarge?.copyWith(color: MashtalColors.forestDeep)),
+                          const SizedBox(width: MashtalSpace.lg),
+                          Expanded(
+                            child: FilledButton.icon(
+                              key: const Key('reserve'),
+                              icon: const Icon(Icons.event_available),
+                              label: Text(context.tr('reserve')),
+                              onPressed: reserve,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

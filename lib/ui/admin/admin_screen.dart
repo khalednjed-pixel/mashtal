@@ -55,15 +55,19 @@ class AdminScreen extends StatelessWidget {
         title: Text('${context.tr('admin')} · ${context.tr(isNurseries ? 'nurseries' : 'professionals')}'),
         actions: const [LanguageButton()],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('addPartner'),
-        onPressed: () => context.go(isNurseries ? '/admin/nurseries/new' : '/admin/professionals/new'),
-        icon: const Icon(Icons.add),
-        label: Text(context.tr(isNurseries ? 'addNursery' : 'addProfessional')),
+      // Lifted above the floating navigation, which the page scrolls under.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+        child: FloatingActionButton.extended(
+          key: const Key('addPartner'),
+          onPressed: () => context.go(isNurseries ? '/admin/nurseries/new' : '/admin/professionals/new'),
+          icon: const Icon(Icons.add),
+          label: Text(context.tr(isNurseries ? 'addNursery' : 'addProfessional')),
+        ),
       ),
       body: Constrained(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          padding: clearNav(context, const EdgeInsets.fromLTRB(16, 8, 16, 96)),
           children: [
             for (final r in rows) Padding(padding: const EdgeInsets.only(bottom: 8), child: r),
             if (!isNurseries) ...[

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mashtal/data/seed/plant_media.g.dart';
+import 'package:mashtal/data/seed/plant_photos.dart';
 import 'package:mashtal/data/seed/plants_seed.dart';
 import 'package:mashtal/logic/catalog_search.dart';
 import 'package:mashtal/data/seed/seed_data.dart';
@@ -25,12 +26,14 @@ void main() {
     }
   });
 
-  test('the photo comes from the dataset, with its credit, without a network lookup', () async {
+  test('the photo is the bundled shop photo, with its credit, without a network lookup', () async {
     final ghaf = seedPlants.firstWhere((p) => p.id == 'p01');
     WikiPhotos.enabled = true;
     final photo = await WikiPhotos.of(ghaf);
-    expect(photo?.media?.photoAuthor, 'LRBurdak');
-    expect(photo?.media?.credit, 'LRBurdak · CC BY-SA 4.0 · Wikimedia Commons');
+    final shop = shopPhotos['p01']!;
+    expect(photo?.asset, shop.asset);
+    expect(photo?.media?.photoAuthor, shop.author);
+    expect(photo?.media?.credit, '${shop.author} · ${shop.licence} · Wikimedia Commons');
   });
 
   test('Wikidata names are extra search terms; the app names still rank first', () {

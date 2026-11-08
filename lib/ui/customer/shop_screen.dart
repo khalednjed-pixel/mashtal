@@ -253,6 +253,8 @@ class _ShopScreenState extends State<ShopScreen> {
               },
             ),
             const SliverToBoxAdapter(child: SizedBox(height: MashtalSpace.xl)),
+            // Room to scroll the last row clear of the floating navigation.
+            SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom)),
           ],
         ),
       ),
@@ -273,8 +275,8 @@ class _ChooseBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    // A soft mint wave with a leaf sprig painted on the end side: the green
-    // backdrop that says "this is about what grows at your place".
+    // A soft mint wave with a young tree on the end side: the green backdrop
+    // that says "this is about what grows at your place".
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -283,23 +285,32 @@ class _ChooseBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(MashtalSpace.radius),
         child: CustomPaint(
           painter: _WavePainter(rtl: Directionality.of(context) == TextDirection.rtl),
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(MashtalSpace.lg, MashtalSpace.xl, 112, MashtalSpace.xl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.tr('chooseBannerTitle'), style: text.titleLarge),
-                const SizedBox(height: MashtalSpace.xs),
-                Text(context.tr('chooseBannerBody'), style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep)),
-                const SizedBox(height: MashtalSpace.lg),
-                FilledButton(
-                  // The theme makes filled buttons full width; size this one to its label.
-                  style: FilledButton.styleFrom(minimumSize: const Size(128, 48)),
-                  onPressed: () => context.go('/choose'),
-                  child: Text(context.tr('chooseStart')),
+          child: Stack(
+            children: [
+              PositionedDirectional(
+                end: MashtalSpace.lg,
+                bottom: MashtalSpace.xl,
+                child: ExcludeSemantics(child: Image.asset('assets/brand/banner_tree.png', height: 116)),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(MashtalSpace.lg, MashtalSpace.xl, 112, MashtalSpace.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(context.tr('chooseBannerTitle'), style: text.titleLarge),
+                    const SizedBox(height: MashtalSpace.xs),
+                    Text(context.tr('chooseBannerBody'), style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep)),
+                    const SizedBox(height: MashtalSpace.lg),
+                    FilledButton(
+                      // The theme makes filled buttons full width; size this one to its label.
+                      style: FilledButton.styleFrom(minimumSize: const Size(128, 48)),
+                      onPressed: () => context.go('/choose'),
+                      child: Text(context.tr('chooseStart')),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -307,7 +318,7 @@ class _ChooseBanner extends StatelessWidget {
   }
 }
 
-/// Mint panel with a gently waving bottom edge and a three-leaf sprig.
+/// Mint panel with a gently waving bottom edge.
 class _WavePainter extends CustomPainter {
   const _WavePainter({required this.rtl});
   final bool rtl;
@@ -334,40 +345,6 @@ class _WavePainter extends CustomPainter {
         ).createShader(Offset.zero & size),
     );
 
-    // Sprig on the end side (left in Arabic, right in English).
-    canvas.save();
-    final x = rtl ? 56.0 : w - 56.0;
-    canvas.translate(x, h * 0.52);
-    final stem = Paint()
-      ..color = MashtalColors.leaf
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(const Offset(0, 54), const Offset(0, -6), stem);
-    void leaf(double angle, double length, Color color) {
-      canvas.save();
-      canvas.rotate(angle);
-      final half = length * 0.32;
-      final shape = Path()
-        ..moveTo(0, 0)
-        ..quadraticBezierTo(half, -length * 0.5, 0, -length)
-        ..quadraticBezierTo(-half, -length * 0.5, 0, 0)
-        ..close();
-      canvas.drawPath(shape, Paint()..color = color);
-      canvas.drawLine(
-        Offset.zero,
-        Offset(0, -length * 0.85),
-        Paint()
-          ..color = MashtalColors.surface.withValues(alpha: 0.35)
-          ..strokeWidth = 1.5,
-      );
-      canvas.restore();
-    }
-
-    leaf(-0.75, 58, MashtalColors.leaf);
-    leaf(0.75, 58, MashtalColors.emeraldDeep);
-    leaf(0, 78, MashtalColors.emerald);
-    canvas.restore();
   }
 
   @override

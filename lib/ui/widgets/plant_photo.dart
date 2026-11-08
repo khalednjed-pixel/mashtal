@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/seed/plant_media.g.dart';
+import '../../data/seed/plant_photos.dart';
 import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../models/plant_media.dart';
@@ -14,9 +15,21 @@ import 'common.dart';
 
 /// A freely licensed photo of a species from Wikipedia / Wikimedia Commons.
 class WikiPhoto {
-  const WikiPhoto(this.imageUrl, this.pageUrl, {this.media});
+  const WikiPhoto(this.imageUrl, this.pageUrl, {this.media, this.asset, this.edited = false, this.aiGenerated = false, this.studio = false});
   final String imageUrl;
   final String pageUrl;
+
+  /// Bundled shop photo (assets/plants/), shown instead of [imageUrl].
+  final String? asset;
+
+  /// The bundled photo's background was changed (CC licences ask to say so).
+  final bool edited;
+
+  /// The bundled image is an AI illustration of the species, not a photo.
+  final bool aiGenerated;
+
+  /// Plain white studio background.
+  final bool studio;
 
   /// Author and licence, when the photo comes from the imported dataset.
   final PlantMedia? media;
@@ -39,6 +52,19 @@ class WikiPhotos {
 
   static Future<WikiPhoto?> of(Plant p) {
     if (!enabled || p.isCustom || p.scientificName.isEmpty) return Future.value(null);
+    final shop = shopPhotos[p.id];
+    if (shop != null) {
+      final media = PlantMedia(
+        wikidataId: mediaFor(p)?.wikidataId ?? '',
+        photoFile: shop.file,
+        photoAuthor: shop.author,
+        photoLicence: shop.licence,
+        photoLicenceUrl: shop.licenceUrl,
+      );
+      return Future.value(
+        WikiPhoto(shop.asset, media.photoPageUrl!, media: media, asset: shop.asset, edited: shop.edited, aiGenerated: shop.aiGenerated, studio: shop.studio),
+      );
+    }
     final media = mediaFor(p);
     if (media != null && media.hasPhoto) {
       return Future.value(WikiPhoto(media.photoUrl!, media.photoPageUrl!, media: media));
@@ -49,11 +75,7 @@ class WikiPhotos {
 
   static Future<WikiPhoto?> _fetch(String title) async {
     try {
-      final uri = Uri(
-        scheme: 'https',
-        host: 'en.wikipedia.org',
-        pathSegments: ['api', 'rest_v1', 'page', 'summary', title.replaceAll(' ', '_')],
-      );
+      final uri = Uri(scheme: 'https', host: 'en.wikipedia.org', pathSegments: ['api', 'rest_v1', 'page', 'summary', title.replaceAll(' ', '_')]);
       final res = await http.get(uri).timeout(const Duration(seconds: 10));
       if (res.statusCode != 200) return null;
       final j = jsonDecode(res.body) as Map<String, dynamic>;
@@ -70,8 +92,7 @@ class WikiPhotos {
 final Map<int, Uint8List> _decoded = {};
 
 /// Decodes a base64 photo once and keeps the bytes.
-Uint8List decodePhoto(String base64Photo) =>
-    _decoded.putIfAbsent(Object.hash(base64Photo.length, base64Photo.hashCode), () => base64Decode(base64Photo));
+Uint8List decodePhoto(String base64Photo) => _decoded.putIfAbsent(Object.hash(base64Photo.length, base64Photo.hashCode), () => base64Decode(base64Photo));
 
 /// Square plant picture: the nursery's own photo if given, else the plant's
 /// uploaded photo, else its Wikipedia photo, else a placeholder icon.
@@ -85,6 +106,7 @@ class PlantPhoto extends StatelessWidget {
   const PlantPhoto.fill({super.key, required this.plant, this.listingPhoto, this.radius}) : size = null;
 
   final Plant plant;
+
   final double? size;
   final String? listingPhoto;
   final double? radius;
@@ -103,6 +125,9 @@ class PlantPhoto extends StatelessWidget {
         builder: (context, snap) {
           final photo = snap.data;
           if (photo == null) return fallback;
+          if (photo.asset != null) {
+            return Image.asset(photo.asset!, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
+          }
           return Image.network(
             photo.imageUrl,
             width: size,
@@ -144,6 +169,16 @@ class PhotoCredit extends StatelessWidget {
         if (photo == null) return const SizedBox.shrink();
         final small = Theme.of(context).textTheme.bodySmall;
         final media = photo.media;
+        if (photo.aiGenerated) {
+          return Row(
+            key: const Key('photoCredit'),
+            children: [
+              Icon(Icons.image_outlined, size: 16, color: MashtalColors.muted),
+              const SizedBox(width: 4),
+              Text(context.tr('photoAi'), style: small),
+            ],
+          );
+        }
         final style = TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact, minimumSize: const Size(0, 32));
         if (media == null) {
           return TextButton.icon(
@@ -170,6 +205,7 @@ class PhotoCredit extends StatelessWidget {
                 onPressed: media.photoLicenceUrl == null ? null : () => _open(media.photoLicenceUrl!),
                 child: Text(media.photoLicence!, style: small),
               ),
+            if (photo.edited) Text(context.tr('photoEdited'), style: small),
           ],
         );
       },

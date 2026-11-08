@@ -94,7 +94,9 @@ void main() {
     await tester.enterText(find.byKey(const Key('newPlantNameEn')), 'Test Fern');
     final form = find.byType(Scrollable).last;
     Future<void> tapKey(String key) async {
-      await tester.scrollUntilVisible(find.byKey(Key(key)), 200, scrollable: form);
+      // Scroll until it can be tapped: the page scrolls under the floating
+      // navigation, so merely reaching the bottom edge is not enough.
+      await tester.dragUntilVisible(find.byKey(Key(key)).hitTestable(), form, const Offset(0, -200));
       await tester.tap(find.byKey(Key(key)));
       await tester.pumpAndSettle();
     }

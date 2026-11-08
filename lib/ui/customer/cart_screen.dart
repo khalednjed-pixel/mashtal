@@ -50,7 +50,7 @@ class CartScreen extends StatelessWidget {
             )
           : Constrained(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl),
+                padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
                 children: [
                   for (final (listing, qty, plant, nursery) in lines)
                     Padding(

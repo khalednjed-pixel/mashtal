@@ -130,7 +130,7 @@ class _ChooseScreenState extends State<ChooseScreen> {
     final q = questions[step];
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: clearNav(context, const EdgeInsets.all(16)),
       children: [
         // AC-01: one question per screen with a progress bar.
         LinearProgressIndicator(key: const Key('chooseProgress'), value: (step + 1) / questions.length, minHeight: 6, borderRadius: BorderRadius.circular(3)),
@@ -255,7 +255,7 @@ class _Results extends StatelessWidget {
           ],
         ),
       Ranked(:final results) => ListView(
-          padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, 0, MashtalSpace.screen, MashtalSpace.xl),
+          padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, 0, MashtalSpace.screen, MashtalSpace.xl)),
           children: [
             Text(context.tr('resultsTitle'), style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: MashtalSpace.xs),
@@ -303,123 +303,126 @@ class _ResultCard extends StatelessWidget {
     final nurseries = offers.map((o) => o.$2.id).toSet().length;
     void compare() => showNurseryCompare(context, p, city: answers.city);
 
-    // Photo-led and frameless, like the shop grid: a wide photo tile carrying the
-    // match score, then the plant, its price and the way to buy it.
+    // A white product box like the shop's: the square photo (never cropped)
+    // beside the plant and its match score, then price, the way to buy it and
+    // the guide citation.
     return Padding(
-      padding: const EdgeInsets.only(bottom: MashtalSpace.xl),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          key: Key('result-${p.id}'),
-          onTap: compare,
-          borderRadius: BorderRadius.circular(MashtalSpace.radius),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: MashtalSpace.xs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Stack(
-                  children: [
-                    // Fixed height, cover-cropped: about 2:1 on a phone, so two results fit on screen.
-                    SizedBox(height: 168, width: double.infinity, child: PlantPhoto.fill(plant: p, radius: MashtalSpace.radius)),
-                    PositionedDirectional(
-                      top: MashtalSpace.sm,
-                      end: MashtalSpace.sm,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(color: MashtalColors.surface, borderRadius: BorderRadius.circular(MashtalSpace.radius)),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(MashtalSpace.sm, MashtalSpace.sm, MashtalSpace.sm, MashtalSpace.xs),
-                          child: _ScoreRing(total: score.total),
+      padding: const EdgeInsets.only(bottom: MashtalSpace.lg),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: MashtalColors.surface,
+          borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+          boxShadow: const [BoxShadow(color: MashtalColors.shadow, blurRadius: 16, offset: Offset(0, 4))],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            key: Key('result-${p.id}'),
+            onTap: compare,
+            borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+            child: Padding(
+              padding: const EdgeInsets.all(MashtalSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 116, height: 116, child: PlantPhoto.fill(plant: p, radius: MashtalSpace.radius)),
+                      const SizedBox(width: MashtalSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('$rank. ${p.name(context.lang)}', style: text.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            Text(
+                              p.scientificName,
+                              textDirection: TextDirection.ltr,
+                              style: text.bodySmall?.copyWith(fontSize: 13, fontStyle: FontStyle.italic, color: MashtalColors.muted),
+                            ),
+                            const SizedBox(height: MashtalSpace.md),
+                            _ScoreRing(total: score.total),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: MashtalSpace.md),
+                  Text(p.description(context.lang), maxLines: 2, overflow: TextOverflow.ellipsis, style: text.bodyMedium?.copyWith(color: MashtalColors.muted)),
+                  const SizedBox(height: MashtalSpace.md),
+                  // Price from, nursery count and the one action: where to buy.
+                  Row(
+                    children: [
+                      Expanded(
+                        child: lowest == null
+                            ? Text(context.tr('notAvailable'), style: text.labelMedium?.copyWith(color: MashtalColors.error))
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(context.tr('from'), style: text.bodySmall),
+                                      const SizedBox(width: MashtalSpace.xs),
+                                      Flexible(child: Text(formatPrice(context, lowest), style: text.titleMedium)),
+                                    ],
+                                  ),
+                                  Text(
+                                    nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}',
+                                    style: text.bodySmall,
+                                  ),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(width: MashtalSpace.sm),
+                      OutlinedButton.icon(
+                        onPressed: compare,
+                        icon: const Icon(Icons.storefront_outlined, size: 20),
+                        label: Text(context.tr('whereToBuy')),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: MashtalSpace.md),
+                  // US-10 AC-01 / US-11: citation, or a label for non-guide plants.
+                  // Opens "Why this score?" with the per-factor breakdown (US-09).
+                  Material(
+                    color: MashtalColors.ground,
+                    borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      key: Key('citation-${p.id}'),
+                      onTap: () => showScoreExplanation(context, score, answers),
+                      child: Padding(
+                        padding: const EdgeInsets.all(MashtalSpace.md),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(citation == null ? Icons.info_outline : Icons.menu_book_outlined, size: 20, color: MashtalColors.leaf),
+                            const SizedBox(width: MashtalSpace.sm),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    citation == null
+                                        ? context.tr(p.isCustom ? 'addedByNursery' : 'notGuideBacked')
+                                        : '${citation.guideIn(context.lang)} · ${citation.editionIn(context.lang)} · ${context.tr('section')}: ${citation.sectionIn(context.lang)}',
+                                    style: text.bodySmall?.copyWith(color: MashtalColors.forestDeep),
+                                  ),
+                                  const SizedBox(height: MashtalSpace.xs),
+                                  Text(context.tr('whyThisScore'), style: text.labelMedium?.copyWith(color: MashtalColors.leaf)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, size: 20, color: MashtalColors.leaf),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: MashtalSpace.md),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.xs),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('$rank. ${p.name(context.lang)}', style: text.titleLarge),
-                      const SizedBox(height: MashtalSpace.xs),
-                      Text(p.description(context.lang), maxLines: 2, overflow: TextOverflow.ellipsis, style: text.bodyMedium?.copyWith(color: MashtalColors.muted)),
-                    ],
                   ),
-                ),
-                const SizedBox(height: MashtalSpace.md),
-                // Price from, nursery count and the one action: where to buy.
-                Row(
-                  children: [
-                    Expanded(
-                      child: lowest == null
-                          ? Text(context.tr('notAvailable'), style: text.labelMedium?.copyWith(color: MashtalColors.error))
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: [
-                                    Text(context.tr('from'), style: text.bodySmall),
-                                    const SizedBox(width: MashtalSpace.xs),
-                                    Flexible(child: Text(formatPrice(context, lowest), style: text.titleMedium)),
-                                  ],
-                                ),
-                                Text(
-                                  nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}',
-                                  style: text.bodySmall,
-                                ),
-                              ],
-                            ),
-                    ),
-                    const SizedBox(width: MashtalSpace.sm),
-                    OutlinedButton.icon(
-                      onPressed: compare,
-                      icon: const Icon(Icons.storefront_outlined, size: 20),
-                      label: Text(context.tr('whereToBuy')),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: MashtalSpace.md),
-                // US-10 AC-01 / US-11: citation, or a label for non-guide plants.
-                // Opens "Why this score?" with the per-factor breakdown (US-09).
-                Material(
-                  color: MashtalColors.ground,
-                  borderRadius: BorderRadius.circular(MashtalSpace.radius),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    key: Key('citation-${p.id}'),
-                    onTap: () => showScoreExplanation(context, score, answers),
-                    child: Padding(
-                      padding: const EdgeInsets.all(MashtalSpace.md),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(citation == null ? Icons.info_outline : Icons.menu_book_outlined, size: 20, color: MashtalColors.leaf),
-                          const SizedBox(width: MashtalSpace.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  citation == null
-                                      ? context.tr(p.isCustom ? 'addedByNursery' : 'notGuideBacked')
-                                      : '${citation.guideIn(context.lang)} · ${citation.editionIn(context.lang)} · ${context.tr('section')}: ${citation.sectionIn(context.lang)}',
-                                  style: text.bodySmall?.copyWith(color: MashtalColors.forestDeep),
-                                ),
-                                const SizedBox(height: MashtalSpace.xs),
-                                Text(context.tr('whyThisScore'), style: text.labelMedium?.copyWith(color: MashtalColors.leaf)),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right, size: 20, color: MashtalColors.leaf),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -436,32 +439,46 @@ class _ScoreRing extends StatelessWidget {
   const _ScoreRing({required this.total});
   final int total;
 
+  /// A word for the number, so 91% reads as "Great fit for your place".
+  static String verdictKey(int total) => total >= 85 ? 'fitGreat' : (total >= 70 ? 'fitGood' : (total >= 40 ? 'fitPartial' : 'fitPoor'));
+
+  /// Text colour of the verdict (emerald itself is too light for text on white).
+  static Color verdictColor(int total) => total >= 70 ? MashtalColors.leaf : (total >= 40 ? MashtalColors.muted : MashtalColors.error);
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Column(
+    return Row(
       children: [
         SizedBox(
-          width: 60,
-          height: 60,
+          width: 52,
+          height: 52,
           child: Stack(
             alignment: Alignment.center,
             children: [
               Positioned.fill(
                 child: CircularProgressIndicator(
                   value: total / 100,
-                  strokeWidth: 4,
+                  strokeWidth: 5,
                   color: scoreColor(total),
-                  backgroundColor: MashtalColors.line,
+                  backgroundColor: MashtalColors.ground,
                   strokeCap: StrokeCap.round,
                 ),
               ),
-              Text('$total%', style: text.titleMedium?.copyWith(color: MashtalColors.forest)),
+              Text('$total%', style: text.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: MashtalColors.forest)),
             ],
           ),
         ),
-        const SizedBox(height: MashtalSpace.xs),
-        Text(context.tr('match'), style: text.labelSmall),
+        const SizedBox(width: MashtalSpace.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.tr(verdictKey(total)), style: text.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: verdictColor(total))),
+              Text(context.tr('fitForYourPlace'), style: text.bodySmall?.copyWith(color: MashtalColors.muted)),
+            ],
+          ),
+        ),
       ],
     );
   }

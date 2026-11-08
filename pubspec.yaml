@@ -68,6 +68,7 @@ flutter:
 
   assets:
     - assets/brand/
+    - assets/plants/
 
   fonts:
     - family: Tajawal

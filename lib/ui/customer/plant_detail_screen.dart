@@ -51,7 +51,7 @@ class PlantDetailScreen extends StatelessWidget {
       ),
       body: Constrained(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xxl),
+          padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xxl)),
           children: [
             // Detail photos: fixed 4:3, cropped to cover. Swipe sideways to see
             // the nurseries' own photos of this plant; the credit stays underneath.
@@ -247,18 +247,25 @@ class _PhotoGalleryState extends State<_PhotoGallery> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AspectRatio(
-          aspectRatio: 4 / 3,
-          child: photos.length == 1
-              ? PlantPhoto.fill(plant: widget.plant, radius: MashtalSpace.radius)
-              : PageView.builder(
-                  itemCount: photos.length,
-                  onPageChanged: (i) => setState(() => _page = i),
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: PlantPhoto.fill(plant: widget.plant, listingPhoto: photos[i], radius: MashtalSpace.radius),
-                  ),
-                ),
+        // Square, like the photos themselves, so nothing is cropped; full width
+        // on a phone, capped on wider screens.
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: photos.length == 1
+                  ? PlantPhoto.fill(plant: widget.plant, radius: MashtalSpace.radius)
+                  : PageView.builder(
+                      itemCount: photos.length,
+                      onPageChanged: (i) => setState(() => _page = i),
+                      itemBuilder: (_, i) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: PlantPhoto.fill(plant: widget.plant, listingPhoto: photos[i], radius: MashtalSpace.radius),
+                      ),
+                    ),
+            ),
+          ),
         ),
         Row(
           children: [

@@ -30,7 +30,7 @@ class NurseryDetailScreen extends StatelessWidget {
       appBar: AppBar(title: Text(nursery.name(lang)), actions: const [LanguageButton()]),
       body: Constrained(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: clearNav(context, const EdgeInsets.all(16)),
           children: [
             Card(
               child: Padding(

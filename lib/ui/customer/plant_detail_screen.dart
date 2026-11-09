@@ -26,7 +26,7 @@ class PlantDetailScreen extends StatelessWidget {
     final lang = context.lang;
 
     final offers = [
-      for (final o in customerOffers(listings: market.listings, nurseryById: market.nurseryById, plantId: plantId))
+      for (final o in customerOffers(listings: market.listings, nurseryById: market.nurseryById, plantId: plantId, city: app.user?.city))
         (o.listing, o.nursery),
     ];
 

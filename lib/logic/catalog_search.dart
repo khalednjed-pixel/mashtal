@@ -126,12 +126,14 @@ SearchResults searchCatalog({
 /// shown when its nursery is verified and the nursery has not hidden it.
 /// Listings with quantity 0 are shown as "not available", after the ones in
 /// stock, on both the plant page and the nursery page. Counts of "nurseries
-/// that have it" use only listings in stock.
+/// that have it" use only listings in stock. Within each group, nurseries in
+/// the customer's [city] come first, then the cheapest (the US-12 order).
 List<Offer> customerOffers({
   required List<Listing> listings,
   required Nursery? Function(String id) nurseryById,
   String? plantId,
   String? nurseryId,
+  String? city,
 }) {
   final offers = [
     for (final l in listings)
@@ -140,6 +142,8 @@ List<Offer> customerOffers({
   ];
   offers.sort((a, b) {
     if (a.listing.isAvailable != b.listing.isAvailable) return a.listing.isAvailable ? -1 : 1;
+    final aHere = city != null && a.nursery.city == city, bHere = city != null && b.nursery.city == city;
+    if (aHere != bHere) return aHere ? -1 : 1;
     return a.listing.price.compareTo(b.listing.price);
   });
   return offers;

@@ -17,6 +17,7 @@
   <base href="/mashtal/">
 
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="مشتل Mashtal — choose the right plant, reserve it, and keep it alive.">
 
@@ -31,8 +32,44 @@
 
   <title>مشتل · Mashtal</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Opening screen while the app loads: the leaf mark and plants only. The
+       name keeps its space (hidden) so nothing moves when the app takes over
+       and writes the name out (lib/ui/splash.dart). */
+    html, body { margin: 0; background: #F6FAF7; }
+    #splash { position: fixed; inset: 0; background: #F6FAF7; z-index: 10;
+              display: flex; flex-direction: column; align-items: center; justify-content: center;
+              transition: opacity 150ms ease-out; }
+    /* Same spot as the app's splash: Alignment(0, -0.18) moves a 195px-tall
+       block up by 0.09 x (screen height - 195px). */
+    #splash .brand { display: flex; flex-direction: column; align-items: center; transform: translateY(calc(-0.09 * (100vh - 195px))); }
+    #splash .mark { height: 88px; }
+    #splash .word { width: 200px; margin-top: 16px; visibility: hidden; }
+    @font-face { font-family: 'Tajawal'; font-weight: 700; src: url('assets/assets/fonts/Tajawal-Bold.ttf'); }
+    #splash .name { font: 700 20px/1.4 'Tajawal', sans-serif; color: #08452D; margin-top: 8px; visibility: hidden; }
+    #splash .column { position: relative; width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #splash .garden { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; }
+    #splash.done { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
+  <div id="splash" aria-hidden="true">
+    <div class="column">
+    <div class="brand">
+      <img class="mark" src="assets/assets/brand/logo_mark.png" alt="">
+      <img class="word" src="assets/assets/brand/logo_wordmark.png" alt="">
+      <div class="name" dir="rtl">مشتل</div>
+    </div>
+    <img class="garden" src="assets/assets/brand/splash_garden.png" alt="">
+    </div>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash');
+      s.classList.add('done');
+      setTimeout(function () { s.remove(); }, 400);
+    });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

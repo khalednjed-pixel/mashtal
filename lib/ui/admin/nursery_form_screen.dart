@@ -69,7 +69,7 @@ class _NurseryFormScreenState extends State<NurseryFormScreen> {
           child: Form(
             key: _form,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: clearNav(context, const EdgeInsets.all(16)),
               children: [
                 if (_existing == null) const PendingNote(),
                 const SizedBox(height: 16),

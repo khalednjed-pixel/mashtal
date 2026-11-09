@@ -93,7 +93,11 @@ class _RoleShellState extends State<RoleShell> {
       }
     }
 
+    // extendBody: pages scroll on under and around the floating pill instead
+    // of stopping above a solid strip; lists add [clearNav] so their last item
+    // can still scroll clear of it.
     return Scaffold(
+      extendBody: true,
       body: SelectionArea(child: widget.child),
       bottomNavigationBar: _FloatingNav(
         selected: index < 0 ? 0 : index,

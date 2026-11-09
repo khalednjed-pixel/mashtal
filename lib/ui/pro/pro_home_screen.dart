@@ -56,7 +56,7 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
       appBar: AppBar(title: Text(context.tr('myProfile')), actions: const [LanguageButton()]),
       body: Constrained(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: clearNav(context, const EdgeInsets.all(16)),
           children: [
             if (pro.status != PartnerStatus.verified)
               Card(

@@ -41,7 +41,7 @@ class _PlantDataScreenState extends State<PlantDataScreen> {
       ),
       body: Constrained(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: clearNav(context, const EdgeInsets.all(16)),
           children: [
             Text(context.tr('plantDataHint'), style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
@@ -148,7 +148,7 @@ class _PlantEditScreenState extends State<PlantEditScreen> {
         child: Form(
           key: _form,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: clearNav(context, const EdgeInsets.all(16)),
             children: [
               Text(context.tr('plantDataHint'), style: theme.textTheme.bodySmall),
               chips<Placement>(context.tr('placement'), Placement.values, _placements.contains, (v) {

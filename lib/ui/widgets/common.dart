@@ -133,6 +133,11 @@ class EmptyState extends StatelessWidget {
   }
 }
 
+/// [base] plus room under the last item for the floating navigation, which the
+/// page scrolls under (the shell sets extendBody, so the nav's height arrives
+/// as bottom padding in MediaQuery; outside the shell it is just the safe area).
+EdgeInsets clearNav(BuildContext context, EdgeInsets base) => base.copyWith(bottom: base.bottom + MediaQuery.paddingOf(context).bottom);
+
 /// Keeps content readable on wide screens (the web build).
 class Constrained extends StatelessWidget {
   const Constrained({super.key, required this.child, this.maxWidth = 720});

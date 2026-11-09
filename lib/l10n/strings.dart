@@ -191,6 +191,8 @@ const Map<String, Map<String, String>> _strings = {
   'storageFull': {'ar': 'مساحة التخزين ممتلئة. احذف بعض الصور وحاول مجدداً.', 'en': 'Storage is full. Remove some photos and try again.'},
   'photoCredit': {'ar': 'الصورة: ويكيبيديا', 'en': 'Photo: Wikipedia'},
   'photoBy': {'ar': 'الصورة', 'en': 'Photo'},
+  'photoAi': {'ar': 'صورة توضيحية مولّدة بالذكاء الاصطناعي', 'en': 'AI-generated illustration'},
+  'photoEdited': {'ar': '· الخلفية معدّلة', 'en': '· background edited'},
   'photoLicence': {'ar': 'الترخيص', 'en': 'Licence'},
   'dataCredits': {'ar': 'مصادر البيانات والصور', 'en': 'Data and photo sources'},
   'dataCreditsBody': {
@@ -265,6 +267,11 @@ const Map<String, Map<String, String>> _strings = {
     'en': 'The percentage comes from fixed rules over official guide data, not AI.'
   },
   'match': {'ar': 'مناسبة', 'en': 'match'},
+  'fitGreat': {'ar': 'مناسبة جداً', 'en': 'Great fit'},
+  'fitGood': {'ar': 'مناسبة', 'en': 'Good fit'},
+  'fitPartial': {'ar': 'مناسبة جزئياً', 'en': 'Partial fit'},
+  'fitPoor': {'ar': 'غير مناسبة غالباً', 'en': 'Poor fit'},
+  'fitForYourPlace': {'ar': 'لمكانك حسب إجاباتك', 'en': 'for your place, from your answers'},
   'f.place': {'ar': 'المكان', 'en': 'Place'},
   'f.light.inside': {'ar': 'الإضاءة', 'en': 'Light'},
   'f.light.outside': {'ar': 'الشمس', 'en': 'Sun'},

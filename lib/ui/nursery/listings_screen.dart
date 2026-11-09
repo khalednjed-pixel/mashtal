@@ -28,15 +28,19 @@ class ListingsScreen extends StatelessWidget {
         title: Text(nursery.name(lang)),
         actions: [Padding(padding: const EdgeInsetsDirectional.only(end: 8), child: StatusChip(status: nursery.status)), const LanguageButton()],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('addListing'),
-        onPressed: () => context.go('/nursery/listing/new'),
-        icon: const Icon(Icons.add),
-        label: Text(context.tr('addListing')),
+      // Lifted above the floating navigation, which the page scrolls under.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+        child: FloatingActionButton.extended(
+          key: const Key('addListing'),
+          onPressed: () => context.go('/nursery/listing/new'),
+          icon: const Icon(Icons.add),
+          label: Text(context.tr('addListing')),
+        ),
       ),
       body: Constrained(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          padding: clearNav(context, const EdgeInsets.fromLTRB(16, 8, 16, 96)),
           children: [
             if (!nursery.isVerified)
               Padding(

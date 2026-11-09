@@ -124,7 +124,7 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
         child: Form(
           key: _form,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: clearNav(context, const EdgeInsets.all(16)),
             children: [
               Card(
                 color: Theme.of(context).colorScheme.secondaryContainer,

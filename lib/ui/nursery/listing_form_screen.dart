@@ -127,7 +127,7 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
         child: Form(
           key: _form,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: clearNav(context, const EdgeInsets.all(16)),
             children: [
               Card(
                 child: ListTile(

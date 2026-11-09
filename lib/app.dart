@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'router.dart';
 import 'state/app_state.dart';
+import 'ui/splash.dart';
 import 'ui/theme.dart';
 
 class MashtalApp extends StatefulWidget {
@@ -34,6 +35,7 @@ class _MashtalAppState extends State<MashtalApp> {
       supportedLocales: const [Locale('ar'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: _router,
+      builder: (context, child) => SplashGate(child: child ?? const SizedBox.shrink()),
     );
   }
 }

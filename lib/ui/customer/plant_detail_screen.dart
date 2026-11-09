@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
 import '../../logic/catalog_search.dart';
+import '../../logic/shop_filters.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
@@ -26,7 +27,7 @@ class PlantDetailScreen extends StatelessWidget {
     final lang = context.lang;
 
     final offers = [
-      for (final o in customerOffers(listings: market.listings, nurseryById: market.nurseryById, plantId: plantId, city: app.user?.city))
+      for (final o in customerOffers(listings: market.listings, nurseryById: market.nurseryById, plantId: plantId, city: preferredCity(app.user)))
         (o.listing, o.nursery),
     ];
 

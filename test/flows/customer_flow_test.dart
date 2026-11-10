@@ -45,9 +45,54 @@ void main() {
     await pumpMashtal(tester);
     await tester.tap(find.text('My Garden'));
     await tester.pumpAndSettle();
+    // Stays in the app with a prompt instead of jumping to sign-in.
+    expect(location(tester), '/garden');
+    expect(find.text('You need to sign in'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('guestSignIn')));
+    await tester.pumpAndSettle();
     expect(location(tester), '/login?from=%2Fgarden');
     await signInWithPhone(tester, '0500000005');
     expect(location(tester), '/garden');
+    expect(find.text('You need to sign in'), findsNothing);
+  });
+
+  testWidgets('a guest on Account sees a sign-in prompt, not the sign-in screen', (tester) async {
+    await pumpMashtal(tester);
+    await tester.tap(find.text('Account'));
+    await tester.pumpAndSettle();
+    expect(location(tester), '/account');
+    expect(find.text('You need to sign in'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('guestSignIn')));
+    await tester.pumpAndSettle();
+    expect(location(tester), '/login?from=%2Faccount');
+  });
+
+  testWidgets('removing a cart line asks first, and Cancel keeps it', (tester) async {
+    final app = await pumpMashtal(tester);
+    go(tester, '/shop/plant/p01');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add_shopping_cart).first);
+    await tester.pumpAndSettle();
+    final id = app.cart.keys.single;
+    go(tester, '/cart');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('removeLine-$id')));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove from cart?'), findsOneWidget);
+    expect(find.textContaining('Ghaf tree from your cart'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('cancelRemove')));
+    await tester.pumpAndSettle();
+    expect(app.cartCount, 1);
+
+    // The minus at quantity 1 also takes the line out, so it asks too.
+    await tester.tap(find.byKey(Key('decrease-$id')));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove from cart?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirmRemove')));
+    await tester.pumpAndSettle();
+    expect(app.cartCount, 0);
+    expect(find.text('Your cart is empty'), findsOneWidget);
   });
 
   testWidgets('US-02 a wrong code shows an error and resend waits 60 seconds', (tester) async {

@@ -49,6 +49,10 @@ class Denied extends AccessDecision {
   final String home;
 }
 
+/// Tabs a guest may open: the page itself shows a "sign in" prompt instead of
+/// leaving the app for the sign-in screen.
+bool guestSeesSignInPrompt(String path) => path == '/garden' || path == '/account';
+
 /// Decides whether a user with [role] (null for a guest) may open [location].
 AccessDecision decideAccess(String location, Role? role) {
   final path = Uri.parse(location).path;
@@ -56,6 +60,7 @@ AccessDecision decideAccess(String location, Role? role) {
   if (role == null) {
     return switch (need) {
       RouteAccess.public => const Allowed(),
+      _ when guestSeesSignInPrompt(path) => const Allowed(),
       _ => NeedSignIn(location),
     };
   }

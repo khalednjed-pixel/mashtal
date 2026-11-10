@@ -10,10 +10,16 @@ void main() {
       }
     });
 
-    test('is sent to sign-in for My Garden and comes back afterwards', () {
-      final d = decideAccess('/garden', null);
+    test('opens My Garden and Account, which show a sign-in prompt', () {
+      for (final path in ['/garden', '/account']) {
+        expect(decideAccess(path, null), isA<Allowed>(), reason: path);
+      }
+    });
+
+    test('is still sent to sign-in for partner pages', () {
+      final d = decideAccess('/nursery', null);
       expect(d, isA<NeedSignIn>());
-      expect((d as NeedSignIn).from, '/garden');
+      expect((d as NeedSignIn).from, '/nursery');
     });
   });
 

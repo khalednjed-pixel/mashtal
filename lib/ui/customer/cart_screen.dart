@@ -96,7 +96,10 @@ class CartScreen extends StatelessWidget {
                                           key: Key('decrease-${listing.id}'),
                                           tooltip: context.tr('decrease'),
                                           icon: const Icon(Icons.remove),
-                                          onPressed: () => app.removeFromCart(listing.id),
+                                          // At 1 the minus takes the line out, so it asks first too.
+                                          onPressed: () async {
+                                            if (qty > 1 || await confirmRemoveFromCart(context, plant.name(lang))) app.removeFromCart(listing.id);
+                                          },
                                         ),
                                         SizedBox(
                                           width: 24,
@@ -121,7 +124,9 @@ class CartScreen extends StatelessWidget {
                                     tooltip: context.tr('remove'),
                                     icon: const Icon(Icons.delete_outline),
                                     color: MashtalColors.muted,
-                                    onPressed: () => app.removeFromCart(listing.id, all: true),
+                                    onPressed: () async {
+                                      if (await confirmRemoveFromCart(context, plant.name(lang))) app.removeFromCart(listing.id, all: true);
+                                    },
                                   ),
                                 ],
                               ),

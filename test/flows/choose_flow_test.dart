@@ -83,4 +83,28 @@ void main() {
     expect(find.byKey(const Key('notCovered')), findsOneWidget);
     expect(find.text('Your city is not covered yet'), findsOneWidget);
   });
+
+  testWidgets('US-12 the nurseries sheet adds a nursery offer to the cart', (tester) async {
+    final app = await pumpMashtal(tester);
+    go(tester, '/choose');
+    await tester.pumpAndSettle();
+    await answer(tester, 'city-riyadh');
+    await answer(tester, 'spot-inside');
+    await answer(tester, 'window-little');
+    await answer(tester, 'space-little');
+    await answer(tester, 'watering-some');
+    await answer(tester, 'kids-yes');
+    await tester.tap(find.byKey(const Key('result-p28')));
+    await tester.pumpAndSettle();
+
+    final sheet = find.byKey(const Key('nurseryCompare'));
+    final add = find.descendant(of: sheet, matching: find.byIcon(Icons.add_shopping_cart)).first;
+    await tester.tap(add);
+    await tester.pumpAndSettle();
+    // Adding keeps the sheet open (no jump to the nursery) and shows the count.
+    expect(app.cartCount, 1);
+    expect(sheet, findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('1')), findsOneWidget);
+    expect(location(tester), '/choose');
+  });
 }

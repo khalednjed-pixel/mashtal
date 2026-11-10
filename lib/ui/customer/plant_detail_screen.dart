@@ -7,6 +7,7 @@ import '../../logic/catalog_search.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/add_to_cart_button.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 import '../widgets/not_found.dart';
@@ -199,30 +200,7 @@ class _OfferAction extends StatelessWidget {
         price,
         const SizedBox(width: MashtalSpace.sm),
         // Round emerald add button, the same mark as the shop cards' dot.
-        IconButton.filled(
-          key: Key('add-${listing.id}'),
-          tooltip: context.tr('addToCart'),
-          icon: const Icon(Icons.add_shopping_cart, size: 22),
-          style: IconButton.styleFrom(
-            backgroundColor: MashtalColors.emerald,
-            foregroundColor: MashtalColors.forestDeep,
-            fixedSize: const Size(48, 48),
-          ).copyWith(
-            backgroundBuilder: (context, states, child) => DecoratedBox(
-              decoration: const BoxDecoration(gradient: MashtalColors.emeraldBlend, shape: BoxShape.circle),
-              child: child,
-            ),
-          ),
-          onPressed: () {
-            final added = context.read<AppState>().addToCart(listing.id);
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(
-                content: Text(context.tr(added ? 'addedToCart' : 'maxStockReached')),
-                duration: const Duration(seconds: 1),
-              ));
-          },
-        ),
+        AddToCartButton(listing: listing),
       ],
     );
   }

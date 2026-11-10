@@ -13,8 +13,13 @@ class AccountScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final user = app.user;
-    // Rebuilt once after sign-out, before the router leaves this page.
-    if (user == null) return const SizedBox.shrink();
+    // A guest gets a sign-in prompt here instead of the sign-in screen.
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(context.tr('account')), actions: const [LanguageButton()]),
+        body: SignInPrompt(icon: Icons.person_outline, body: context.tr('guestAccountBody'), from: '/account'),
+      );
+    }
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('account')), actions: const [LanguageButton()]),

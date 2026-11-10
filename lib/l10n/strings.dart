@@ -71,6 +71,18 @@ const Map<String, Map<String, String>> _strings = {
     'ar': 'تحتاج حساباً لحجز النباتات واستخدام حديقتي. ستعود لنفس الصفحة بعد الدخول.',
     'en': 'You need an account to reserve plants and use My Garden. You will come back to this page afterwards.'
   },
+  'guestTitle': {'ar': 'يجب تسجيل الدخول أولاً', 'en': 'You need to sign in'},
+  'guestGardenBody': {
+    'ar': 'سجّل الدخول لترى نباتاتك في حديقتي. ليس لديك حساب؟ أنشئ حساباً برقم جوالك.',
+    'en': 'Sign in to see your plants in My Garden. No account yet? Create one with your mobile number.'
+  },
+  'guestAccountBody': {
+    'ar': 'سجّل الدخول لإدارة حسابك. ليس لديك حساب؟ أنشئ حساباً برقم جوالك.',
+    'en': 'Sign in to manage your account. No account yet? Create one with your mobile number.'
+  },
+  'createAccount': {'ar': 'إنشاء حساب', 'en': 'Create account'},
+  'removeFromCartTitle': {'ar': 'إزالة من السلة؟', 'en': 'Remove from cart?'},
+  'removeFromCartBody': {'ar': 'هل أنت متأكد أنك تريد إزالة {item} من سلتك؟', 'en': 'Are you sure you want to remove {item} from your cart?'},
   'gardenEmpty': {'ar': 'لا توجد نباتات في حديقتك بعد', 'en': 'No plants in your garden yet'},
   'gardenSoon': {
     'ar': 'النباتات التي تستلمها من المشتل ستظهر هنا تلقائياً (السبرنت الثالث).',

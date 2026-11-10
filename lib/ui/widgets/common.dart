@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
@@ -131,6 +132,66 @@ class EmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Shown to a guest on a signed-in tab (My Garden, Account) instead of
+/// jumping to the sign-in screen: says why, then offers sign-in or a new
+/// account. Both use the phone sign-in, which creates the account for a new
+/// number, and come back to [from] afterwards.
+class SignInPrompt extends StatelessWidget {
+  const SignInPrompt({super.key, required this.icon, required this.body, required this.from});
+
+  final IconData icon;
+  final String body;
+  final String from;
+
+  @override
+  Widget build(BuildContext context) {
+    final login = Uri(path: '/login', queryParameters: {'from': from}).toString();
+    return EmptyState(
+      icon: icon,
+      title: context.tr('guestTitle'),
+      body: body,
+      actions: [
+        FilledButton.icon(
+          key: const Key('guestSignIn'),
+          style: FilledButton.styleFrom(minimumSize: const Size(220, 48)),
+          icon: const Icon(Icons.login),
+          label: Text(context.tr('signIn')),
+          onPressed: () => context.go(login),
+        ),
+        OutlinedButton.icon(
+          key: const Key('guestCreateAccount'),
+          style: OutlinedButton.styleFrom(minimumSize: const Size(220, 48)),
+          icon: const Icon(Icons.person_add_alt),
+          label: Text(context.tr('createAccount')),
+          onPressed: () => context.go(login),
+        ),
+      ],
+    );
+  }
+}
+
+/// Asks before taking [item] out of the cart. Returns true when the user confirms.
+Future<bool> confirmRemoveFromCart(BuildContext context, String item) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      icon: const Icon(Icons.delete_outline),
+      title: Text(c.tr('removeFromCartTitle')),
+      content: Text(c.tr('removeFromCartBody').replaceAll('{item}', item)),
+      actions: [
+        TextButton(key: const Key('cancelRemove'), onPressed: () => Navigator.pop(c, false), child: Text(c.tr('cancel'))),
+        FilledButton(
+          key: const Key('confirmRemove'),
+          style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error, minimumSize: const Size(88, 40)),
+          onPressed: () => Navigator.pop(c, true),
+          child: Text(c.tr('remove')),
+        ),
+      ],
+    ),
+  );
+  return ok ?? false;
 }
 
 /// [base] plus room under the last item for the floating navigation, which the

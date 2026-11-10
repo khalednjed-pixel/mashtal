@@ -48,7 +48,6 @@ void main() {
     // Stays in the app with a prompt instead of jumping to sign-in.
     expect(location(tester), '/garden');
     expect(find.text('You need to sign in'), findsOneWidget);
-    expect(find.byKey(const Key('guestCreateAccount')), findsOneWidget);
     await tester.tap(find.byKey(const Key('guestSignIn')));
     await tester.pumpAndSettle();
     expect(location(tester), '/login?from=%2Fgarden');
@@ -63,7 +62,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(location(tester), '/account');
     expect(find.text('You need to sign in'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('guestCreateAccount')));
+    await tester.tap(find.byKey(const Key('guestSignIn')));
     await tester.pumpAndSettle();
     expect(location(tester), '/login?from=%2Faccount');
   });

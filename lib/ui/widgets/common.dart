@@ -135,9 +135,8 @@ class EmptyState extends StatelessWidget {
 }
 
 /// Shown to a guest on a signed-in tab (My Garden, Account) instead of
-/// jumping to the sign-in screen: says why, then offers sign-in or a new
-/// account. Both use the phone sign-in, which creates the account for a new
-/// number, and come back to [from] afterwards.
+/// jumping to the sign-in screen: says why, then offers the one sign-in page
+/// (which comes back to [from] afterwards).
 class SignInPrompt extends StatelessWidget {
   const SignInPrompt({super.key, required this.icon, required this.body, required this.from});
 
@@ -158,13 +157,6 @@ class SignInPrompt extends StatelessWidget {
           style: FilledButton.styleFrom(minimumSize: const Size(220, 48)),
           icon: const Icon(Icons.login),
           label: Text(context.tr('signIn')),
-          onPressed: () => context.go(login),
-        ),
-        OutlinedButton.icon(
-          key: const Key('guestCreateAccount'),
-          style: OutlinedButton.styleFrom(minimumSize: const Size(220, 48)),
-          icon: const Icon(Icons.person_add_alt),
-          label: Text(context.tr('createAccount')),
           onPressed: () => context.go(login),
         ),
       ],

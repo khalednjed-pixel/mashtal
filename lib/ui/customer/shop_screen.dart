@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
 import '../../logic/catalog_search.dart';
+import '../../logic/shop_filters.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
@@ -24,10 +25,6 @@ class _ShopScreenState extends State<ShopScreen> {
   // Kept across visits so returning from a plant page keeps the search.
   static String _savedQuery = '';
 
-  /// Filters per account. A signed-in user starts filtered to their own city
-  /// and can change it (feedback 3).
-  static final Map<String, SearchFilters> _savedFilters = {};
-
   late final _query = TextEditingController(text: _savedQuery);
 
   @override
@@ -37,13 +34,12 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   SearchFilters get _filters {
-    final user = Provider.of<AppState>(context, listen: false).user;
-    return _savedFilters.putIfAbsent(user?.id ?? 'guest', () => SearchFilters(city: user?.city));
+    return shopFiltersFor(Provider.of<AppState>(context, listen: false).user);
   }
 
   void _setFilters(SearchFilters f) {
     final user = context.read<AppState>().user;
-    setState(() => _savedFilters[user?.id ?? 'guest'] = f);
+    setState(() => setShopFilters(user, f));
   }
 
   Future<void> _openFilters() async {

@@ -8,6 +8,7 @@ import '../../logic/suitability.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/add_to_cart_button.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 
@@ -650,7 +651,17 @@ Future<void> showNurseryCompare(BuildContext context, Plant plant, {String? city
                           leading: const Icon(Icons.storefront),
                           title: Text(nursery.name(c.lang)),
                           subtitle: Row(children: [RatingLabel(rating: nursery.rating, count: nursery.ratingCount), Text('  ·  ${c.trCity(nursery.city)}')]),
-                          trailing: Text(formatPrice(c, listing.price), style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(formatPrice(c, listing.price), style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
+                              // Same add button as the plant page's "Where to find it".
+                              if (c.watch<AppState>().canShop) ...[
+                                const SizedBox(width: MashtalSpace.sm),
+                                AddToCartButton(listing: listing, showCount: true),
+                              ],
+                            ],
+                          ),
                           onTap: () {
                             Navigator.pop(c);
                             context.go('/shop/nursery/${nursery.id}');

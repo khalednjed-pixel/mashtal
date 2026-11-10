@@ -186,8 +186,10 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             if (results.plants.isNotEmpty) _header(context, context.tr('plants'), results.plants.length),
             // Browsing: one shelf per plant type that swipes sideways, the first
-            // shelf with bigger cards. Searching or filtering shows the grid.
-            if (_query.text.isEmpty && _filters.isEmpty)
+            // shelf with bigger cards. Filters only narrow the shelves (types
+            // with no match drop out), so the page keeps its look; a typed
+            // search shows the grid.
+            if (_query.text.isEmpty)
               for (final (i, (category, plants)) in _shelves(results.plants).indexed)
                 SliverToBoxAdapter(
                   child: _Shelf(title: context.tr('shelf_${category.name}'), plants: plants, large: i == 0),

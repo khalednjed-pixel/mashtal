@@ -54,9 +54,31 @@ void main() {
     go(tester, '/shop');
     await tester.pumpAndSettle();
     expect(location(tester), '/shop');
-    // The admin's city filter shows the grid; its boxes are there, without the +.
-    expect(find.text('Seashore paspalum'), findsOneWidget);
+    // The admin's city filter keeps the category shelves; its boxes are there, without the +.
+    expect(find.text('Palms'), findsOneWidget);
+    expect(find.text('Date palm'), findsOneWidget);
     expect(quickAdds, findsNothing);
+  });
+
+  testWidgets('filters keep the category shelves; only a typed search shows the grid', (tester) async {
+    await pumpMashtal(tester);
+    expect(find.text('Palms'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('filtersButton')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'Riyadh'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Riyadh'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('applyFilters')));
+    await tester.tap(find.byKey(const Key('applyFilters')));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear filters'), findsOneWidget);
+    expect(find.text('Palms'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('searchField')), 'palm');
+    await tester.pumpAndSettle();
+    expect(find.text('Palms'), findsNothing);
+    expect(find.text('Date palm'), findsOneWidget);
   });
 
   testWidgets('a nursery photo makes the plant photo swipeable; the licence credit stays with the Commons photo', (tester) async {

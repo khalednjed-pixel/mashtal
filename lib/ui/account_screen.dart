@@ -70,6 +70,8 @@ class AccountScreen extends StatelessWidget {
                     ),
                   ),
                   const Divider(height: 1),
+                  // Online the data is shared by everyone, so it is not reset.
+                  if (!app.backend.isOnline) ...[
                   ListTile(
                     leading: const Icon(Icons.restart_alt),
                     title: Text(context.tr('resetDemo')),
@@ -81,6 +83,7 @@ class AccountScreen extends StatelessWidget {
                     },
                   ),
                   const Divider(height: 1),
+                  ],
                   ListTile(
                     key: const Key('signOut'),
                     leading: Icon(Icons.logout, color: theme.colorScheme.error),

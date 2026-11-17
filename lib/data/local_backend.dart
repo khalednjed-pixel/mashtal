@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../logic/phone.dart';
 import '../models/models.dart';
+import 'accounts.dart';
+import 'remote_store.dart';
 import 'repositories.dart';
 import 'seed/plants_seed.dart';
 import 'seed/seed_data.dart';
@@ -13,8 +15,13 @@ import 'seed/seed_data.dart';
 /// Demo backend that keeps all data on the device (browser storage on the
 /// web build). It enforces the same permissions as firestore.rules so the
 /// app behaves the same once Firebase replaces it.
+///
+/// With an [AccountService] and a [RemoteStore] (TF-03), sign-in, profiles
+/// and all shop data live in Firebase instead, shared by every device. The
+/// rules below still run here first, and firestore.rules checks them again
+/// on the server.
 class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepository {
-  LocalBackend._(this._prefs, this._now, this._random);
+  LocalBackend._(this._prefs, this._now, this._random, this._accounts, this._remote);
 
   static const _dbKey = 'mashtal.db.v1';
   static const _sessionKey = 'mashtal.session.v1';
@@ -22,6 +29,15 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   final SharedPreferences _prefs;
   final DateTime Function() _now;
   final Random _random;
+  final AccountService? _accounts;
+  final RemoteStore? _remote;
+
+  /// True when data and accounts live in Firebase (shared by all devices).
+  bool get isOnline => _remote != null;
+
+  /// False until the online data has arrived once. Always true offline.
+  bool get loaded => _remote == null || _listingsLoaded;
+  bool _listingsLoaded = false;
 
   late List<AppUser> _users;
   late List<Nursery> _nurseries;
@@ -37,11 +53,149 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
 
   final Map<String, _PendingCode> _pending = {};
 
-  static Future<LocalBackend> open({DateTime Function()? clock, Random? random}) async {
+  static Future<LocalBackend> open({
+    DateTime Function()? clock,
+    Random? random,
+    AccountService? accounts,
+    RemoteStore? remote,
+  }) async {
+    assert(remote == null || accounts != null, 'Online data needs online accounts');
     final prefs = await SharedPreferences.getInstance();
-    final backend = LocalBackend._(prefs, clock ?? DateTime.now, random ?? Random.secure());
-    backend._load();
+    final backend = LocalBackend._(prefs, clock ?? DateTime.now, random ?? Random.secure(), accounts, remote);
+    if (remote != null) {
+      backend._clear();
+    } else {
+      backend._load();
+    }
+    if (accounts != null) {
+      final user = await accounts.restore();
+      if (user != null) backend._remember(user);
+      backend._currentUser = user;
+    }
+    backend._watch();
     return backend;
+  }
+
+  @override
+  void dispose() {
+    _remote?.dispose();
+    super.dispose();
+  }
+
+  /// Online mode starts empty and fills from the server.
+  void _clear() {
+    _users = [];
+    _nurseries = [];
+    _professionals = [];
+    _listings = [];
+    _priceRanges = [];
+    _customPlants = [];
+    _plantOverrides = {};
+    _plantEdits = [];
+  }
+
+  void _watch() => _remote?.watch(_currentUser, _onRemote);
+
+  static final _seedPlantIds = {for (final p in seedPlants) p.id};
+
+  void _onRemote(String collection, List<Map<String, dynamic>> docs) {
+    List<T> parse<T>(T Function(Map<String, dynamic>) fromJson) {
+      final out = <T>[];
+      for (final d in docs) {
+        try {
+          out.add(fromJson(d));
+        } catch (e) {
+          debugPrint('Skipped bad $collection/${d['id']}: $e');
+        }
+      }
+      return out;
+    }
+
+    switch (collection) {
+      case 'nurseries':
+        _nurseries = parse(Nursery.fromJson);
+      case 'professionals':
+        _professionals = parse(Professional.fromJson);
+      case 'listings':
+        _listings = parse(Listing.fromJson);
+        _listingsLoaded = true;
+      case 'priceRanges':
+        _priceRanges = parse(PriceRange.fromJson);
+      case 'plants':
+        final all = parse(Plant.fromJson);
+        _plantOverrides = {for (final p in all) if (_seedPlantIds.contains(p.id)) p.id: p};
+        _customPlants = [for (final p in all) if (!_seedPlantIds.contains(p.id)) p];
+      case 'plantEdits':
+        _plantEdits = parse(PlantEdit.fromJson)..sort((a, b) => a.at.compareTo(b.at));
+      case 'users':
+        final me = _currentUser;
+        _users = parse((j) => AppUser.fromJson({...j, 'phone': localPhone(j['phone'] as String)}));
+        if (me != null) _remember(me);
+      default:
+        return;
+    }
+    notifyListeners();
+  }
+
+  /// '+966500000001' or '0500000001' → '0500000001'.
+  static String localPhone(String phone) => phone.startsWith('+966') ? '0${phone.substring(4)}' : phone;
+
+  /// Sends changes to the server in online mode; does nothing offline.
+  Future<void> _push(List<RemoteWrite> writes) async {
+    final remote = _remote;
+    if (remote == null || writes.isEmpty) return;
+    await remote.commit(writes);
+  }
+
+  static Map<String, dynamic> _doc(Map<String, dynamic> json) => Map.of(json)..remove('id');
+
+  RemoteWrite _putNursery(Nursery n) => RemoteWrite.put('nurseries', n.id, _doc(n.toJson()));
+  RemoteWrite _putProfessional(Professional p) => RemoteWrite.put('professionals', p.id, _doc(p.toJson()));
+  RemoteWrite _putPlant(Plant p) => RemoteWrite.put('plants', p.id, _doc(p.toJson()));
+
+  /// `public` lets customers query listings without a join: shown when not
+  /// hidden and the nursery is verified (see firestore.rules).
+  RemoteWrite _putListing(Listing l, {List<Nursery>? nurseries}) {
+    final nursery = (nurseries ?? _nurseries).where((n) => n.id == l.nurseryId).firstOrNull;
+    return RemoteWrite.put('listings', l.id, {
+      ..._doc(l.toJson()),
+      'public': !l.hidden && nursery?.status == PartnerStatus.verified,
+    });
+  }
+
+  /// Re-publishes a nursery's listings after its status changed.
+  List<RemoteWrite> _listingsOf(String nurseryId) =>
+      [for (final l in _listings) if (l.nurseryId == nurseryId) _putListing(l)];
+
+  /// Uploads the demo data the first time the admin signs in online, so the
+  /// shared database starts with the same nurseries, listings and accounts as
+  /// the offline demo.
+  Future<void> _seedOnline() async {
+    final remote = _remote!;
+    if (await remote.isSeeded()) return;
+    // New partners must start pending (firestore.rules), so statuses follow.
+    await remote.commit([
+      for (final n in seedNurseries) _putNursery(n.copyWith(status: PartnerStatus.pending)),
+      for (final p in seedProfessionals) _putProfessional(p.copyWith(status: PartnerStatus.pending)),
+      for (final p in seedPlants) _putPlant(p),
+      for (final r in seedPriceRanges) RemoteWrite.put('priceRanges', r.service.name, r.toJson()),
+    ]);
+    await remote.commit([
+      for (final n in seedNurseries) if (n.status != PartnerStatus.pending) _putNursery(n),
+      for (final p in seedProfessionals) if (p.status != PartnerStatus.pending) _putProfessional(p),
+    ]);
+    await remote.commit([for (final l in seedListings) _putListing(l, nurseries: seedNurseries)]);
+    for (final u in seedUsers.where((u) => u.role == Role.nursery || u.role == Role.professional)) {
+      await _accounts!.setPartnerAccount(u.phone, u.role, u.partnerId);
+    }
+    await remote.markSeeded();
+  }
+
+  /// Keeps the local copy of an account in step with the signed-in one, so
+  /// partner look-ups by phone still work.
+  void _remember(AppUser user) {
+    _users.removeWhere((u) => u.phone == user.phone || u.id == user.id);
+    _users.add(user);
   }
 
   void _load() {
@@ -59,7 +213,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       _plantOverrides = {for (final p in _list(j['plantOverrides'] ?? [], Plant.fromJson)) p.id: p};
       _plantEdits = _list(j['plantEdits'] ?? [], PlantEdit.fromJson);
     }
-    final sessionId = _prefs.getString(_sessionKey);
+    final sessionId = _accounts != null ? null : _prefs.getString(_sessionKey);
     _currentUser = sessionId == null ? null : _users.where((u) => u.id == sessionId).firstOrNull;
   }
 
@@ -78,6 +232,10 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   }
 
   Future<void> _save() async {
+    if (_remote != null) {
+      notifyListeners();
+      return;
+    }
     final ok = await _prefs.setString(
       _dbKey,
       jsonEncode({
@@ -97,7 +255,13 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   }
 
   /// Restores the seed data and signs out. Used from the account screen.
+  /// Online, the shared data is left alone and only this device signs out.
   Future<void> resetDemoData() async {
+    if (_remote != null) {
+      _pending.clear();
+      await signOut();
+      return;
+    }
     _seed();
     _pending.clear();
     await signOut();
@@ -137,6 +301,33 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     if (pending.code != code.trim()) throw const AuthException('wrong-code');
     pending.verified = true;
 
+    final accounts = _accounts;
+    if (accounts != null) {
+      final uid = await _online(() => accounts.signIn(local!));
+      pending.uid = uid;
+      var user = await _online(() => accounts.loadProfile(uid));
+      final partner = await _online(() => accounts.partnerAccount(local!));
+      if (user == null) {
+        if (partner == null) return NeedsProfile(local!);
+        // The admin made this number a partner (or the admin): no sign-up form.
+        final known = _users.where((u) => u.phone == local).firstOrNull;
+        user = AppUser(
+          id: uid,
+          phone: local!,
+          name: known?.name ?? _partnerName(partner) ?? local,
+          city: known?.city ?? 'riyadh',
+          role: partner.role,
+          partnerId: partner.partnerId,
+        );
+        await _online(() => accounts.saveProfile(user!));
+      } else if (partner != null && (partner.role != user.role || partner.partnerId != user.partnerId)) {
+        user = AppUser(id: uid, phone: user.phone, name: user.name, city: user.city, role: partner.role, partnerId: partner.partnerId);
+        await _online(() => accounts.saveProfile(user!));
+      }
+      await _startSession(user);
+      return SignedIn(user);
+    }
+
     final existing = _users.where((u) => u.phone == local).firstOrNull;
     if (existing == null) return NeedsProfile(local!);
     await _startSession(existing);
@@ -148,6 +339,15 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final local = SaudiPhone.normalize(phone);
     final pending = local == null ? null : _pending[local];
     if (pending == null || !pending.verified) throw const AuthException('no-code');
+    final accounts = _accounts;
+    if (accounts != null) {
+      final uid = pending.uid;
+      if (uid == null) throw const AuthException('no-code');
+      final user = AppUser(id: uid, phone: local!, name: name.trim(), city: city, role: Role.customer);
+      await _online(() => accounts.saveProfile(user));
+      await _startSession(user);
+      return user;
+    }
     final user = AppUser(id: _newId('u'), phone: local!, name: name.trim(), city: city, role: Role.customer);
     _users.add(user);
     await _startSession(user);
@@ -157,14 +357,44 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   Future<void> _startSession(AppUser user) async {
     _pending.remove(user.phone);
     _currentUser = user;
-    await _prefs.setString(_sessionKey, user.id);
+    if (_accounts != null) {
+      _remember(user);
+      if (user.role == Role.admin && _remote != null) await _online(_seedOnline);
+      _watch();
+    } else {
+      await _prefs.setString(_sessionKey, user.id);
+    }
     await _save();
+  }
+
+  String? _partnerName(PartnerAccount p) => switch (p.role) {
+        Role.nursery => nurseryById(p.partnerId ?? '')?.nameAr,
+        Role.professional => _professionals.where((x) => x.id == p.partnerId).firstOrNull?.nameAr,
+        _ => null,
+      };
+
+  /// Runs a Firebase call, turning a failure into a message the sign-in
+  /// screen can show.
+  static Future<T> _online<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Firebase: $e');
+      throw const AuthException('network');
+    }
   }
 
   @override
   Future<void> signOut() async {
     _currentUser = null;
-    await _prefs.remove(_sessionKey);
+    if (_accounts != null) {
+      await _accounts.signOut();
+      _watch();
+    } else {
+      await _prefs.remove(_sessionKey);
+    }
     notifyListeners();
   }
 
@@ -174,6 +404,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     if (me == null) throw const PermissionDenied('updateProfile');
     if (name.trim().isEmpty) throw ArgumentError('name');
     final updated = me.copyWith(name: name.trim(), city: city);
+    if (_accounts != null) await _accounts.updateProfile(me.id, name: updated.name, city: city);
     _users[_users.indexWhere((u) => u.id == me.id)] = updated;
     _currentUser = updated;
     await _save();
@@ -220,6 +451,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     if (!_users.any((u) => u.phone == n.phone)) {
       _users.add(AppUser(id: _newId('u'), phone: n.phone, name: n.nameAr, city: n.city, role: Role.nursery, partnerId: n.id));
     }
+    await _push([_putNursery(n)]);
+    await _accounts?.setPartnerAccount(n.phone, Role.nursery, n.id);
     await _save();
     return n;
   }
@@ -232,17 +465,42 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final oldPhone = _nurseries[i].phone;
     _nurseries[i] = nursery;
     _relinkAccount(oldPhone, nursery.phone, nursery.id, Role.nursery, nursery.nameAr, nursery.city);
+    await _push([_putNursery(nursery), ..._listingsOf(nursery.id)]);
+    await _relinkOnline(oldPhone, nursery.phone, Role.nursery, nursery.id);
     await _save();
   }
 
   @override
   Future<void> deleteNursery(String nurseryId) async {
     _require(Role.admin, 'deleteNursery');
+    final plantsBefore = _customPlants.map((p) => p.id).toSet();
+    final listingsBefore = _listings.where((l) => l.nurseryId == nurseryId).map((l) => l.id).toList();
+    final nurseryPhone = nurseryById(nurseryId)?.phone;
     _nurseries.removeWhere((n) => n.id == nurseryId);
     _listings.removeWhere((l) => l.nurseryId == nurseryId);
     _customPlants.removeWhere((p) => p.addedBy == nurseryId && !_listings.any((l) => l.plantId == p.id));
+    final plantsAfter = _customPlants.map((p) => p.id).toSet();
+    await _push([
+      for (final id in listingsBefore) RemoteWrite.delete('listings', id),
+      for (final id in plantsBefore.difference(plantsAfter)) RemoteWrite.delete('plants', id),
+      RemoteWrite.delete('nurseries', nurseryId),
+    ]);
+    final phones = {
+      ..._users.where((u) => u.partnerId == nurseryId).map((u) => u.phone),
+      ?nurseryPhone,
+    };
     _users.removeWhere((u) => u.partnerId == nurseryId);
+    for (final p in phones) {
+      await _accounts?.removePartnerAccount(p);
+    }
     await _save();
+  }
+
+  Future<void> _relinkOnline(String oldPhone, String newPhone, Role role, String partnerId) async {
+    final accounts = _accounts;
+    if (accounts == null) return;
+    if (oldPhone != newPhone) await accounts.removePartnerAccount(oldPhone);
+    await accounts.setPartnerAccount(newPhone, role, partnerId);
   }
 
   /// Keeps the partner's sign-in account on the partner's phone number.
@@ -262,6 +520,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final i = _nurseries.indexWhere((n) => n.id == nurseryId);
     if (i < 0) return;
     _nurseries[i] = _nurseries[i].copyWith(status: status);
+    await _push([_putNursery(_nurseries[i]), ..._listingsOf(nurseryId)]);
     await _save();
   }
 
@@ -281,6 +540,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     if (!_users.any((u) => u.phone == p.phone)) {
       _users.add(AppUser(id: _newId('u'), phone: p.phone, name: p.nameAr, city: p.cities.first, role: Role.professional, partnerId: p.id));
     }
+    await _push([_putProfessional(p)]);
+    await _accounts?.setPartnerAccount(p.phone, Role.professional, p.id);
     await _save();
     return p;
   }
@@ -294,6 +555,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     if (me?.role == Role.admin) {
       _professionals[i] = professional;
       _relinkAccount(old.phone, professional.phone, professional.id, Role.professional, professional.nameAr, professional.cities.first);
+      await _relinkOnline(old.phone, professional.phone, Role.professional, professional.id);
     } else if (me?.role == Role.professional && me!.partnerId == professional.id) {
       // Professionals choose what they offer and where; the rest is the admin's.
       if (professional.services.isEmpty || professional.cities.isEmpty) throw ArgumentError('services');
@@ -301,14 +563,24 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     } else {
       throw const PermissionDenied('updateProfessional');
     }
+    await _push([_putProfessional(_professionals[i])]);
     await _save();
   }
 
   @override
   Future<void> deleteProfessional(String professionalId) async {
     _require(Role.admin, 'deleteProfessional');
+    final proPhone = _professionals.where((p) => p.id == professionalId).firstOrNull?.phone;
     _professionals.removeWhere((p) => p.id == professionalId);
+    await _push([RemoteWrite.delete('professionals', professionalId)]);
+    final phones = {
+      ..._users.where((u) => u.partnerId == professionalId).map((u) => u.phone),
+      ?proPhone,
+    };
     _users.removeWhere((u) => u.partnerId == professionalId);
+    for (final p in phones) {
+      await _accounts?.removePartnerAccount(p);
+    }
     await _save();
   }
 
@@ -323,6 +595,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     } else {
       _priceRanges[i] = range;
     }
+    await _push([RemoteWrite.put('priceRanges', service.name, range.toJson())]);
     await _save();
   }
 
@@ -332,6 +605,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final i = _professionals.indexWhere((p) => p.id == professionalId);
     if (i < 0) return;
     _professionals[i] = _professionals[i].copyWith(status: status);
+    await _push([_putProfessional(_professionals[i])]);
     await _save();
   }
 
@@ -342,6 +616,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     if (plantById(plantId) == null) throw ArgumentError('Unknown plant $plantId');
     _validateListing(price, quantity);
     final l = Listing(id: _newId('l'), nurseryId: nurseryId, plantId: plantId, price: price, quantity: quantity, photo: photo);
+    await _push([_putListing(l)]);
     _listings.add(l);
     await _save();
     return l;
@@ -356,6 +631,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       throw const PermissionDenied('updateListing');
     }
     _validateListing(listing.price, listing.quantity);
+    await _push([_putListing(listing)]);
     _listings[i] = listing;
     await _save();
   }
@@ -366,6 +642,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final i = _listings.indexWhere((l) => l.id == listingId);
     if (i < 0) return;
     if (_listings[i].nurseryId != _currentUser!.partnerId) throw const PermissionDenied('deleteListing');
+    await _push([RemoteWrite.delete('listings', listingId)]);
     _listings.removeAt(i);
     await _save();
   }
@@ -393,6 +670,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       addedBy: nursery.id,
       photo: draft.photo,
     );
+    await _push([_putPlant(plant)]);
     _customPlants.add(plant);
     await _save();
     return plant;
@@ -405,6 +683,12 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final me = _currentUser;
     final allowed = me?.role == Role.admin || (me?.role == Role.nursery && me!.partnerId == plant.addedBy);
     if (!allowed) throw const PermissionDenied('deletePlant');
+    // A nursery can only remove its own listings; the admin removes all.
+    await _push([
+      for (final l in _listings)
+        if (l.plantId == plantId && (me!.role == Role.admin || l.nurseryId == me.partnerId)) RemoteWrite.delete('listings', l.id),
+      RemoteWrite.delete('plants', plantId),
+    ]);
     _customPlants.remove(plant);
     _listings.removeWhere((l) => l.plantId == plantId);
     await _save();
@@ -439,8 +723,9 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
 
     final me = _currentUser!;
     final at = _now();
+    final edits = <PlantEdit>[];
     for (final (field, before, after) in changes) {
-      _plantEdits.add(PlantEdit(
+      edits.add(PlantEdit(
         plantId: old.id,
         field: field,
         oldValue: before,
@@ -450,6 +735,11 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         at: at,
       ));
     }
+    await _push([
+      _putPlant(updated),
+      for (final (n, e) in edits.indexed) RemoteWrite.put('plantEdits', '${_newId('e')}$n', e.toJson()),
+    ]);
+    _plantEdits.addAll(edits);
     final i = _customPlants.indexWhere((p) => p.id == old.id);
     if (i >= 0) {
       _customPlants[i] = updated;
@@ -474,4 +764,7 @@ class _PendingCode {
   final String code;
   final DateTime sentAt;
   bool verified = false;
+
+  /// The Firebase account the code unlocked, when accounts are online.
+  String? uid;
 }

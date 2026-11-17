@@ -22,7 +22,7 @@ class AppState extends ChangeNotifier {
       }
     }
     _owner = _ownerFor(backend.currentUser);
-    _fitCartsToStock();
+    if (backend.loaded) _fitCartsToStock();
     backend.addListener(_onBackendChanged);
   }
 
@@ -82,7 +82,8 @@ class AppState extends ChangeNotifier {
       }
       _owner = owner;
     }
-    if (_fitCartsToStock() && cart.isNotEmpty) cartAdjusted = true;
+    // Online, stock is unknown until the first data arrives; carts wait.
+    if (backend.loaded && _fitCartsToStock() && cart.isNotEmpty) cartAdjusted = true;
     _saveCarts(notify: false);
     notifyListeners();
   }

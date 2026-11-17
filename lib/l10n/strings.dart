@@ -103,6 +103,7 @@ const Map<String, Map<String, String>> _strings = {
   'err.wrong-code': {'ar': 'الرمز غير صحيح. تأكد منه وحاول مرة أخرى.', 'en': 'The code is incorrect. Check it and try again.'},
   'err.code-expired': {'ar': 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', 'en': 'The code has expired. Request a new one.'},
   'err.no-code': {'ar': 'اطلب رمزاً أولاً.', 'en': 'Request a code first.'},
+  'err.network': {'ar': 'تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.', 'en': 'Could not reach the server. Check your connection and try again.'},
   'err.too-soon': {'ar': 'انتظر قليلاً قبل طلب رمز جديد.', 'en': 'Please wait before requesting a new code.'},
   'completeProfile': {'ar': 'أكمل حسابك', 'en': 'Complete your account'},
   'name': {'ar': 'الاسم', 'en': 'Name'},

@@ -35,7 +35,9 @@ beforeEach(async () => {
 });
 
 const guest = () => env.unauthenticatedContext().firestore();
-const as = (uid, phone) => env.authenticatedContext(uid, phone ? { phone_number: phone } : {}).firestore();
+// The app signs in to an Email/Password account named after the phone (TF-03).
+const as = (uid, phone) =>
+  env.authenticatedContext(uid, phone ? { email: `${phone.slice(1)}@phone.mashtal.app` } : {}).firestore();
 
 describe('US-02 sign-up', () => {
   test('a new user can create their own customer profile', async () => {
@@ -55,6 +57,46 @@ describe('US-02 sign-up', () => {
   test('users can read and edit only their own profile name and city', async () => {
     await assertSucceeds(updateDoc(doc(as('cust'), 'users/cust'), { name: 'Sara A', city: 'jeddah' }));
     await assertFails(getDoc(doc(as('cust'), 'users/n1owner')));
+  });
+});
+
+describe('TF-03 partner accounts', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'partnerAccounts/+966551113333'), { role: 'nursery', partnerId: 'n5' });
+    });
+  });
+
+  test('a number the admin made a partner signs up with that role', async () => {
+    const db = as('np', '+966551113333');
+    await assertSucceeds(getDoc(doc(db, 'partnerAccounts/+966551113333')));
+    await assertFails(setDoc(doc(db, 'users/np'), { phone: '+966551113333', name: 'N', city: 'riyadh', role: 'customer' }));
+    await assertFails(setDoc(doc(db, 'users/np'), { phone: '+966551113333', name: 'N', city: 'riyadh', role: 'nursery', partnerId: 'n1' }));
+    await assertSucceeds(setDoc(doc(db, 'users/np'), { phone: '+966551113333', name: 'N', city: 'riyadh', role: 'nursery', partnerId: 'n5' }));
+  });
+
+  test('an existing customer takes the role the admin gave later', async () => {
+    const db = as('np', '+966551113333');
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/np'), { phone: '+966551113333', name: 'N', city: 'riyadh', role: 'customer' });
+    });
+    await assertFails(updateDoc(doc(db, 'users/np'), { role: 'admin' }));
+    await assertSucceeds(updateDoc(doc(db, 'users/np'), { role: 'nursery', partnerId: 'n5' }));
+  });
+
+  test('only the admin writes partner accounts; others cannot read them', async () => {
+    await assertFails(setDoc(doc(as('cust', '+966500000005'), 'partnerAccounts/+966500000005'), { role: 'admin' }));
+    await assertFails(getDoc(doc(as('cust', '+966500000005'), 'partnerAccounts/+966551113333')));
+    await assertSucceeds(setDoc(doc(as('admin', '+966500000001'), 'partnerAccounts/+966551114444'), { role: 'professional', partnerId: 'pr1' }));
+    await assertSucceeds(deleteDoc(doc(as('admin', '+966500000001'), 'partnerAccounts/+966551114444')));
+  });
+
+  test('the admin uploads demo listings and removes them', async () => {
+    const db = as('admin');
+    await assertSucceeds(setDoc(doc(db, 'listings/l9'), { nurseryId: 'n1', plantId: 'p05', price: 50, quantity: 3, hidden: false, public: true }));
+    await assertSucceeds(deleteDoc(doc(db, 'listings/l9')));
+    await assertSucceeds(setDoc(doc(db, 'meta/seed'), { at: 1 }));
+    await assertFails(setDoc(doc(as('cust'), 'meta/seed'), { at: 2 }));
   });
 });
 
@@ -151,7 +193,7 @@ describe('review feedback', () => {
   });
 
   test('a listing can carry the nursery\'s own photo', async () => {
-    await assertSucceeds(updateDoc(doc(as('n1owner'), 'listings/l1'), { photoUrl: 'https://example.com/a.jpg' }));
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'listings/l1'), { photo: '/9j/4AAQSkZJRg==' }));
   });
 
   test('the admin edits and deletes partners and price ranges', async () => {

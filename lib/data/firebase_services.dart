@@ -182,12 +182,15 @@ class FirebaseServices implements AccountService, RemoteStore {
     }
   }
 
+  static const _batchSize = 5;
+
   @override
   Future<void> commit(List<RemoteWrite> writes) async {
-    // A batch holds at most 500 writes.
-    for (var start = 0; start < writes.length; start += 400) {
+    // Security rules may read at most 20 other documents per request, and
+    // each listing checks its plant and nursery, so batches stay small.
+    for (var start = 0; start < writes.length; start += _batchSize) {
       final batch = _db.batch();
-      for (final w in writes.skip(start).take(400)) {
+      for (final w in writes.skip(start).take(_batchSize)) {
         final ref = _db.collection(w.collection).doc(w.id);
         final data = w.data;
         if (data == null) {

@@ -16,19 +16,51 @@ service cloud.firestore {
     }
     function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
 
-    // US-02: a user creates their own customer profile after phone sign-in.
-    // Role and partner link are set by the admin only.
+    // TF-03: the app signs in to an Email/Password account named after the
+    // phone number, e.g. 966500000001@phone.mashtal.app, after showing the
+    // code on screen. This is the signed-in number in +966 form.
+    function myPhone() {
+      return signedIn() && request.auth.token.email is string
+        ? '+' + request.auth.token.email.split('@')[0] : null;
+    }
+    function partnerAccount(phone) { return get(/databases/$(database)/documents/partnerAccounts/$(phone)).data; }
+    function hasPartnerAccount(phone) { return exists(/databases/$(database)/documents/partnerAccounts/$(phone)); }
+    // A role is either plain customer, or exactly what the admin gave this number.
+    function roleAllowed(d) {
+      return hasPartnerAccount(d.phone)
+        ? d.role == partnerAccount(d.phone).role && d.get('partnerId', null) == partnerAccount(d.phone).get('partnerId', null)
+        : d.role == 'customer' && d.get('partnerId', null) == null;
+    }
+
+    // US-02: a user creates their own profile after signing in. Partner and
+    // admin roles come only from partnerAccounts, which the admin writes.
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['phone', 'name', 'city', 'role', 'createdAt'])
-        && request.resource.data.role == 'customer'
-        && request.resource.data.phone == request.auth.token.phone_number
+        && request.resource.data.keys().hasOnly(['phone', 'name', 'city', 'role', 'partnerId', 'createdAt'])
+        && request.resource.data.phone == myPhone()
+        && roleAllowed(request.resource.data)
         && request.resource.data.name is string && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 60;
       allow update: if (signedIn() && request.auth.uid == uid && onlyChanges(['name', 'city']))
+        || (signedIn() && request.auth.uid == uid && onlyChanges(['role', 'partnerId']) && roleAllowed(request.resource.data))
         || isAdmin();
       allow delete: if isAdmin();
+    }
+
+    // Which numbers sign in as a nursery, a professional or the admin. The
+    // first admin number is added by hand in the Firebase console.
+    match /partnerAccounts/{phone} {
+      allow read: if myPhone() == phone || isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.role in ['nursery', 'professional', 'admin'];
+      allow delete: if isAdmin();
+    }
+
+    // Marks that the admin uploaded the demo data.
+    match /meta/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Plant knowledge base: public, edited by the admin (US-14). A nursery may
@@ -65,7 +97,7 @@ service cloud.firestore {
     // filter on it; the admin updates it when a nursery's status changes.
     match /listings/{id} {
       function validListing(d) {
-        return d.keys().hasOnly(['nurseryId', 'plantId', 'price', 'quantity', 'hidden', 'public', 'photoUrl', 'updatedAt'])
+        return d.keys().hasOnly(['nurseryId', 'plantId', 'price', 'quantity', 'hidden', 'public', 'photo', 'updatedAt'])
           && d.price is number && d.price > 0 && d.price <= 100000
           && d.quantity is int && d.quantity >= 0
           && d.hidden is bool
@@ -82,6 +114,9 @@ service cloud.firestore {
         && validListing(request.resource.data);
       allow update: if isAdmin() && onlyChanges(['public']);
       allow delete: if hasRole('nursery') && managesPartner(resource.data.nurseryId);
+      // The admin uploads the demo listings and removes a deleted nursery's.
+      allow create: if isAdmin() && validListing(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Admin-set service price ranges (US-13).

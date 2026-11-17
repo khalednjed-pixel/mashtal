@@ -73,12 +73,15 @@ Open the live demo and use a demo account. **There is no real SMS**: the code is
 | 0500000004 | Professional |
 | 0500000005 | Customer |
 
-Any other 05 number registers as a new customer. *Account → Reset demo data* restores the seed data.
+Any other 05 number registers as a new customer.
+
+The web demo now keeps its data in Firebase (project `mashtal-1`), so every phone sees the same nurseries, listings and accounts. The first time the admin number signs in, the app uploads the demo data. *Account → Reset demo data* only exists in the offline build (`--dart-define=MASHTAL_OFFLINE=true`).
 
 ## How it is built
 
 - **Flutter** (Android and web from one codebase), with `provider` for state, `go_router` for navigation and the route guards, and the Tajawal font.
-- **Backend:** the app runs on `LocalBackend`, which keeps data on the device, because the team's Firebase project is not set up yet. The screens use the `AuthRepository` and `MarketRepository` interfaces, so Firebase can replace it without changing them. See [docs/data-model.md](docs/data-model.md).
+- **Backend (TF-03):** Firebase project `mashtal-1` on the free Spark plan. Accounts use Firebase Authentication and all data (accounts, nurseries, professionals, listings, plants, price ranges, photos) is in Cloud Firestore. `LocalBackend` keeps its permission checks and in-memory lists; `FirebaseServices` (`lib/data/firebase_services.dart`) fills them from Firestore and saves every change there. Without Firebase settings for a platform (for now: Android), the app runs on the offline demo data. See [docs/data-model.md](docs/data-model.md).
+- **Sign-in:** the screens are unchanged: phone number, then the code shown on screen. After a correct code the app signs in to a hidden Email/Password account named after the number. This avoids paid SMS but does not truly verify the phone, which is acceptable for the course demo.
 - **Security:** `firebase/firestore.rules` enforces roles on the server (NFR-05) and is tested against the Firestore emulator.
 
 ```
@@ -97,8 +100,22 @@ firebase/       Firestore security rules and emulator tests
 ```bash
 flutter pub get
 flutter run -d chrome            # or an Android emulator
-flutter test                     # 107 unit and widget tests
-cd firebase && npm ci && npm test   # 24 security-rules tests (needs Java 11+)
+flutter test                     # unit and widget tests
+cd firebase && npm ci && npm test   # security-rules tests (needs Java 11+)
 ```
+
+Against the local Firebase emulators instead of the real project:
+
+```bash
+cd firebase && npx firebase emulators:start --only auth,firestore --project demo-mashtal
+flutter run -d chrome --dart-define=USE_FIREBASE_EMULATOR=true
+```
+
+### Firebase project setup (done once)
+
+1. Authentication → Sign-in method → enable **Email/Password**.
+2. Firestore → create the database, then publish `firebase/firestore.rules` (Rules tab, or `npx firebase deploy --only firestore:rules` from `firebase/`).
+3. Firestore → Data → add collection `partnerAccounts`, document id `+966500000001`, field `role` = `admin`. This makes 0500000001 the admin; every other partner account is created by the app.
+4. Sign in to the app as 0500000001 once to upload the demo data.
 
 On every push to `main`, GitHub Actions runs the tests and deploys the web build to GitHub Pages.

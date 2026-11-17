@@ -71,4 +71,64 @@ void main() {
       expect(Reservation.fromJson(r.toJson()).expiresAt, r.expiresAt);
     });
   });
+
+  group('US-17 nursery accepts or rejects', () {
+    Future<(LocalBackend, String)> pendingAtN1() async {
+      final b = await signedIn('0500000005');
+      final r = (await b.reserve({'l1': 1})).single;
+      await b.signOut();
+      await signedIn('0500000002', reuse: b);
+      return (b, r.id);
+    }
+
+    test('the nursery sees reservations sent to it', () async {
+      final (b, id) = await pendingAtN1();
+      expect(b.reservations.single.id, id);
+      await b.signOut();
+      await signedIn('0500000003', reuse: b);
+      expect(b.reservations, isEmpty, reason: 'another nursery sees nothing');
+    });
+
+    test('AC-01 accepting starts the 48-hour hold', () async {
+      final now = DateTime.utc(2026, 11, 17, 12);
+      SharedPreferences.setMockInitialValues({});
+      final b = await LocalBackend.open(clock: () => now, random: Random(2));
+      await signedIn('0500000005', reuse: b);
+      final r = (await b.reserve({'l1': 1})).single;
+      await b.signOut();
+      await signedIn('0500000002', reuse: b);
+      await b.acceptReservation(r.id);
+      final accepted = b.reservations.single;
+      expect(accepted.status, ReservationStatus.accepted);
+      expect(accepted.acceptedAt, now);
+      expect(accepted.expiresAt, now.add(const Duration(hours: 48)));
+
+      // The customer sees it accepted with its expiry (US-16 AC-02).
+      await b.signOut();
+      await signedIn('0500000005', reuse: b);
+      expect(b.reservations.single.expiresAt, now.add(const Duration(hours: 48)));
+    });
+
+    test('AC-02 rejecting with a reason; the customer sees the reason', () async {
+      final (b, id) = await pendingAtN1();
+      await b.rejectReservation(id, RejectReason.outOfStock);
+      await b.signOut();
+      await signedIn('0500000005', reuse: b);
+      final r = b.reservations.single;
+      expect(r.status, ReservationStatus.rejected);
+      expect(r.rejectReason, RejectReason.outOfStock);
+    });
+
+    test('only that nursery, and only while pending', () async {
+      final (b, id) = await pendingAtN1();
+      await b.acceptReservation(id);
+      expect(() => b.rejectReservation(id, RejectReason.other), throwsStateError);
+      await b.signOut();
+      await signedIn('0500000003', reuse: b);
+      expect(() => b.acceptReservation(id), throwsA(isA<PermissionDenied>()));
+      await b.signOut();
+      await signedIn('0500000005', reuse: b);
+      expect(() => b.acceptReservation(id), throwsA(isA<PermissionDenied>()));
+    });
+  });
 }

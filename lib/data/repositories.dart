@@ -139,4 +139,12 @@ abstract interface class ReservationRepository {
   /// reservation per nursery. Lines whose listing is gone or not available
   /// are left out.
   Future<List<Reservation>> reserve(Map<String, int> cart);
+
+  /// US-17, the reservation's nursery only, while it is pending: accepting
+  /// starts the 48-hour hold.
+  Future<void> acceptReservation(String id);
+
+  /// US-17, the reservation's nursery only, while it is pending. The customer
+  /// sees [reason].
+  Future<void> rejectReservation(String id, RejectReason reason);
 }

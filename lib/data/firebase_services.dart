@@ -176,6 +176,16 @@ class FirebaseServices implements AccountService, RemoteStore {
       if (admin) listings else listings.where('public', isEqualTo: true),
       if (viewer?.role == Role.nursery && partnerId != null) listings.where('nurseryId', isEqualTo: partnerId),
     ]);
+    final reservations = _db.collection('reservations');
+    if (viewer?.role == Role.customer) {
+      listen('reservations', [reservations.where('customerId', isEqualTo: viewer!.id)]);
+    } else if (viewer?.role == Role.nursery && partnerId != null) {
+      listen('reservations', [reservations.where('nurseryId', isEqualTo: partnerId)]);
+    } else if (admin) {
+      listen('reservations', [reservations]);
+    } else {
+      onData('reservations', const []);
+    }
     if (admin) {
       listen('plantEdits', [_db.collection('plantEdits')]);
       listen('users', [_db.collection('users')]);

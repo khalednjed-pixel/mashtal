@@ -62,10 +62,19 @@ const Map<String, Map<String, String>> _strings = {
   'district': {'ar': 'الحي', 'en': 'District'},
   'cartEmpty': {'ar': 'سلتك فارغة', 'en': 'Your cart is empty'},
   'reserve': {'ar': 'احجز', 'en': 'Reserve'},
-  'reserveSoon': {
-    'ar': 'الحجز من المشاتل يصل في السبرنت الثالث. سلتك محفوظة.',
-    'en': 'Reserving from nurseries arrives in Sprint 3. Your cart is saved.'
-  },
+  'reservedDone': {'ar': 'أُرسل طلب الحجز إلى {n} مشتل', 'en': 'Reservation sent to {n} nursery(ies)'},
+  'reserveNothing': {'ar': 'لا يوجد في السلة ما يمكن حجزه الآن', 'en': 'Nothing in the cart can be reserved right now'},
+  'myReservations': {'ar': 'حجوزاتي', 'en': 'My reservations'},
+  'noReservations': {'ar': 'لا توجد حجوزات بعد', 'en': 'No reservations yet'},
+  'res.pending': {'ar': 'بانتظار رد المشتل', 'en': 'Waiting for the nursery'},
+  'res.accepted': {'ar': 'مقبول', 'en': 'Accepted'},
+  'res.rejected': {'ar': 'مرفوض', 'en': 'Rejected'},
+  'res.pickedUp': {'ar': 'تم الاستلام', 'en': 'Picked up'},
+  'res.expired': {'ar': 'انتهت مدة الحجز', 'en': 'Hold expired'},
+  'heldUntil': {'ar': 'محجوز لك حتى', 'en': 'Held for you until'},
+  'rejectReason': {'ar': 'السبب', 'en': 'Reason'},
+  'reason.outOfStock': {'ar': 'نفدت الكمية', 'en': 'Out of stock'},
+  'reason.other': {'ar': 'سبب آخر', 'en': 'Other reason'},
   'signInToContinue': {'ar': 'سجّل الدخول للمتابعة', 'en': 'Sign in to continue'},
   'signInReason': {
     'ar': 'تحتاج حساباً لحجز النباتات واستخدام حديقتي. ستعود لنفس الصفحة بعد الدخول.',

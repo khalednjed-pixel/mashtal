@@ -127,3 +127,16 @@ abstract interface class MarketRepository {
   /// Edit log of one plant, newest first.
   List<PlantEdit> plantEditsFor(String plantId);
 }
+
+/// Reservations (US-16): a customer reserves the cart, one reservation per
+/// nursery.
+abstract interface class ReservationRepository {
+  /// What the signed-in user may see, newest first: a customer's own
+  /// reservations, or those sent to the signed-in nursery.
+  List<Reservation> get reservations;
+
+  /// Customer only. Turns the cart (listing id → quantity) into one pending
+  /// reservation per nursery. Lines whose listing is gone or not available
+  /// are left out.
+  Future<List<Reservation>> reserve(Map<String, int> cart);
+}

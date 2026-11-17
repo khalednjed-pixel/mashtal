@@ -20,7 +20,7 @@ import 'seed/seed_data.dart';
 /// and all shop data live in Firebase instead, shared by every device. The
 /// rules below still run here first, and firestore.rules checks them again
 /// on the server.
-class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepository {
+class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepository, ReservationRepository {
   LocalBackend._(this._prefs, this._now, this._random, this._accounts, this._remote);
 
   static const _dbKey = 'mashtal.db.v1';
@@ -49,6 +49,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   /// Admin edits to knowledge-base plants, by plant id (US-14).
   late Map<String, Plant> _plantOverrides;
   late List<PlantEdit> _plantEdits;
+  late List<Reservation> _reservations;
   AppUser? _currentUser;
 
   final Map<String, _PendingCode> _pending = {};
@@ -92,6 +93,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _customPlants = [];
     _plantOverrides = {};
     _plantEdits = [];
+    _reservations = [];
   }
 
   void _watch() => _remote?.watch(_currentUser, _onRemote);
@@ -125,6 +127,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         final all = parse(Plant.fromJson);
         _plantOverrides = {for (final p in all) if (_seedPlantIds.contains(p.id)) p.id: p};
         _customPlants = [for (final p in all) if (!_seedPlantIds.contains(p.id)) p];
+      case 'reservations':
+        _reservations = parse(Reservation.fromJson);
       case 'plantEdits':
         _plantEdits = parse(PlantEdit.fromJson)..sort((a, b) => a.at.compareTo(b.at));
       case 'users':
@@ -212,6 +216,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       _customPlants = _list(j['customPlants'] ?? [], Plant.fromJson);
       _plantOverrides = {for (final p in _list(j['plantOverrides'] ?? [], Plant.fromJson)) p.id: p};
       _plantEdits = _list(j['plantEdits'] ?? [], PlantEdit.fromJson);
+      _reservations = _list(j['reservations'] ?? [], Reservation.fromJson);
     }
     final sessionId = _accounts != null ? null : _prefs.getString(_sessionKey);
     _currentUser = sessionId == null ? null : _users.where((u) => u.id == sessionId).firstOrNull;
@@ -229,6 +234,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _customPlants = [];
     _plantOverrides = {};
     _plantEdits = [];
+    _reservations = [];
   }
 
   Future<void> _save() async {
@@ -247,6 +253,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         'customPlants': _customPlants.map((e) => e.toJson()).toList(),
         'plantOverrides': _plantOverrides.values.map((e) => e.toJson()).toList(),
         'plantEdits': _plantEdits.map((e) => e.toJson()).toList(),
+        'reservations': _reservations.map((e) => e.toJson()).toList(),
       }),
     ).catchError((_) => false);
     notifyListeners();
@@ -752,6 +759,52 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   @override
   List<PlantEdit> plantEditsFor(String plantId) =>
       _plantEdits.where((e) => e.plantId == plantId).toList().reversed.toList();
+
+  // --------------------------------------------------------- Reservations
+
+  @override
+  List<Reservation> get reservations {
+    final me = _currentUser;
+    final mine = switch (me?.role) {
+      Role.customer => _reservations.where((r) => r.customerId == me!.id),
+      Role.nursery => _reservations.where((r) => r.nurseryId == me!.partnerId),
+      Role.admin => _reservations,
+      _ => const <Reservation>[],
+    };
+    return mine.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
+  Future<List<Reservation>> reserve(Map<String, int> cart) async {
+    _require(Role.customer, 'reserve');
+    final me = _currentUser!;
+    final byNursery = <String, List<ReservationItem>>{};
+    for (final MapEntry(key: listingId, value: qty) in cart.entries) {
+      final l = _listings.where((l) => l.id == listingId).firstOrNull;
+      if (l == null || !l.isAvailable || qty <= 0) continue;
+      if (qty > l.quantity) throw ArgumentError('quantity');
+      byNursery.putIfAbsent(l.nurseryId, () => []).add(
+            ReservationItem(listingId: l.id, plantId: l.plantId, quantity: qty, price: l.price),
+          );
+    }
+    final now = _now();
+    final made = [
+      for (final MapEntry(key: nurseryId, value: items) in byNursery.entries)
+        Reservation(
+          id: _newId('r'),
+          customerId: me.id,
+          customerName: me.name,
+          customerPhone: me.phone,
+          nurseryId: nurseryId,
+          items: items,
+          createdAt: now,
+        ),
+    ];
+    await _push([for (final r in made) RemoteWrite.put('reservations', r.id, _doc(r.toJson()))]);
+    _reservations.addAll(made);
+    await _save();
+    return made;
+  }
 
   static void _validateListing(double price, int quantity) {
     if (price <= 0 || price > 100000) throw ArgumentError('price');

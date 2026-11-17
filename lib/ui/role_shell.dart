@@ -86,8 +86,10 @@ class _RoleShellState extends State<RoleShell> {
     // Longest matching prefix wins, so /nursery/reservations beats /nursery.
     var index = -1;
     var best = 0;
+    // My reservations is opened from Account, so Account stays selected.
+    final location = widget.location.startsWith('/reservations') ? '/account' : widget.location;
     for (final (i, t) in tabs.indexed) {
-      if (widget.location.startsWith(t.path) && t.path.length > best) {
+      if (location.startsWith(t.path) && t.path.length > best) {
         index = i;
         best = t.path.length;
       }

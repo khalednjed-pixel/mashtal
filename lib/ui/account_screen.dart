@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/strings.dart';
+import '../models/models.dart';
 import '../state/app_state.dart';
 import 'widgets/common.dart';
 
@@ -35,6 +36,18 @@ class AccountScreen extends StatelessWidget {
                 trailing: Chip(label: Text(roleLabel(context.lang, user.role))),
               ),
             ),
+            if (user.role == Role.customer) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  key: const Key('myReservations'),
+                  leading: const Icon(Icons.event_available),
+                  title: Text(context.tr('myReservations')),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.go('/reservations'),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Card(
               child: ListTile(

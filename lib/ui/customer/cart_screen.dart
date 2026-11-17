@@ -8,8 +8,9 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 
-/// Minimal cart so a guest's choices survive sign-in (US-01 AC-02). Grouping
-/// by nursery and reserving are Sprint 3 (US-15, US-16).
+/// Cart: a guest's choices survive sign-in (US-01 AC-02); a customer
+/// reserves it, one reservation per nursery (US-16). Grouping by nursery is
+/// US-15.
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
@@ -31,12 +32,22 @@ class CartScreen extends StatelessWidget {
       });
     }
 
-    void reserve() {
+    Future<void> reserve() async {
       if (app.user == null) {
         context.go('/login?from=/cart');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('reserveSoon'))));
+        return;
       }
+      final messenger = ScaffoldMessenger.of(context);
+      final router = GoRouter.of(context);
+      final done = context.tr('reservedDone');
+      final nothing = context.tr('reserveNothing');
+      final made = await app.reserveCart();
+      if (made == 0) {
+        messenger.showSnackBar(SnackBar(content: Text(nothing)));
+        return;
+      }
+      router.go('/reservations');
+      messenger.showSnackBar(SnackBar(content: Text(done.replaceAll('{n}', '$made'))));
     }
 
     final text = Theme.of(context).textTheme;

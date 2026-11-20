@@ -133,6 +133,36 @@ describe('US-16 reservations', () => {
   });
 });
 
+describe('US-17 accept or reject', () => {
+  const pending = { customerId: 'cust', customerName: 'Sara', customerPhone: '0500000005', nurseryId: 'n1',
+    items: [{ listingId: 'l1', plantId: 'p01', quantity: 1, price: 180 }], createdAt: '2026-11-17T10:00:00.000Z', status: 'pending' };
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reservations/r1'), pending);
+    });
+  });
+
+  test('the nursery accepts with acceptedAt', async () => {
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'accepted', acceptedAt: '2026-11-17T11:00:00.000Z' }));
+  });
+
+  test('the nursery rejects with a known reason only', async () => {
+    await assertFails(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'rejected', rejectReason: 'bored' }));
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'rejected', rejectReason: 'outOfStock' }));
+  });
+
+  test('other nurseries and the customer cannot decide; nor can items change', async () => {
+    await assertFails(updateDoc(doc(as('n5owner'), 'reservations/r1'), { status: 'accepted', acceptedAt: 'x' }));
+    await assertFails(updateDoc(doc(as('cust'), 'reservations/r1'), { status: 'accepted', acceptedAt: 'x' }));
+    await assertFails(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'accepted', acceptedAt: 'x', items: [] }));
+  });
+
+  test('a decided reservation cannot be decided again', async () => {
+    await updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'accepted', acceptedAt: 'x' });
+    await assertFails(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'rejected', rejectReason: 'other' }));
+  });
+});
+
 describe('US-03 verification', () => {
   test('guests see verified nurseries but not pending ones', async () => {
     await assertSucceeds(getDoc(doc(guest(), 'nurseries/n1')));

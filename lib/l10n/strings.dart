@@ -73,6 +73,9 @@ const Map<String, Map<String, String>> _strings = {
   'res.expired': {'ar': 'انتهت مدة الحجز', 'en': 'Hold expired'},
   'heldUntil': {'ar': 'محجوز لك حتى', 'en': 'Held for you until'},
   'rejectReason': {'ar': 'السبب', 'en': 'Reason'},
+  'accept': {'ar': 'قبول', 'en': 'Accept'},
+  'reject': {'ar': 'رفض', 'en': 'Reject'},
+  'rejectWhy': {'ar': 'سبب الرفض', 'en': 'Why are you rejecting it?'},
   'reason.outOfStock': {'ar': 'نفدت الكمية', 'en': 'Out of stock'},
   'reason.other': {'ar': 'سبب آخر', 'en': 'Other reason'},
   'signInToContinue': {'ar': 'سجّل الدخول للمتابعة', 'en': 'Sign in to continue'},
@@ -131,7 +134,6 @@ const Map<String, Map<String, String>> _strings = {
   // Nursery
   'myListings': {'ar': 'منتجاتي', 'en': 'My listings'},
   'reservations': {'ar': 'الحجوزات', 'en': 'Reservations'},
-  'reservationsSoon': {'ar': 'طلبات الحجز تظهر هنا في السبرنت الثالث.', 'en': 'Reservation requests appear here in Sprint 3.'},
   'addListing': {'ar': 'أضف منتجاً', 'en': 'Add listing'},
   'editListing': {'ar': 'تعديل المنتج', 'en': 'Edit listing'},
   'choosePlant': {'ar': 'اختر النبتة من قائمة النباتات', 'en': 'Choose the plant from the plant list'},

@@ -806,6 +806,33 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     return made;
   }
 
+  /// The signed-in nursery's own pending reservation [id].
+  int _pendingFor(String id, String action) {
+    _require(Role.nursery, action);
+    final i = _reservations.indexWhere((r) => r.id == id);
+    if (i < 0 || _reservations[i].nurseryId != _currentUser!.partnerId) throw PermissionDenied(action);
+    if (_reservations[i].status != ReservationStatus.pending) throw StateError('Reservation is not pending');
+    return i;
+  }
+
+  Future<void> _replaceReservation(int i, Reservation r) async {
+    await _push([RemoteWrite.put('reservations', r.id, _doc(r.toJson()))]);
+    _reservations[i] = r;
+    await _save();
+  }
+
+  @override
+  Future<void> acceptReservation(String id) async {
+    final i = _pendingFor(id, 'acceptReservation');
+    await _replaceReservation(i, _reservations[i].copyWith(status: ReservationStatus.accepted, acceptedAt: _now()));
+  }
+
+  @override
+  Future<void> rejectReservation(String id, RejectReason reason) async {
+    final i = _pendingFor(id, 'rejectReservation');
+    await _replaceReservation(i, _reservations[i].copyWith(status: ReservationStatus.rejected, rejectReason: reason));
+  }
+
   static void _validateListing(double price, int quantity) {
     if (price <= 0 || price > 100000) throw ArgumentError('price');
     if (quantity < 0 || quantity > 100000) throw ArgumentError('quantity');

@@ -10,6 +10,7 @@ RouteAccess accessFor(String path) {
   if (path.startsWith('/nursery')) return RouteAccess.nursery;
   if (path.startsWith('/pro')) return RouteAccess.professional;
   if (path.startsWith('/garden')) return RouteAccess.customer;
+  if (path.startsWith('/reservations')) return RouteAccess.customer;
   if (path.startsWith('/account')) return RouteAccess.signedIn;
   return RouteAccess.public;
 }

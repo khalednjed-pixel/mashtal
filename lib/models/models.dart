@@ -446,3 +446,109 @@ class PlantEdit {
         at: DateTime.parse(j['at']),
       );
 }
+
+enum ReservationStatus { pending, accepted, rejected, pickedUp }
+
+/// Why a nursery turned a reservation down (US-17 AC-02).
+enum RejectReason { outOfStock, other }
+
+/// One plant line of a reservation, with the price when it was reserved.
+class ReservationItem {
+  const ReservationItem({required this.listingId, required this.plantId, required this.quantity, required this.price});
+
+  final String listingId;
+  final String plantId;
+  final int quantity;
+  final double price;
+
+  Map<String, dynamic> toJson() => {'listingId': listingId, 'plantId': plantId, 'quantity': quantity, 'price': price};
+
+  factory ReservationItem.fromJson(Map<String, dynamic> j) => ReservationItem(
+        listingId: j['listingId'],
+        plantId: j['plantId'],
+        quantity: j['quantity'],
+        price: (j['price'] as num).toDouble(),
+      );
+}
+
+/// A customer's request to hold plants at one nursery (US-16). A cart with
+/// plants from several nurseries becomes one reservation per nursery.
+class Reservation {
+  const Reservation({
+    required this.id,
+    required this.customerId,
+    required this.customerName,
+    required this.customerPhone,
+    required this.nurseryId,
+    required this.items,
+    required this.createdAt,
+    this.status = ReservationStatus.pending,
+    this.acceptedAt,
+    this.rejectReason,
+  });
+
+  /// How long an accepted reservation is held (OD-01).
+  static const holdFor = Duration(hours: 48);
+
+  final String id;
+  final String customerId;
+  final String customerName;
+
+  /// 05XXXXXXXX, so the nursery can call the customer.
+  final String customerPhone;
+  final String nurseryId;
+  final List<ReservationItem> items;
+  final DateTime createdAt;
+  final ReservationStatus status;
+
+  /// When the nursery accepted; the hold runs [holdFor] from here.
+  final DateTime? acceptedAt;
+  final RejectReason? rejectReason;
+
+  DateTime? get expiresAt => acceptedAt?.add(holdFor);
+
+  /// An accepted reservation that was not picked up in time.
+  bool isExpired(DateTime now) => status == ReservationStatus.accepted && expiresAt!.isBefore(now);
+
+  double get total => items.fold(0, (sum, i) => sum + i.price * i.quantity);
+  int get plantCount => items.fold(0, (sum, i) => sum + i.quantity);
+
+  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason}) => Reservation(
+        id: id,
+        customerId: customerId,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        nurseryId: nurseryId,
+        items: items,
+        createdAt: createdAt,
+        status: status ?? this.status,
+        acceptedAt: acceptedAt ?? this.acceptedAt,
+        rejectReason: rejectReason ?? this.rejectReason,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'customerId': customerId,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'nurseryId': nurseryId,
+        'items': items.map((i) => i.toJson()).toList(),
+        'createdAt': createdAt.toUtc().toIso8601String(),
+        'status': status.name,
+        'acceptedAt': ?acceptedAt?.toUtc().toIso8601String(),
+        'rejectReason': ?rejectReason?.name,
+      };
+
+  factory Reservation.fromJson(Map<String, dynamic> j) => Reservation(
+        id: j['id'],
+        customerId: j['customerId'],
+        customerName: j['customerName'],
+        customerPhone: j['customerPhone'],
+        nurseryId: j['nurseryId'],
+        items: (j['items'] as List).map((e) => ReservationItem.fromJson(Map<String, dynamic>.from(e as Map))).toList(),
+        createdAt: DateTime.parse(j['createdAt']),
+        status: _enumByName(ReservationStatus.values, j['status']),
+        acceptedAt: j['acceptedAt'] == null ? null : DateTime.parse(j['acceptedAt']),
+        rejectReason: j['rejectReason'] == null ? null : _enumByName(RejectReason.values, j['rejectReason']),
+      );
+}

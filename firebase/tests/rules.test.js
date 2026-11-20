@@ -100,6 +100,39 @@ describe('TF-03 partner accounts', () => {
   });
 });
 
+describe('US-16 reservations', () => {
+  const item = { listingId: 'l1', plantId: 'p01', quantity: 2, price: 180 };
+  const res = (over = {}) => ({
+    customerId: 'cust', customerName: 'Sara', customerPhone: '0500000005', nurseryId: 'n1',
+    items: [item], createdAt: '2026-11-17T10:00:00.000Z', status: 'pending', ...over,
+  });
+
+  test('a customer reserves for themselves, as pending', async () => {
+    const db = as('cust', '+966500000005');
+    await assertSucceeds(setDoc(doc(db, 'reservations/r1'), res()));
+    await assertFails(setDoc(doc(db, 'reservations/r2'), res({ status: 'accepted' })));
+    await assertFails(setDoc(doc(db, 'reservations/r3'), res({ customerId: 'other' })));
+    await assertFails(setDoc(doc(db, 'reservations/r4'), res({ customerPhone: '0559999999' })));
+    await assertFails(setDoc(doc(db, 'reservations/r5'), res({ items: [] })));
+  });
+
+  test('guests and partners cannot reserve', async () => {
+    await assertFails(setDoc(doc(guest(), 'reservations/r1'), res()));
+    await assertFails(setDoc(doc(as('n1owner', '+966500000002'), 'reservations/r1'), res({ customerId: 'n1owner', customerPhone: '0500000002' })));
+  });
+
+  test('the customer and that nursery read it; others cannot', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reservations/r1'), res());
+    });
+    await assertSucceeds(getDoc(doc(as('cust'), 'reservations/r1')));
+    await assertSucceeds(getDoc(doc(as('n1owner'), 'reservations/r1')));
+    await assertFails(getDoc(doc(as('n5owner'), 'reservations/r1')));
+    await assertSucceeds(getDocs(query(collection(as('cust'), 'reservations'), where('customerId', '==', 'cust'))));
+    await assertSucceeds(getDocs(query(collection(as('n1owner'), 'reservations'), where('nurseryId', '==', 'n1'))));
+  });
+});
+
 describe('US-03 verification', () => {
   test('guests see verified nurseries but not pending ones', async () => {
     await assertSucceeds(getDoc(doc(guest(), 'nurseries/n1')));

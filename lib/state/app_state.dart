@@ -131,6 +131,17 @@ class AppState extends ChangeNotifier {
     _saveCarts();
   }
 
+  /// US-16: sends the cart to the nurseries (one reservation each) and
+  /// empties it. Returns how many reservations were made.
+  Future<int> reserveCart() async {
+    final made = await backend.reserve(cart);
+    if (made.isNotEmpty) {
+      _carts.remove(_owner);
+      _saveCarts();
+    }
+    return made.length;
+  }
+
   void _saveCarts({bool notify = true}) {
     _carts.removeWhere((_, c) => c.isEmpty);
     _prefs.setString(_cartsKey, jsonEncode(_carts));

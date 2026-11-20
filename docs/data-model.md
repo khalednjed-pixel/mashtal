@@ -16,6 +16,7 @@ The app talks to its backend through two interfaces in `lib/data/repositories.da
 | `nurseries/{id}` | nameAr, nameEn, city, district, phone, hours, status (`pending`, `verified`, `suspended`), rating, ratingCount | everyone if verified, otherwise the admin and the nursery itself | admin. New nurseries must start as `pending` |
 | `professionals/{id}` | nameAr, nameEn, cities[], services[], phone, status, rating, jobsDone | same as nurseries | admin. The professional may change only their own services and cities |
 | `listings/{id}` | nurseryId, plantId, price (SAR), quantity, hidden, public, photo? | everyone if `public`, plus the admin and the owning nursery | the owning nursery, which can also delete it. `public` must equal `!hidden && nursery verified` |
+| `reservations/{id}` | customerId, customerName, customerPhone, nurseryId, items[] (listingId, plantId, quantity, price), createdAt, status (`pending`, `accepted`, `rejected`, `pickedUp`), acceptedAt?, rejectReason? (`outOfStock`, `other`) | the customer, that nursery, admin | a customer creates their own, one per nursery, always `pending` (US-16). An accepted reservation is held 48 hours from `acceptedAt` (OD-01) |
 | `priceRanges/{service}` | min, max (SAR) | everyone | admin, with min < max |
 | `plantEdits/{id}` | plantId, field, oldValue, newValue, editorId, editorName, at | admin | admin creates entries as themselves; entries can never be changed or deleted (US-14) |
 

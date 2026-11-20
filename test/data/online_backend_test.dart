@@ -71,7 +71,7 @@ class FakeDevice implements AccountService, RemoteStore {
   }
 
   void _deliver() {
-    for (final c in ['plants', 'nurseries', 'professionals', 'listings', 'priceRanges', 'plantEdits']) {
+    for (final c in ['plants', 'nurseries', 'professionals', 'listings', 'priceRanges', 'plantEdits', 'reservations']) {
       _onData?.call(c, [for (final e in fb.col(c).entries) {...e.value, 'id': e.key}]);
     }
   }
@@ -177,6 +177,18 @@ void main() {
 
     final customer = await device(FakeDevice(fb));
     expect(customer.listings.map((x) => x.id), contains(l.id));
+  });
+
+  test('US-16 a reservation is saved online without its id field', () async {
+    final admin = await device(FakeDevice(fb));
+    await signIn(admin, '0500000001');
+    final customer = await device(FakeDevice(fb));
+    await signIn(customer, '0500000005');
+    final made = await customer.reserve({'l1': 1});
+    final doc = fb.col('reservations')[made.single.id]!;
+    expect(doc['status'], 'pending');
+    expect(doc['customerId'], customer.currentUser!.id);
+    expect(doc.containsKey('id'), isFalse);
   });
 
   test('suspending a nursery unpublishes its listings', () async {

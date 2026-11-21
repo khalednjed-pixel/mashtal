@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/local_backend.dart';
+import '../logic/away.dart';
 import '../logic/notices.dart';
 import '../models/models.dart';
 
@@ -34,6 +35,12 @@ class AppState extends ChangeNotifier {
         _saved[e.key] = List<String>.from(e.value as List);
       }
     }
+    final away = _prefs.getString(_awayKey);
+    if (away != null) {
+      for (final e in (jsonDecode(away) as Map<String, dynamic>).entries) {
+        _away[e.key] = AwayTrip.fromJson(e.value as Map<String, dynamic>);
+      }
+    }
     _owner = _ownerFor(backend.currentUser);
     if (backend.loaded) _fitCartsToStock();
     backend.addListener(_onBackendChanged);
@@ -43,6 +50,7 @@ class AppState extends ChangeNotifier {
   static const _seenKey = 'mashtal.seenNotices.v1';
   static const _cartsKey = 'mashtal.carts.v2';
   static const _savedKey = 'mashtal.saved.v1';
+  static const _awayKey = 'mashtal.away.v1';
   static const _guest = 'guest';
 
   static Future<AppState> create(LocalBackend backend) async =>
@@ -215,9 +223,35 @@ class AppState extends ChangeNotifier {
     _prefs.setString(_savedKey, jsonEncode(_saved));
   }
 
+  // ------------------------------------------------------------ Going away
+
+  /// Each customer's current trip, kept on the device.
+  final Map<String, AwayTrip> _away = {};
+
+  /// The signed-in customer's trip: on while away, and after it ends until
+  /// they say they are back (so the app can say "check every plant").
+  AwayTrip? get awayTrip => role == Role.customer ? _away[_owner] : null;
+
+  void startAway(AwayTrip trip) {
+    _away[_owner] = trip;
+    _saveAway();
+  }
+
+  /// Ends the trip early, or clears the "welcome back" once seen.
+  void endAway() {
+    if (_away.remove(_owner) != null) _saveAway();
+  }
+
+  void _saveAway() {
+    _prefs.setString(_awayKey, jsonEncode({for (final e in _away.entries) e.key: e.value.toJson()}));
+    notifyListeners();
+  }
+
   Future<void> resetDemo() async {
     _carts.clear();
     _saved.clear();
+    _away.clear();
+    await _prefs.remove(_awayKey);
     await _prefs.remove(_cartsKey);
     await _prefs.remove(_savedKey);
     await backend.resetDemoData();

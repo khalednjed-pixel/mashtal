@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/away.dart';
 import '../../logic/care_plan.dart';
 import '../../logic/watering.dart';
 import '../../models/models.dart';
@@ -80,7 +82,28 @@ class GardenScreen extends StatelessWidget {
               child: ListView(
                 padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
                 children: [
-                  _TodayPanel(due: [for (final d in due) d.plant], total: items.length, season: riyadhSeason(now)),
+                  if (app.awayTrip case final trip?)
+                    _AwayPanel(trip: trip, now: now, onBack: app.endAway)
+                  else ...[
+                    _TodayPanel(due: [for (final d in due) d.plant], total: items.length, season: riyadhSeason(now)),
+                    const SizedBox(height: MashtalSpace.sm),
+                    // Travel: plan the plants' care before leaving.
+                    Material(
+                      color: MashtalColors.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                        side: const BorderSide(color: MashtalColors.line),
+                      ),
+                      child: ListTile(
+                        key: const Key('goingAway'),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+                        leading: const Icon(Icons.luggage_outlined, color: MashtalColors.leaf),
+                        title: Text(context.tr('goingAwayRow'), style: Theme.of(context).textTheme.bodyLarge),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.go('/garden/away'),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: MashtalSpace.lg),
                   LayoutBuilder(
                     builder: (context, c) {
@@ -148,6 +171,64 @@ class _TodayPanel extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// While away: until when and who waters, with "I'm back". After the trip
+/// it turns into "welcome back: check every plant", cleared with Done.
+class _AwayPanel extends StatelessWidget {
+  const _AwayPanel({required this.trip, required this.now, required this.onBack});
+  final AwayTrip trip;
+  final DateTime now;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final over = trip.isOver(now);
+    final until = DateFormat('EEEE d MMMM', context.lang).format(trip.until);
+    return Container(
+      key: Key(over ? 'welcomeBack' : 'awayPanel'),
+      padding: const EdgeInsets.all(MashtalSpace.lg),
+      decoration: BoxDecoration(color: MashtalColors.forest, borderRadius: BorderRadius.circular(MashtalSpace.cardRadius)),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(color: MashtalColors.lime, shape: BoxShape.circle),
+            child: Icon(over ? Icons.home_outlined : Icons.flight_takeoff, color: MashtalColors.forest),
+          ),
+          const SizedBox(width: MashtalSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(over ? context.tr('welcomeBack') : '${context.tr('awayUntil')} $until', style: text.titleMedium?.copyWith(color: MashtalColors.surface)),
+                Text(
+                  over ? context.tr('welcomeBackBody') : context.tr(trip.helper ? 'awayWithHelper' : 'awayAlone'),
+                  style: text.bodyMedium?.copyWith(color: MashtalColors.lime),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            key: const Key('awayBack'),
+            style: TextButton.styleFrom(foregroundColor: MashtalColors.lime),
+            onPressed: () {
+              // Back early: the same reminder as at the end of the trip.
+              if (!over) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(context.tr('welcomeBackBody'))));
+              }
+              onBack();
+            },
+            child: Text(context.tr(over ? 'done' : 'awayBack')),
           ),
         ],
       ),

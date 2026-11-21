@@ -24,7 +24,6 @@ SuitabilityAnswers a(Spot spot, Amount light, Amount space, Amount water, {bool 
       space: space,
       watering: water,
       sunTime: SunTime.morning,
-      away: false,
       kidsOrPets: kids,
     );
 

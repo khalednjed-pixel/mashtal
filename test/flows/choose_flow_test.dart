@@ -27,7 +27,6 @@ void main() {
     await answer(tester, 'window-little');
     await answer(tester, 'space-little');
     await answer(tester, 'watering-some');
-    await answer(tester, 'away-no');
     await answer(tester, 'kids-yes');
 
     // US-09: ranked with percentages; toxic plants left out (AC-02).
@@ -80,7 +79,6 @@ void main() {
     await answer(tester, 'sun-lots');
     await answer(tester, 'space-lots');
     await answer(tester, 'watering-some');
-    await answer(tester, 'away-no');
     await answer(tester, 'kids-no');
     expect(find.byKey(const Key('notCovered')), findsOneWidget);
     expect(find.text('Your city is not covered yet'), findsOneWidget);
@@ -95,7 +93,6 @@ void main() {
     await answer(tester, 'window-little');
     await answer(tester, 'space-little');
     await answer(tester, 'watering-some');
-    await answer(tester, 'away-no');
     await answer(tester, 'kids-yes');
     await tester.tap(find.byKey(const Key('result-p28')));
     await tester.pumpAndSettle();

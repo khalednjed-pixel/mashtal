@@ -26,9 +26,8 @@ enum Blocker { place, light, water, space, safety }
 enum SunTime { morning, afternoon, unsure }
 
 /// The questions of the suitability flow, in order (US-07). [sunTime] is
-/// only asked for a few hours of outdoor sun; [away] is about summer travel,
-/// when a plant left alone needs water most.
-enum Question { city, spot, window, sun, sunTime, space, watering, away, kidsOrPets }
+/// only asked for a few hours of outdoor sun.
+enum Question { city, spot, window, sun, sunTime, space, watering, kidsOrPets }
 
 /// Cities with guide data (OD-04: Riyadh only at launch).
 const Set<String> coveredCities = {'riyadh'};
@@ -48,7 +47,7 @@ const Map<Factor, int> factorWeights = {
 };
 
 class SuitabilityAnswers {
-  const SuitabilityAnswers({this.city, this.spot, this.light, this.sunTime, this.space, this.watering, this.away, this.kidsOrPets});
+  const SuitabilityAnswers({this.city, this.spot, this.light, this.sunTime, this.space, this.watering, this.kidsOrPets});
 
   final String? city;
   final Spot? spot;
@@ -62,9 +61,6 @@ class SuitabilityAnswers {
 
   /// How often the customer can water.
   final Amount? watering;
-
-  /// Away from home for a week or more in summer.
-  final bool? away;
   final bool? kidsOrPets;
 
   bool get isInside => spot == Spot.inside;
@@ -76,14 +72,6 @@ class SuitabilityAnswers {
   /// Riyadh is as harsh as sun all day.
   Amount? get effectiveLight => asksSunTime && sunTime == SunTime.afternoon ? Amount.lots : light;
 
-  /// The watering the plant really gets: someone away in summer can water
-  /// one step less often than they would at home.
-  Amount? get effectiveWatering {
-    final w = watering;
-    if (w == null || away != true) return w;
-    return Amount.values[(w.index - 1).clamp(0, Amount.values.length - 1)];
-  }
-
   /// The questions to ask for these answers. The window question is only
   /// asked inside the house, the sun question only outside (US-07 AC-02).
   List<Question> get questions => [
@@ -93,7 +81,6 @@ class SuitabilityAnswers {
         if (asksSunTime) Question.sunTime,
         Question.space,
         Question.watering,
-        Question.away,
         Question.kidsOrPets,
       ];
 
@@ -104,7 +91,6 @@ class SuitabilityAnswers {
         Question.sunTime => sunTime != null,
         Question.space => space != null,
         Question.watering => watering != null,
-        Question.away => away != null,
         Question.kidsOrPets => kidsOrPets != null,
       };
 
@@ -121,7 +107,6 @@ class SuitabilityAnswers {
       sunTime: sameSide ? sunTime : null,
       space: space,
       watering: watering,
-      away: away,
       kidsOrPets: kidsOrPets,
     );
   }
@@ -132,7 +117,6 @@ class SuitabilityAnswers {
     SunTime? sunTime,
     Amount? space,
     Amount? watering,
-    bool? away,
     bool? kidsOrPets,
   }) =>
       SuitabilityAnswers(
@@ -142,7 +126,6 @@ class SuitabilityAnswers {
         sunTime: sunTime ?? this.sunTime,
         space: space ?? this.space,
         watering: watering ?? this.watering,
-        away: away ?? this.away,
         kidsOrPets: kidsOrPets ?? this.kidsOrPets,
       );
 }
@@ -227,7 +210,7 @@ PlantScore? scorePlant(Plant plant, SuitabilityAnswers answers) {
   final factors = {
     Factor.place: placeScore(plant, answers.spot!),
     Factor.light: lightScore(lightNeedOf(plant), answers.effectiveLight!),
-    Factor.water: waterScore(waterNeedOf(plant), answers.effectiveWatering!),
+    Factor.water: waterScore(waterNeedOf(plant), answers.watering!),
     Factor.space: spaceScore(sizeOf(plant), answers.space!),
   };
   final weighted = factors.entries.fold<int>(0, (sum, e) => sum + e.value * factorWeights[e.key]!);
@@ -262,7 +245,7 @@ class NothingFits extends SuitabilityOutcome {
 Question questionFor(Blocker b, SuitabilityAnswers a) => switch (b) {
       Blocker.place => Question.spot,
       Blocker.light => a.isInside ? Question.window : (a.asksSunTime && a.sunTime == SunTime.afternoon ? Question.sunTime : Question.sun),
-      Blocker.water => a.away == true ? Question.away : Question.watering,
+      Blocker.water => Question.watering,
       Blocker.space => Question.space,
       Blocker.safety => Question.kidsOrPets,
     };

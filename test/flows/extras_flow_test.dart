@@ -139,4 +139,60 @@ void main() {
     expect(app.backend.garden.single.pace, greaterThan(1));
     expect(find.textContaining("We'll remind you"), findsOneWidget);
   });
+
+  testWidgets('going away: a plan for whoever waters, or what to do when nobody will, then away mode', (tester) async {
+    final opened = <Uri>[];
+    openExternal = (uri) async {
+      opened.add(uri);
+      return true;
+    };
+    final app = await pumpMashtal(tester);
+    go(tester, '/login');
+    await tester.pumpAndSettle();
+    await signInWithPhone(tester, '0500000005');
+    await tester.runAsync(() async {
+      await app.backend.addToGarden('p23', home: PlantHome.smallPot);
+      await app.backend.addToGarden('p03', home: PlantHome.ground);
+    });
+    go(tester, '/garden');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('goingAway')));
+    await tester.pumpAndSettle();
+    expect(location(tester), '/garden/away');
+
+    await tester.tap(find.byKey(const Key('away-14')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('helper-yes')));
+    await tester.pumpAndSettle();
+    // The plan lists every plant; it can be sent in English for a maid.
+    expect(find.descendant(of: find.byKey(const Key('awayMessage')), matching: find.textContaining('Arabian jasmine (small pot)')), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byKey(const Key('awayLang')), matching: find.text('العربية')));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: find.byKey(const Key('awayMessage')), matching: find.textContaining('الفل (حوض صغير)')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('awaySendPlan')));
+    await tester.tap(find.byKey(const Key('awaySendPlan')));
+    await tester.pumpAndSettle();
+    expect(opened.single.host, 'wa.me');
+
+    // Nobody at home: the jasmine in a small pot will not last two weeks.
+    await tester.ensureVisible(find.byKey(const Key('helper-no')));
+    await tester.tap(find.byKey(const Key('helper-no')));
+    await tester.pumpAndSettle();
+    final jasmine = app.backend.garden.firstWhere((g) => g.plantId == 'p23');
+    expect(find.byKey(Key('atRisk-${jasmine.id}')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('awayStart')));
+    await tester.tap(find.byKey(const Key('awayStart')));
+    await tester.pumpAndSettle();
+    expect(location(tester), '/garden');
+    expect(app.awayTrip?.helper, isFalse);
+    expect(find.byKey(const Key('awayPanel')), findsOneWidget);
+    expect(find.byKey(const Key('todayPanel')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('awayBack')));
+    await tester.pumpAndSettle();
+    expect(app.awayTrip, isNull);
+    expect(find.byKey(const Key('todayPanel')), findsOneWidget);
+    expect(find.text('Check the soil of every plant today and water the dry ones.'), findsOneWidget);
+  });
 }

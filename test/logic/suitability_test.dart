@@ -11,7 +11,6 @@ const indoorDark = SuitabilityAnswers(
   space: Amount.little,
   watering: Amount.some,
   sunTime: SunTime.morning,
-  away: false,
   kidsOrPets: false,
 );
 
@@ -81,7 +80,6 @@ void main() {
             space: Amount.lots,
             watering: Amount.some,
             sunTime: SunTime.morning,
-            away: false,
             kidsOrPets: true,
           );
           final o = recommend(seedPlants, a);
@@ -98,7 +96,6 @@ void main() {
         space: Amount.lots,
         watering: Amount.some,
         sunTime: SunTime.morning,
-        away: false,
         kidsOrPets: false,
       );
       final results = (recommend(seedPlants, garden) as Ranked).results;
@@ -201,18 +198,17 @@ void main() {
     });
   });
 
-  group('sun time and summer travel', () {
+  group('sun time', () {
     const outsideFewHours = SuitabilityAnswers(city: 'riyadh', spot: Spot.balcony, light: Amount.some);
 
     test('morning or afternoon is only asked for a few hours of outdoor sun', () {
       expect(outsideFewHours.questions, contains(Question.sunTime));
       expect(outsideFewHours.copyWith(light: Amount.lots).questions, isNot(contains(Question.sunTime)));
       expect(const SuitabilityAnswers(spot: Spot.inside, light: Amount.some).questions, isNot(contains(Question.sunTime)));
-      expect(outsideFewHours.questions, contains(Question.away));
     });
 
     test('afternoon sun counts as full sun, so part-sun plants score lower', () {
-      final base = outsideFewHours.copyWith(space: Amount.lots, watering: Amount.lots, away: false, kidsOrPets: false);
+      final base = outsideFewHours.copyWith(space: Amount.lots, watering: Amount.lots, kidsOrPets: false);
       final jasmine = seedPlants.firstWhere((p) => p.id == 'p23'); // part sun
       final morning = scorePlant(jasmine, base.copyWith(sunTime: SunTime.morning))!;
       final afternoon = scorePlant(jasmine, base.copyWith(sunTime: SunTime.afternoon))!;
@@ -220,12 +216,5 @@ void main() {
       expect(scorePlant(jasmine, base.copyWith(sunTime: SunTime.unsure))!.factors[Factor.light], morning.factors[Factor.light]);
     });
 
-    test('being away in summer counts as watering one step less often', () {
-      final hibiscus = seedPlants.firstWhere((p) => p.id == 'p24'); // high water
-      final home = indoorDark.copyWith(watering: Amount.lots, away: false);
-      final away = indoorDark.copyWith(watering: Amount.lots, away: true);
-      expect(away.effectiveWatering, Amount.some);
-      expect(scorePlant(hibiscus, away)!.factors[Factor.water], lessThan(scorePlant(hibiscus, home)!.factors[Factor.water]!));
-    });
   });
 }

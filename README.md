@@ -89,7 +89,8 @@ Every plant the app calls guide-backed now cites its exact portrait in the *Manu
 | Check the soil | Reminders ask the customer to check the soil. "Soil is still moist" moves the next check a little later and slowly stretches that plant's pace, so the plan learns the home. "How do I tell?" explains the finger test. |
 | Hold to water | The plant page's main action is a round "soil" that drains as days pass and turns sandy when dry. Press and hold fills it with water (a quick tap does nothing), with a small vibration on phones. Garden cards show the same moisture ring. |
 | Where it lives | Asked once when a plant is added by hand, with the app's guess marked. Picked-up plants start with the guess and can be changed in one tap. |
-| Choose questions | Two plain questions: for a few hours of outdoor sun, morning or afternoon (Riyadh afternoon sun counts as full sun), and whether the customer is away for a week or more in summer (counted as watering one step less often). |
+| Choose question | For a few hours of outdoor sun: morning or afternoon? Riyadh's afternoon sun counts as full sun; "not sure" changes nothing. |
+| Going away | In My Garden: how long, and will someone at home (a maid or family) water? If yes, a simple watering plan per plant to send on WhatsApp, in Arabic or English. If not, what to do before leaving and which plants will not last that long alone, with when they need water. Away mode shows on My Garden; on return it says to check every plant's soil. Kept on the device. |
 | Saved, share, tips | A heart saves plants to a Saved list; the plant page shares a plant on WhatsApp or as a link; garden plants show general care tips. |
 
 These are general household rules, not quotes from the guide, and the screens say "check the soil" rather than promising exact days. Watering colours (`water`, `waterLight`, `waterSoft`) are the one colour family outside the greens and are used for water only.

@@ -15,10 +15,9 @@ One per screen with a progress bar. The window question is asked only for "insid
 | 4 | Room? | small pot / big pot on the floor / ground |
 | 3c | Morning or afternoon sun? (outside, a few hours only) | morning / midday and afternoon / not sure |
 | 5 | How often can you water? | every two weeks or less / weekly / every 2–3 days |
-| 5b | Away a week or more in summer? | yes / no |
 | 6 | Children or pets? | yes / no |
 
-Afternoon sun counts as "most of the day" for the light score, because Riyadh's afternoon sun burns part-sun plants; "not sure" changes nothing. Being away in summer counts as watering one step less often.
+Afternoon sun counts as "most of the day" for the light score, because Riyadh's afternoon sun burns part-sun plants; "not sure" changes nothing.
 
 ## Score (US-09)
 

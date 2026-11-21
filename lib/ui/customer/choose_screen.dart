@@ -139,8 +139,8 @@ class _ChooseScreenState extends State<ChooseScreen> {
         Text('${context.tr('questionOf')} ${step + 1} ${context.tr('of')} ${questions.length}', style: theme.textTheme.bodySmall),
         const SizedBox(height: 24),
         Text(context.tr('q.${q.name}'), key: Key('question-${q.name}'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-        // The two newer questions say why they are asked, in one line.
-        if (q == Question.sunTime || q == Question.away) ...[
+        // The sun-time question says why it is asked, in one line.
+        if (q == Question.sunTime) ...[
           const SizedBox(height: 8),
           Text(context.tr('q.${q.name}.why'), style: theme.textTheme.bodyMedium),
         ],
@@ -179,10 +179,6 @@ class _ChooseScreenState extends State<ChooseScreen> {
       Question.sunTime => [
           for (final t in SunTime.values)
             _Option(id: 'sunTime-${t.name}', label: context.tr('a.sunTime.${t.name}'), selected: a.sunTime == t, onTap: () => _set(a.copyWith(sunTime: t))),
-        ],
-      Question.away => [
-          _Option(id: 'away-yes', label: context.tr('a.away.yes'), selected: a.away == true, onTap: () => _set(a.copyWith(away: true))),
-          _Option(id: 'away-no', label: context.tr('no'), selected: a.away == false, onTap: () => _set(a.copyWith(away: false))),
         ],
       Question.space => [
           for (final v in Amount.values)
@@ -547,11 +543,7 @@ Future<void> showScoreExplanation(BuildContext context, PlantScore score, Suitab
               ].join(' · '),
             Question.sunTime => c.tr('a.sunTime.${a.sunTime!.name}'),
             Question.space => c.tr('a.space.${a.space!.name}'),
-            Question.watering => [
-                c.tr('a.watering.${a.watering!.name}'),
-                if (a.away == true) c.tr('awayInSummer'),
-              ].join(' · '),
-            Question.away => c.tr(a.away! ? 'a.away.yes' : 'no'),
+            Question.watering => c.tr('a.watering.${a.watering!.name}'),
             Question.kidsOrPets => c.tr(a.kidsOrPets! ? 'yes' : 'no'),
             Question.city => c.trCity(a.city!),
           };

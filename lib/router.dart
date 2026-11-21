@@ -11,6 +11,7 @@ import 'ui/admin/professional_form_screen.dart';
 import 'ui/auth/login_screen.dart';
 import 'ui/auth/profile_screen.dart';
 import 'ui/customer/care_screen.dart';
+import 'ui/customer/away_screen.dart';
 import 'ui/customer/cart_screen.dart';
 import 'ui/customer/choose_screen.dart';
 import 'ui/customer/garden_add_screen.dart';
@@ -67,6 +68,7 @@ GoRouter buildRouter(AppState app) => GoRouter(
             // Not nested under /garden, for the same SelectionArea reason as
             // /reservations below.
             GoRoute(path: '/garden/add', builder: (_, _) => const GardenAddScreen()),
+            GoRoute(path: '/garden/away', builder: (_, _) => const AwayScreen()),
             GoRoute(path: '/garden/plant/:id', builder: (_, s) => GardenPlantScreen(gardenPlantId: s.pathParameters['id']!)),
             GoRoute(
               path: '/garden/care',

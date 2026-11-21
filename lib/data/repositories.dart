@@ -148,3 +148,18 @@ abstract interface class ReservationRepository {
   /// sees [reason].
   Future<void> rejectReservation(String id, RejectReason reason);
 }
+
+/// My Garden (US-21): the plants a customer owns.
+abstract interface class GardenRepository {
+  /// The signed-in customer's plants, newest first. Empty for anyone else.
+  List<GardenPlant> get garden;
+
+  /// Customer only: adds a plant bought outside the app.
+  Future<GardenPlant> addToGarden(String plantId);
+
+  /// Customer only, own plants: records a watering now.
+  Future<void> markWatered(String gardenPlantId);
+
+  /// Customer only, own plants.
+  Future<void> removeFromGarden(String gardenPlantId);
+}

@@ -552,3 +552,75 @@ class Reservation {
         rejectReason: j['rejectReason'] == null ? null : _enumByName(RejectReason.values, j['rejectReason']),
       );
 }
+
+/// How a plant came into My Garden.
+enum GardenSource { pickup, manual }
+
+/// One plant a customer owns (US-21). Picked-up reservations add these
+/// automatically (US-20); plants bought elsewhere are added by hand.
+class GardenPlant {
+  const GardenPlant({
+    required this.id,
+    required this.ownerId,
+    required this.plantId,
+    required this.addedAt,
+    required this.source,
+    this.quantity = 1,
+    this.reservationId,
+    this.nurseryId,
+    this.lastWateredAt,
+  });
+
+  final String id;
+  final String ownerId;
+  final String plantId;
+  final DateTime addedAt;
+  final GardenSource source;
+
+  /// How many of this plant came together (a reservation line of 3 is one card).
+  final int quantity;
+
+  /// The picked-up reservation and its nursery, for [GardenSource.pickup].
+  final String? reservationId;
+  final String? nurseryId;
+
+  /// When the customer last said they watered it; the schedule counts from
+  /// here, or from [addedAt] before the first watering.
+  final DateTime? lastWateredAt;
+
+  GardenPlant copyWith({DateTime? lastWateredAt}) => GardenPlant(
+        id: id,
+        ownerId: ownerId,
+        plantId: plantId,
+        addedAt: addedAt,
+        source: source,
+        quantity: quantity,
+        reservationId: reservationId,
+        nurseryId: nurseryId,
+        lastWateredAt: lastWateredAt ?? this.lastWateredAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'ownerId': ownerId,
+        'plantId': plantId,
+        'addedAt': addedAt.toUtc().toIso8601String(),
+        'source': source.name,
+        'quantity': quantity,
+        'reservationId': ?reservationId,
+        'nurseryId': ?nurseryId,
+        'lastWateredAt': ?lastWateredAt?.toUtc().toIso8601String(),
+      };
+
+  factory GardenPlant.fromJson(Map<String, dynamic> j) => GardenPlant(
+        id: j['id'],
+        ownerId: j['ownerId'],
+        plantId: j['plantId'],
+        addedAt: DateTime.parse(j['addedAt']),
+        source: _enumByName(GardenSource.values, j['source']),
+        quantity: j['quantity'] ?? 1,
+        reservationId: j['reservationId'],
+        nurseryId: j['nurseryId'],
+        lastWateredAt: j['lastWateredAt'] == null ? null : DateTime.parse(j['lastWateredAt']),
+      );
+}

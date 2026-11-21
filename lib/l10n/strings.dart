@@ -105,10 +105,23 @@ const Map<String, Map<String, String>> _strings = {
   'removeFromCartTitle': {'ar': 'إزالة من السلة؟', 'en': 'Remove from cart?'},
   'removeFromCartBody': {'ar': 'هل أنت متأكد أنك تريد إزالة {item} من سلتك؟', 'en': 'Are you sure you want to remove {item} from your cart?'},
   'gardenEmpty': {'ar': 'لا توجد نباتات في حديقتك بعد', 'en': 'No plants in your garden yet'},
-  'gardenSoon': {
-    'ar': 'النباتات التي تستلمها من المشتل ستظهر هنا تلقائياً (السبرنت الثالث).',
-    'en': 'Plants you pick up from a nursery will appear here automatically (Sprint 3).'
+  'gardenEmptyBody': {
+    'ar': 'النباتات التي تستلمها من المشتل تظهر هنا تلقائياً. وأضف بنفسك ما اشتريته من مكان آخر.',
+    'en': 'Plants you pick up from a nursery appear here by themselves. Add plants you bought elsewhere yourself.'
   },
+  'addManuallyBody': {
+    'ar': 'اختر النبتة من القائمة لتظهر في حديقتك مع موعد ريّها.',
+    'en': 'Pick the plant from the list to see it in your garden with its watering rhythm.'
+  },
+  'gardenSearchHint': {'ar': 'ابحث باسم النبتة', 'en': 'Search by plant name'},
+  'addedToGarden': {'ar': 'أضيفت إلى حديقتك', 'en': 'Added to your garden'},
+  'toWaterOne': {'ar': 'نبتة واحدة تحتاج الري اليوم', 'en': '1 plant to water today'},
+  'toWaterMany': {'ar': '{n} نباتات تحتاج الري اليوم', 'en': '{n} plants to water today'},
+  'nothingToWater': {'ar': 'لا شيء يحتاج الري اليوم', 'en': 'Nothing to water today'},
+  'plantsInGarden': {'ar': 'في حديقتك {n} نبتة', 'en': '{n} plant(s) in your garden'},
+  'iWatered': {'ar': 'سقيتها', 'en': 'I watered it'},
+  'wateredDone': {'ar': 'سُجّل الري:', 'en': 'Watering recorded:'},
+  'nextWeekRhythm': {'ar': 'أيام الري في الأسبوع القادم: {n}', 'en': 'Watering days in the next week: {n}'},
   'addManually': {'ar': 'أضف نبتة يدوياً', 'en': 'Add a plant manually'},
   'phoneNumber': {'ar': 'رقم الجوال', 'en': 'Mobile number'},
   'phoneHint': {'ar': '05XXXXXXXX', 'en': '05XXXXXXXX'},

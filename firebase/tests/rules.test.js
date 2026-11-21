@@ -291,3 +291,24 @@ describe('US-14 plant data edits', () => {
     await assertFails(getDoc(doc(as('cust'), 'plantEdits/e4')));
   });
 });
+
+describe('US-21 My Garden', () => {
+  const plant = (extra = {}) => ({ ownerId: 'cust', plantId: 'p01', addedAt: '2026-11-20T10:00:00Z', source: 'manual', quantity: 1, ...extra });
+
+  test('a customer adds a plant by hand to their own garden', async () => {
+    await assertSucceeds(setDoc(doc(as('cust'), 'garden/g1'), plant()));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g2'), plant({ ownerId: 'someoneElse' })));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g3'), plant({ plantId: 'nope' })));
+    await assertFails(setDoc(doc(as('n1owner'), 'garden/g4'), plant({ ownerId: 'n1owner' })));
+  });
+
+  test('only the owner reads it or records a watering', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'garden/g1'), plant()));
+    await assertSucceeds(getDocs(query(collection(as('cust'), 'garden'), where('ownerId', '==', 'cust'))));
+    await assertFails(getDoc(doc(as('n1owner'), 'garden/g1')));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { lastWateredAt: '2026-11-21T08:00:00Z' }));
+    await assertFails(updateDoc(doc(as('cust'), 'garden/g1'), { plantId: 'p05' }));
+    await assertFails(deleteDoc(doc(as('n1owner'), 'garden/g1')));
+    await assertSucceeds(deleteDoc(doc(as('cust'), 'garden/g1')));
+  });
+});

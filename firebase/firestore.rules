@@ -155,6 +155,23 @@ service cloud.firestore {
               && onlyChanges(['status', 'rejectReason'])));
     }
 
+    // US-21: My Garden. Each customer reads and changes only their own plants.
+    match /garden/{id} {
+      function validGarden(d) {
+        return d.keys().hasOnly(['ownerId', 'plantId', 'addedAt', 'source', 'quantity', 'reservationId', 'nurseryId', 'lastWateredAt'])
+          && d.ownerId == request.auth.uid
+          && d.addedAt is string
+          && d.quantity is int && d.quantity > 0 && d.quantity <= 1000
+          && exists(/databases/$(database)/documents/plants/$(d.plantId));
+      }
+      allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if hasRole('customer') && validGarden(request.resource.data)
+        && request.resource.data.source == 'manual';
+      allow update: if hasRole('customer') && resource.data.ownerId == request.auth.uid
+        && onlyChanges(['lastWateredAt']) && request.resource.data.lastWateredAt is string;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
     // US-14: every admin edit to plant data is logged and the log cannot be
     // changed afterwards.
     match /plantEdits/{editId} {

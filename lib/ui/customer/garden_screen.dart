@@ -7,6 +7,7 @@ import '../../logic/watering.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 
@@ -217,6 +218,17 @@ class GardenCard extends StatelessWidget {
                       style: text.labelSmall?.copyWith(
                         color: late ? MashtalColors.error : (plan.isDue ? MashtalColors.forest : MashtalColors.muted),
                         fontWeight: plan.isDue ? FontWeight.w700 : null,
+                      ),
+                    ),
+                    // US-23: care for this plant.
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        key: Key('bookCare-${garden.id}'),
+                        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.xs)),
+                        icon: const Icon(Icons.handyman_outlined, size: 18),
+                        label: Text(context.tr('bookCare')),
+                        onPressed: () => bookPlantCare(context, garden: garden, plantName: plant.name(lang)),
                       ),
                     ),
                   ],

@@ -146,6 +146,12 @@ const Map<String, Map<String, String>> _strings = {
   'noProsInArea': {'ar': 'لا يوجد مختصون في منطقتك بعد', 'en': 'No professionals in your area yet'},
   'noProsInAreaBody': {'ar': 'جرّب نوع خدمة آخر، أو عد لاحقاً، فنحن نضيف مختصين موثّقين باستمرار.', 'en': 'Try another service, or check back later as we add verified professionals.'},
   'findProfessionals': {'ar': 'مختصو العناية', 'en': 'Care professionals'},
+  // US-23: Book Plant Care from a plant.
+  'bookCare': {'ar': 'احجز عناية', 'en': 'Book Plant Care'},
+  'whatNeeds': {'ar': 'ما الذي تحتاجه {plant}؟', 'en': 'What does {plant} need?'},
+  'svc.pruning': {'ar': 'قص الأغصان اليابسة أو الزائدة وتشكيل النبتة', 'en': 'Cut back dry or extra branches and shape it'},
+  'svc.periodicCare': {'ar': 'زيارات منتظمة للتسميد والتنظيف والمتابعة', 'en': 'Regular visits to feed, tidy and check it'},
+  'svc.treatment': {'ar': 'فحص نبتة مريضة أو مصابة بآفة وعلاجها', 'en': 'Check and treat a sick or pest-hit plant'},
   // US-22: each plant's history.
   'plantStory': {'ar': 'سجل النبتة', 'en': 'Plant history'},
   'addNote': {'ar': 'أضف ملاحظة', 'en': 'Add a note'},

@@ -7,6 +7,7 @@ import '../../logic/professionals.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
 
 /// Plant care professionals (US-24): for the customer's city and a service
@@ -23,8 +24,8 @@ class CareScreen extends StatelessWidget {
   /// The garden plant the care is for, when opened from a plant (US-23).
   final String? gardenPlantId;
 
-  /// Services a customer books for a plant they own, in the order shown.
-  static const services = [ServiceType.pruning, ServiceType.periodicCare, ServiceType.treatment, ServiceType.planting];
+  /// The care services first (as in the Book Plant Care sheet), then planting.
+  static const services = [...careServices, ServiceType.planting];
 
   String _link({ServiceType? service, String? city}) => Uri(path: '/garden/care', queryParameters: {
         'service': (service ?? this.service ?? services.first).name,

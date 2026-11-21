@@ -10,6 +10,7 @@ import '../../logic/watering.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
 import '../widgets/not_found.dart';
 import '../widgets/plant_photo.dart';
@@ -108,6 +109,14 @@ class GardenPlantScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: MashtalSpace.md),
+            // US-23: the second action, outlined; watering stays the primary one.
+            OutlinedButton.icon(
+              key: const Key('bookCare'),
+              icon: const Icon(Icons.handyman_outlined),
+              label: Text(context.tr('bookCare')),
+              onPressed: () => bookPlantCare(context, garden: g, plantName: plant.name(lang)),
             ),
             const SizedBox(height: MashtalSpace.xl),
             Row(

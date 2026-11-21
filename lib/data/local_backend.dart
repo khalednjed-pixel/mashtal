@@ -75,6 +75,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       backend._currentUser = user;
     }
     backend._watch();
+    await backend._syncGarden();
     return backend;
   }
 
@@ -98,7 +99,11 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _garden = [];
   }
 
-  void _watch() => _remote?.watch(_currentUser, _onRemote);
+  void _watch() {
+    _gardenLoaded = false;
+    _reservationsLoaded = false;
+    _remote?.watch(_currentUser, _onRemote);
+  }
 
   static final _seedPlantIds = {for (final p in seedPlants) p.id};
 
@@ -131,8 +136,10 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         _customPlants = [for (final p in all) if (!_seedPlantIds.contains(p.id)) p];
       case 'reservations':
         _reservations = parse(Reservation.fromJson);
+        _reservationsLoaded = true;
       case 'garden':
         _garden = parse(GardenPlant.fromJson);
+        _gardenLoaded = true;
       case 'plantEdits':
         _plantEdits = parse(PlantEdit.fromJson)..sort((a, b) => a.at.compareTo(b.at));
       case 'users':
@@ -143,7 +150,48 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         return;
     }
     notifyListeners();
+    if (collection == 'garden' || collection == 'reservations') _syncGarden();
   }
+
+  bool _gardenLoaded = false;
+  bool _reservationsLoaded = false;
+
+  /// US-20: puts the plants of the signed-in customer's picked-up
+  /// reservations into their garden. The nursery cannot write a customer's
+  /// garden (firestore.rules), so the customer's own app adds them, with ids
+  /// taken from the reservation line so that adding twice changes nothing.
+  Future<void> _syncGarden() async {
+    final me = _currentUser;
+    if (me?.role != Role.customer) return;
+    if (_remote != null && !(_gardenLoaded && _reservationsLoaded)) return;
+    final have = {for (final g in _garden) g.id};
+    final missing = [
+      for (final r in _reservations)
+        if (r.customerId == me!.id && r.status == ReservationStatus.pickedUp)
+          for (final i in r.items)
+            if (!have.contains(_pickupGardenId(r.id, i.listingId)))
+              GardenPlant(
+                id: _pickupGardenId(r.id, i.listingId),
+                ownerId: me.id,
+                plantId: i.plantId,
+                addedAt: r.pickedUpAt ?? _now(),
+                source: GardenSource.pickup,
+                quantity: i.quantity,
+                reservationId: r.id,
+                nurseryId: r.nurseryId,
+              ),
+    ];
+    if (missing.isEmpty) return;
+    _garden.addAll(missing);
+    try {
+      await _push([for (final g in missing) _putGarden(g)]);
+    } catch (e) {
+      debugPrint('Could not add picked-up plants: $e');
+    }
+    await _save();
+  }
+
+  static String _pickupGardenId(String reservationId, String listingId) => 'g-$reservationId-$listingId';
 
   /// '+966500000001' or '0500000001' → '0500000001'.
   static String localPhone(String phone) => phone.startsWith('+966') ? '0${phone.substring(4)}' : phone;
@@ -379,6 +427,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       await _prefs.setString(_sessionKey, user.id);
     }
     await _save();
+    await _syncGarden();
   }
 
   String? _partnerName(PartnerAccount p) => switch (p.role) {
@@ -846,7 +895,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   List<GardenPlant> get garden {
     final me = _currentUser;
     if (me?.role != Role.customer) return const [];
-    return _garden.where((g) => g.ownerId == me!.id).toList()..sort((a, b) => b.addedAt.compareTo(a.addedAt));
+    return _garden.where((g) => g.ownerId == me!.id && g.removedAt == null).toList()..sort((a, b) => b.addedAt.compareTo(a.addedAt));
   }
 
   RemoteWrite _putGarden(GardenPlant g) => RemoteWrite.put('garden', g.id, _doc(g.toJson()));
@@ -888,9 +937,27 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   @override
   Future<void> removeFromGarden(String gardenPlantId) async {
     final i = _ownGarden(gardenPlantId, 'removeFromGarden');
-    await _push([RemoteWrite.delete('garden', gardenPlantId)]);
-    _garden.removeAt(i);
+    if (_garden[i].source == GardenSource.pickup) {
+      final g = _garden[i].copyWith(removedAt: _now());
+      await _push([_putGarden(g)]);
+      _garden[i] = g;
+    } else {
+      await _push([RemoteWrite.delete('garden', gardenPlantId)]);
+      _garden.removeAt(i);
+    }
     await _save();
+  }
+
+  @override
+  Future<void> markPickedUp(String id) async {
+    _require(Role.nursery, 'markPickedUp');
+    final i = _reservations.indexWhere((r) => r.id == id);
+    if (i < 0 || _reservations[i].nurseryId != _currentUser!.partnerId) throw const PermissionDenied('markPickedUp');
+    final r = _reservations[i];
+    // AC-02: only a reservation the nursery accepted, still inside its hold.
+    if (r.status != ReservationStatus.accepted) throw StateError('Reservation is not accepted');
+    if (r.isExpired(_now())) throw StateError('Reservation hold has expired');
+    await _replaceReservation(i, r.copyWith(status: ReservationStatus.pickedUp, pickedUpAt: _now()));
   }
 
   static void _validateListing(double price, int quantity) {

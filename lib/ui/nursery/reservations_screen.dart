@@ -47,6 +47,14 @@ class ReservationsScreen extends StatelessWidget {
                               child: Text(context.tr('accept')),
                             ),
                           ],
+                          if (r.status == ReservationStatus.accepted && !r.isExpired(DateTime.now()))
+                            FilledButton.icon(
+                              key: Key('pickedUp-${r.id}'),
+                              style: FilledButton.styleFrom(minimumSize: const Size(88, 40)),
+                              icon: const Icon(Icons.handshake_outlined),
+                              label: Text(context.tr('markPickedUp')),
+                              onPressed: () => _pickedUp(context, app, r),
+                            ),
                         ],
                       ),
                     ),
@@ -54,6 +62,27 @@ class ReservationsScreen extends StatelessWidget {
               ),
             ),
     );
+  }
+
+  Future<void> _pickedUp(BuildContext context, AppState app, Reservation r) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        icon: const Icon(Icons.yard_outlined),
+        title: Text(c.tr('pickedUpConfirmTitle')),
+        content: Text(c.tr('pickedUpConfirmBody').replaceAll('{name}', r.customerName)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(c.tr('cancel'))),
+          FilledButton(
+            key: const Key('confirmPickedUp'),
+            style: FilledButton.styleFrom(minimumSize: const Size(88, 40)),
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(c.tr('confirmPickedUp')),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await app.backend.markPickedUp(r.id);
   }
 
   Future<void> _reject(BuildContext context, AppState app, Reservation r) async {

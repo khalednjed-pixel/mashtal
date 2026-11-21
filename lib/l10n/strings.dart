@@ -83,6 +83,13 @@ const Map<String, Map<String, String>> _strings = {
   'res.expired': {'ar': 'انتهت مدة الحجز', 'en': 'Hold expired'},
   'heldUntil': {'ar': 'محجوز لك حتى', 'en': 'Held for you until'},
   'rejectReason': {'ar': 'السبب', 'en': 'Reason'},
+  // US-20: pickup puts the plants into My Garden.
+  'markPickedUp': {'ar': 'تم التسليم', 'en': 'Mark picked up'},
+  'pickedUpConfirmTitle': {'ar': 'هل استلم العميل النباتات؟', 'en': 'Has the customer collected the plants?'},
+  'pickedUpConfirmBody': {'ar': 'ستُضاف النباتات إلى حديقة {name} في التطبيق.', 'en': 'The plants will be added to {name}\'s My Garden.'},
+  'confirmPickedUp': {'ar': 'نعم، استلمها', 'en': 'Yes, collected'},
+  'inYourGarden': {'ar': 'استلمتها في {date}، وهي الآن في حديقتك', 'en': 'Collected {date}, now in My Garden'},
+  'openGarden': {'ar': 'افتح حديقتي', 'en': 'Open My Garden'},
   'accept': {'ar': 'قبول', 'en': 'Accept'},
   'reject': {'ar': 'رفض', 'en': 'Reject'},
   'rejectWhy': {'ar': 'سبب الرفض', 'en': 'Why are you rejecting it?'},

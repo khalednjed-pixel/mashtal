@@ -59,6 +59,23 @@ class ReservationCard extends StatelessWidget {
                   style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep),
                 ),
               ),
+            if (r.status == ReservationStatus.pickedUp && r.pickedUpAt != null)
+              Padding(
+                padding: const EdgeInsets.only(top: MashtalSpace.xs),
+                child: Row(
+                  children: [
+                    const Icon(Icons.yard_outlined, size: 18, color: MashtalColors.leaf),
+                    const SizedBox(width: MashtalSpace.xs),
+                    Expanded(
+                      child: Text(
+                        context.tr('inYourGarden').replaceAll('{date}', when.format(r.pickedUpAt!.toLocal())),
+                        key: Key('inGarden-${r.id}'),
+                        style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (r.status == ReservationStatus.rejected && r.rejectReason != null)
               Padding(
                 padding: const EdgeInsets.only(top: MashtalSpace.xs),

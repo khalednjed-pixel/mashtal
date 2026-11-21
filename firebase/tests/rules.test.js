@@ -312,3 +312,30 @@ describe('US-21 My Garden', () => {
     await assertSucceeds(deleteDoc(doc(as('cust'), 'garden/g1')));
   });
 });
+
+describe('US-20 picked up into My Garden', () => {
+  const res = (status) => ({ customerId: 'cust', customerName: 'Sara', customerPhone: '0500000005', nurseryId: 'n1', items: [{ listingId: 'l1', plantId: 'p01', quantity: 1, price: 180 }], createdAt: '2026-11-20T10:00:00Z', status, acceptedAt: '2026-11-20T11:00:00Z' });
+  const fromPickup = (extra = {}) => ({ ownerId: 'cust', plantId: 'p01', addedAt: '2026-11-21T10:00:00Z', source: 'pickup', quantity: 1, reservationId: 'r1', nurseryId: 'n1', ...extra });
+
+  test('the nursery marks only an accepted reservation picked up', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reservations/r1'), res('accepted'));
+      await setDoc(doc(ctx.firestore(), 'reservations/r2'), res('pending'));
+    });
+    await assertFails(updateDoc(doc(as('n5owner'), 'reservations/r1'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+    await assertFails(updateDoc(doc(as('cust'), 'reservations/r1'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+    await assertFails(updateDoc(doc(as('n1owner'), 'reservations/r2'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+  });
+
+  test('the customer adds plants only from their own picked-up reservation', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reservations/r1'), res('pickedUp'));
+      await setDoc(doc(ctx.firestore(), 'reservations/r2'), res('accepted'));
+    });
+    await assertFails(setDoc(doc(as('cust'), 'garden/g2'), fromPickup({ reservationId: 'r2' })));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g3'), fromPickup({ nurseryId: 'n5' })));
+    await assertSucceeds(setDoc(doc(as('cust'), 'garden/g1'), fromPickup()));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { removedAt: '2026-11-22T10:00:00Z' }));
+  });
+});

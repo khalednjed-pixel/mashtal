@@ -153,22 +153,38 @@ service cloud.firestore {
               && onlyChanges(['status', 'acceptedAt']))
           || (request.resource.data.status == 'rejected' && request.resource.data.rejectReason in ['outOfStock', 'other']
               && onlyChanges(['status', 'rejectReason'])));
+
+      // US-20: the nursery marks an accepted reservation picked up. A pending,
+      // rejected or already collected one cannot be (AC-02). The 48-hour hold
+      // is checked by the app; the rules cannot read time from a string.
+      allow update: if hasRole('nursery') && managesPartner(resource.data.nurseryId)
+        && resource.data.status == 'accepted'
+        && request.resource.data.status == 'pickedUp' && request.resource.data.pickedUpAt is string
+        && onlyChanges(['status', 'pickedUpAt']);
     }
 
     // US-21: My Garden. Each customer reads and changes only their own plants.
     match /garden/{id} {
       function validGarden(d) {
-        return d.keys().hasOnly(['ownerId', 'plantId', 'addedAt', 'source', 'quantity', 'reservationId', 'nurseryId', 'lastWateredAt'])
+        return d.keys().hasOnly(['ownerId', 'plantId', 'addedAt', 'source', 'quantity', 'reservationId', 'nurseryId', 'lastWateredAt', 'removedAt'])
           && d.ownerId == request.auth.uid
           && d.addedAt is string
           && d.quantity is int && d.quantity > 0 && d.quantity <= 1000
           && exists(/databases/$(database)/documents/plants/$(d.plantId));
       }
       allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
+      // US-20: picked-up plants are added by the customer's own app, only
+      // from their own reservation that the nursery marked picked up.
+      function pickedUpFor(d) {
+        let r = get(/databases/$(database)/documents/reservations/$(d.reservationId)).data;
+        return r.customerId == request.auth.uid && r.status == 'pickedUp' && r.nurseryId == d.nurseryId;
+      }
       allow create: if hasRole('customer') && validGarden(request.resource.data)
-        && request.resource.data.source == 'manual';
+        && (request.resource.data.source == 'manual'
+          || (request.resource.data.source == 'pickup' && pickedUpFor(request.resource.data)));
       allow update: if hasRole('customer') && resource.data.ownerId == request.auth.uid
-        && onlyChanges(['lastWateredAt']) && request.resource.data.lastWateredAt is string;
+        && ((onlyChanges(['lastWateredAt']) && request.resource.data.lastWateredAt is string)
+          || (onlyChanges(['removedAt']) && request.resource.data.removedAt is string));
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 

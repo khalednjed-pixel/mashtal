@@ -147,6 +147,10 @@ abstract interface class ReservationRepository {
   /// US-17, the reservation's nursery only, while it is pending. The customer
   /// sees [reason].
   Future<void> rejectReservation(String id, RejectReason reason);
+
+  /// US-20, the reservation's nursery only, while it is accepted and its hold
+  /// has not run out. The plants then appear in the customer's My Garden.
+  Future<void> markPickedUp(String id);
 }
 
 /// My Garden (US-21): the plants a customer owns.

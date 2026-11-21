@@ -485,6 +485,7 @@ class Reservation {
     this.status = ReservationStatus.pending,
     this.acceptedAt,
     this.rejectReason,
+    this.pickedUpAt,
   });
 
   /// How long an accepted reservation is held (OD-01).
@@ -505,6 +506,9 @@ class Reservation {
   final DateTime? acceptedAt;
   final RejectReason? rejectReason;
 
+  /// When the nursery marked it collected (US-20).
+  final DateTime? pickedUpAt;
+
   DateTime? get expiresAt => acceptedAt?.add(holdFor);
 
   /// An accepted reservation that was not picked up in time.
@@ -513,7 +517,7 @@ class Reservation {
   double get total => items.fold(0, (sum, i) => sum + i.price * i.quantity);
   int get plantCount => items.fold(0, (sum, i) => sum + i.quantity);
 
-  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason}) => Reservation(
+  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason, DateTime? pickedUpAt}) => Reservation(
         id: id,
         customerId: customerId,
         customerName: customerName,
@@ -524,6 +528,7 @@ class Reservation {
         status: status ?? this.status,
         acceptedAt: acceptedAt ?? this.acceptedAt,
         rejectReason: rejectReason ?? this.rejectReason,
+        pickedUpAt: pickedUpAt ?? this.pickedUpAt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -537,6 +542,7 @@ class Reservation {
         'status': status.name,
         'acceptedAt': ?acceptedAt?.toUtc().toIso8601String(),
         'rejectReason': ?rejectReason?.name,
+        'pickedUpAt': ?pickedUpAt?.toUtc().toIso8601String(),
       };
 
   factory Reservation.fromJson(Map<String, dynamic> j) => Reservation(
@@ -550,6 +556,7 @@ class Reservation {
         status: _enumByName(ReservationStatus.values, j['status']),
         acceptedAt: j['acceptedAt'] == null ? null : DateTime.parse(j['acceptedAt']),
         rejectReason: j['rejectReason'] == null ? null : _enumByName(RejectReason.values, j['rejectReason']),
+        pickedUpAt: j['pickedUpAt'] == null ? null : DateTime.parse(j['pickedUpAt']),
       );
 }
 
@@ -569,6 +576,7 @@ class GardenPlant {
     this.reservationId,
     this.nurseryId,
     this.lastWateredAt,
+    this.removedAt,
   });
 
   final String id;
@@ -588,7 +596,11 @@ class GardenPlant {
   /// here, or from [addedAt] before the first watering.
   final DateTime? lastWateredAt;
 
-  GardenPlant copyWith({DateTime? lastWateredAt}) => GardenPlant(
+  /// A picked-up plant the customer took out of the garden. It is kept, not
+  /// deleted, so the pickup does not add it again.
+  final DateTime? removedAt;
+
+  GardenPlant copyWith({DateTime? lastWateredAt, DateTime? removedAt}) => GardenPlant(
         id: id,
         ownerId: ownerId,
         plantId: plantId,
@@ -598,6 +610,7 @@ class GardenPlant {
         reservationId: reservationId,
         nurseryId: nurseryId,
         lastWateredAt: lastWateredAt ?? this.lastWateredAt,
+        removedAt: removedAt ?? this.removedAt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -610,6 +623,7 @@ class GardenPlant {
         'reservationId': ?reservationId,
         'nurseryId': ?nurseryId,
         'lastWateredAt': ?lastWateredAt?.toUtc().toIso8601String(),
+        'removedAt': ?removedAt?.toUtc().toIso8601String(),
       };
 
   factory GardenPlant.fromJson(Map<String, dynamic> j) => GardenPlant(
@@ -622,5 +636,6 @@ class GardenPlant {
         reservationId: j['reservationId'],
         nurseryId: j['nurseryId'],
         lastWateredAt: j['lastWateredAt'] == null ? null : DateTime.parse(j['lastWateredAt']),
+        removedAt: j['removedAt'] == null ? null : DateTime.parse(j['removedAt']),
       );
 }

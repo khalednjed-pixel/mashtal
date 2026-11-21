@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -36,6 +37,15 @@ class MyReservationsScreen extends StatelessWidget {
                       child: ReservationCard(
                         reservation: r,
                         title: app.backend.nurseryById(r.nurseryId)?.name(lang) ?? '',
+                        actions: [
+                          if (r.status == ReservationStatus.pickedUp)
+                            TextButton.icon(
+                              key: Key('openGarden-${r.id}'),
+                              icon: const Icon(Icons.yard_outlined),
+                              label: Text(context.tr('openGarden')),
+                              onPressed: () => context.go('/garden'),
+                            ),
+                        ],
                       ),
                     ),
                 ],

@@ -89,4 +89,14 @@ void main() {
     expect(app.addToCart('l7'), isFalse);
     expect(await app.reserveCart(), 0);
   });
+
+  testWidgets('counts read naturally in Arabic, and an all-unavailable stop adds no subtotal', (tester) async {
+    final app = await pumpMashtal(tester, lang: 'ar');
+    app.addToCart('l1');
+    app.addToCart('l11');
+    go(tester, '/cart');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ستستلم من مشتلين'), findsOneWidget);
+    expect(find.text('سيُرسل طلب حجز إلى كل من المشتلين'), findsOneWidget);
+  });
 }

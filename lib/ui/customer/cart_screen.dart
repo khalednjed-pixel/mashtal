@@ -37,6 +37,7 @@ class CartScreen extends StatelessWidget {
         lines.where((l) => l.listing.isAvailable).fold(0, (s, l) => s + l.listing.price * l.qty);
     final total = sum(stops.values.expand((l) => l));
     final reservableStops = stops.values.where((lines) => lines.any((l) => l.listing.isAvailable)).length;
+    // Stops where something can still be reserved; the pickup note counts these.
 
     if (app.cartAdjusted) {
       app.cartAdjusted = false;
@@ -52,7 +53,7 @@ class CartScreen extends StatelessWidget {
       }
       final messenger = ScaffoldMessenger.of(context);
       final router = GoRouter.of(context);
-      final done = context.tr('reservedDone');
+      final reservedText = context.trCount;
       final nothing = context.tr('reserveNothing');
       final made = await app.reserveCart();
       if (made == 0) {
@@ -60,11 +61,12 @@ class CartScreen extends StatelessWidget {
         return;
       }
       router.go('/reservations');
-      messenger.showSnackBar(SnackBar(content: Text(done.replaceAll('{n}', '$made'))));
+      messenger.showSnackBar(SnackBar(content: Text(reservedText('reservedDone', made))));
     }
 
     final text = Theme.of(context).textTheme;
     final several = stops.length > 1;
+    final pickups = reservableStops;
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('cart')), actions: const [LanguageButton()]),
       body: stops.isEmpty
@@ -77,8 +79,8 @@ class CartScreen extends StatelessWidget {
               child: ListView(
                 padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
                 children: [
-                  if (several) ...[
-                    _RouteNote(text: context.tr('separatePickups').replaceAll('{n}', '${stops.length}')),
+                  if (pickups > 1) ...[
+                    _RouteNote(text: context.trCount('separatePickups', pickups)),
                     const SizedBox(height: MashtalSpace.lg),
                   ],
                   for (final (i, MapEntry(key: nursery, value: lines)) in stops.entries.indexed)
@@ -88,7 +90,8 @@ class CartScreen extends StatelessWidget {
                       nursery: nursery,
                       lines: lines,
                       // With one nursery the subtotal is the total; say it once.
-                      subtotal: several ? sum(lines) : null,
+                      // Nothing to pay at a stop whose plants are all unavailable.
+                      subtotal: several && sum(lines) > 0 ? sum(lines) : null,
                       last: i == stops.length - 1,
                     ),
                   // Total and the screen's one primary action. Kept in the list,
@@ -111,7 +114,7 @@ class CartScreen extends StatelessWidget {
                           ),
                           if (reservableStops > 0)
                             Text(
-                              context.tr('willSend').replaceAll('{n}', '$reservableStops'),
+                              context.trCount('willSend', reservableStops),
                               style: text.bodySmall,
                             ),
                           const SizedBox(height: MashtalSpace.md),

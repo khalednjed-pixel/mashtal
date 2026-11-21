@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/citation.dart';
 import '../../logic/catalog_search.dart';
 import '../../logic/shop_filters.dart';
 import '../../models/models.dart';
@@ -128,7 +129,11 @@ class PlantDetailScreen extends StatelessWidget {
                     child: Text(
                       plant.isCustom
                           ? context.tr('addedByNursery')
-                          : '${context.tr('source')}: ${sourceText(lang, plant)}${plant.guideBacked ? '' : ' — ${context.tr('notGuideBacked')}'}',
+                          : switch (citationFor(plant)) {
+                              // A guide plant names its portrait page too (US-10).
+                              final c? => '${context.tr('source')}: ${sourceText(lang, plant)}${lang == 'ar' ? '، ' : ', '}${c.sectionIn(lang)}',
+                              null => '${context.tr('source')}: ${sourceText(lang, plant)} — ${context.tr('notGuideBacked')}',
+                            },
                       style: theme.textTheme.bodySmall?.copyWith(color: MashtalColors.forestDeep),
                     ),
                   ),

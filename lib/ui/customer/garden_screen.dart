@@ -116,11 +116,7 @@ class _TodayPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final lang = context.lang;
-    final title = due.isEmpty
-        ? context.tr('nothingToWater')
-        : due.length == 1
-        ? context.tr('toWaterOne')
-        : context.tr('toWaterMany').replaceAll('{n}', '${due.length}');
+    final title = due.isEmpty ? context.tr('nothingToWater') : context.trCount('toWater', due.length);
     return Container(
       key: const Key('todayPanel'),
       padding: const EdgeInsets.all(MashtalSpace.lg),
@@ -140,7 +136,7 @@ class _TodayPanel extends StatelessWidget {
               children: [
                 Text(title, style: text.titleMedium?.copyWith(color: MashtalColors.surface)),
                 Text(
-                  due.isEmpty ? context.tr('plantsInGarden').replaceAll('{n}', '$total') : due.map((p) => p.name(lang)).join('، '),
+                  due.isEmpty ? context.trCount('plantsInGarden', total) : due.map((p) => p.name(lang)).join('، '),
                   style: text.bodyMedium?.copyWith(color: MashtalColors.lime),
                 ),
               ],

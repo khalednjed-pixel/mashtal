@@ -81,15 +81,24 @@ const Map<String, Map<String, String>> _strings = {
   'ago.d': {'en': '{n} days ago'},
   // US-15: the cart as a pickup route, one stop per nursery.
   'pickupStop': {'ar': 'محطة الاستلام {n}', 'en': 'Pickup {n}'},
-  'separatePickups': {
-    'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من {n} مشاتل.',
+  // Counted texts: .one/.two/.few (3–10)/.many in Arabic, .one/.many in English (trCount).
+  'separatePickups.two': {'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من مشتلين.'},
+  'separatePickups.few': {'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من {n} مشاتل.'},
+  'separatePickups.many': {
+    'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من {n} مشتلاً.',
     'en': 'Each nursery is a separate pickup with its own reservation. You will collect from {n} nurseries.'
   },
   'subtotal': {'ar': 'المجموع عند هذا المشتل', 'en': 'Subtotal at this nursery'},
   'total': {'ar': 'الإجمالي', 'en': 'Total'},
   'unavailableNow': {'ar': 'غير متوفر الآن، لن يُحجز', 'en': 'Not available now, will not be reserved'},
-  'willSend': {'ar': 'سيُرسل طلب حجز إلى {n} مشتل', 'en': 'A request goes to {n} nursery(ies)'},
-  'reservedDone': {'ar': 'أُرسل طلب الحجز إلى {n} مشتل', 'en': 'Reservation sent to {n} nursery(ies)'},
+  'willSend.one': {'ar': 'سيُرسل طلب الحجز إلى مشتل واحد', 'en': 'The request goes to 1 nursery'},
+  'willSend.two': {'ar': 'سيُرسل طلب حجز إلى كل من المشتلين'},
+  'willSend.few': {'ar': 'سيُرسل طلب حجز إلى كل مشتل من {n} مشاتل'},
+  'willSend.many': {'ar': 'سيُرسل طلب حجز إلى كل مشتل من {n} مشتلاً', 'en': 'A request goes to each of {n} nurseries'},
+  'reservedDone.one': {'ar': 'أُرسل طلب الحجز إلى المشتل', 'en': 'Reservation sent to the nursery'},
+  'reservedDone.two': {'ar': 'أُرسل طلب الحجز إلى المشتلين'},
+  'reservedDone.few': {'ar': 'أُرسل طلب الحجز إلى {n} مشاتل'},
+  'reservedDone.many': {'ar': 'أُرسل طلب الحجز إلى {n} مشتلاً', 'en': 'Reservation sent to {n} nurseries'},
   'reserveNothing': {'ar': 'لا يوجد في السلة ما يمكن حجزه الآن', 'en': 'Nothing in the cart can be reserved right now'},
   'myReservations': {'ar': 'حجوزاتي', 'en': 'My reservations'},
   'noReservations': {'ar': 'لا توجد حجوزات بعد', 'en': 'No reservations yet'},
@@ -148,10 +157,15 @@ const Map<String, Map<String, String>> _strings = {
   },
   'gardenSearchHint': {'ar': 'ابحث باسم النبتة', 'en': 'Search by plant name'},
   'addedToGarden': {'ar': 'أضيفت إلى حديقتك', 'en': 'Added to your garden'},
-  'toWaterOne': {'ar': 'نبتة واحدة تحتاج الري اليوم', 'en': '1 plant to water today'},
-  'toWaterMany': {'ar': '{n} نباتات تحتاج الري اليوم', 'en': '{n} plants to water today'},
+  'toWater.one': {'ar': 'نبتة واحدة تحتاج الري اليوم', 'en': '1 plant to water today'},
+  'toWater.two': {'ar': 'نبتتان تحتاجان الري اليوم'},
+  'toWater.few': {'ar': '{n} نباتات تحتاج الري اليوم'},
+  'toWater.many': {'ar': '{n} نبتة تحتاج الري اليوم', 'en': '{n} plants to water today'},
   'nothingToWater': {'ar': 'لا شيء يحتاج الري اليوم', 'en': 'Nothing to water today'},
-  'plantsInGarden': {'ar': 'في حديقتك {n} نبتة', 'en': '{n} plant(s) in your garden'},
+  'plantsInGarden.one': {'ar': 'في حديقتك نبتة واحدة', 'en': '1 plant in your garden'},
+  'plantsInGarden.two': {'ar': 'في حديقتك نبتتان'},
+  'plantsInGarden.few': {'ar': 'في حديقتك {n} نباتات'},
+  'plantsInGarden.many': {'ar': 'في حديقتك {n} نبتة', 'en': '{n} plants in your garden'},
   'iWatered': {'ar': 'سقيتها', 'en': 'I watered it'},
   // US-24: professionals for plant care.
   'plantCare': {'ar': 'العناية بالنبات', 'en': 'Plant care'},
@@ -323,7 +337,7 @@ const Map<String, Map<String, String>> _strings = {
   'cartAdjusted': {'ar': 'عدّلنا سلتك لأن كمية بعض النباتات تغيّرت في المشتل', 'en': 'We updated your cart because a nursery\'s stock changed'},
   'srcRcrc': {'ar': 'الهيئة الملكية لمدينة الرياض — دليل نباتات الرياض', 'en': 'RCRC — Manual of Riyadh Plants'},
   'srcHouseplant': {'ar': 'نبات منزلي شائع؛ السمية من قائمة ASPCA', 'en': 'Common houseplant; toxicity from the ASPCA list'},
-  'srcNative': {'ar': 'نبات سعودي محلي ليس له بطاقة في دليل نباتات الرياض', 'en': 'Native Saudi plant without a portrait in the Manual of Riyadh Plants'},
+  'srcNative': {'ar': 'نبات سعودي محلي', 'en': 'Native Saudi plant'},
   'nurseryPhoto': {'ar': 'صورة المشتل', 'en': 'Nursery photo'},
   'typeMaxPrice': {'ar': 'أو اكتب أعلى سعر', 'en': 'Or type a max price'},
   'anyPrice': {'ar': 'أي سعر', 'en': 'Any price'},
@@ -499,6 +513,19 @@ extension Tr on BuildContext {
   String trEnum(Enum value) => _enums[value.name]?[lang] ?? value.name;
 
   String trCity(String id) => _cities[id]?[lang] ?? id;
+
+  /// [base] for a count [n], with {n} filled in: Arabic picks the one, two,
+  /// few (3–10) or many form; English the one or many form.
+  String trCount(String base, int n) {
+    final form = switch ((lang, n)) {
+      (_, 1) => 'one',
+      ('ar', 2) => 'two',
+      ('ar', >= 3 && <= 10) => 'few',
+      _ => 'many',
+    };
+    final text = _strings['$base.$form']?[lang] ?? _strings['$base.many']?[lang] ?? base;
+    return text.replaceAll('{n}', '$n');
+  }
 }
 
 String roleLabel(String lang, Role role) => _enums[role.name]?[lang] ?? role.name;

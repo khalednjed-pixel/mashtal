@@ -119,4 +119,18 @@ void main() {
       await expectLater(b.setHome(g.id, PlantHome.indoor), throwsA(isA<PermissionDenied>()));
     });
   });
+
+  group('growth photos', () {
+    test('the owner adds growth photos to the plant history; others cannot', () async {
+      final b = await signedIn('0500000005');
+      final g = await b.addToGarden('p23');
+      await b.addGrowthPhoto(g.id, 'abc');
+      expect(b.historyOf(g.id).single.kind, HistoryKind.photo);
+      expect(b.historyOf(g.id).single.photo, 'abc');
+      await expectLater(b.addGrowthPhoto(g.id, 'x' * (LocalBackend.photoMaxLength + 1)), throwsArgumentError);
+      await b.signOut();
+      await signedIn('0551112222', reuse: b);
+      await expectLater(b.addGrowthPhoto(g.id, 'abc'), throwsA(isA<PermissionDenied>()));
+    });
+  });
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/strings.dart';
+import '../logic/care_plan.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'customer/notifications_screen.dart' show noticeText;
@@ -107,6 +108,9 @@ class _RoleShellState extends State<RoleShell> {
           ],
         ),
         action: SnackBarAction(label: context.tr('view'), textColor: MashtalColors.lime, onPressed: () => router.go('/notifications')),
+        // It goes away on its own; the notice stays in Notifications.
+        persist: false,
+        duration: const Duration(seconds: 6),
       ));
     });
   }
@@ -130,6 +134,13 @@ class _RoleShellState extends State<RoleShell> {
     final now = DateTime.now();
     _announce(app, now);
     final unseen = app.unseenCount(now);
+    // Plants due for a soil check today, on the My Garden tab.
+    final dueToday = app.role != Role.customer
+        ? 0
+        : [
+            for (final g in app.backend.garden)
+              if (app.backend.plantById(g.plantId) case final p? when CarePlan.of(g, p, now).isDue) g,
+          ].length;
     // Longest matching prefix wins, so /nursery/reservations beats /nursery.
     var index = -1;
     var best = 0;
@@ -158,6 +169,7 @@ class _RoleShellState extends State<RoleShell> {
                 '/cart' => _CartBadge(count: app.cartCount, child: Icon(t.icon)),
                 // US-19: unseen reservation notices wait in Account.
                 '/account' => _CartBadge(count: unseen, child: Icon(t.icon)),
+                '/garden' => _CartBadge(count: dueToday, child: Icon(t.icon)),
                 _ => Icon(t.icon),
               },
               // On the cart tab itself the count is on screen, so no badge.

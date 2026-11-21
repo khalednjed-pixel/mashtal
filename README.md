@@ -92,6 +92,10 @@ Every plant the app calls guide-backed now cites its exact portrait in the *Manu
 | Choose question | For a few hours of outdoor sun: morning or afternoon? Riyadh's afternoon sun counts as full sun; "not sure" changes nothing. |
 | Going away | In My Garden: how long, and will someone at home (a maid or family) water? If yes, a simple watering plan per plant to send on WhatsApp, in Arabic or English. If not, what to do before leaving and which plants will not last that long alone, with when they need water. Away mode shows on My Garden; on return it says to check every plant's soil. Kept on the device. |
 | Look | Answers in Choose, where a plant lives, going away, the Today panel and the empty screens use one set of simple garden line drawings drawn in code (`lib/ui/widgets/garden_art.dart`). |
+| Reminders | "Remind me in my calendar" on a garden plant adds a repeating soil-check reminder to the phone's calendar (Google Calendar link), so reminders arrive with the app closed and without paid push notifications. The My Garden tab shows how many plants are due today. |
+| Growth photos | Each garden plant has a photo strip; with two or more photos it shows the first and the latest side by side ("then and now", with the days between). Photos are kept in the plant's history; the Firestore rules allow them only as photo entries, up to about 400 KB. |
+| Nursery listings | A photo grid with the stock on each photo ("12 in stock", "Only 3 left", "Sold out", "Hidden") and filters for what needs attention. |
+| Account | A profile card, the customer's garden, saved plants and reservations as counts, and the menu in grouped panels. |
 | Saved, share, tips | A heart saves plants to a Saved list; the plant page shares a plant on WhatsApp or as a link; garden plants show general care tips. |
 
 These are general household rules, not quotes from the guide, and the screens say "check the soil" rather than promising exact days. Watering colours (`water`, `waterLight`, `waterSoft`) are the one colour family outside the greens and are used for water only.

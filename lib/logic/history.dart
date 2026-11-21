@@ -4,7 +4,7 @@ import '../models/models.dart';
 enum HistorySource { you, nursery, askMashtal, professional }
 
 class HistoryItem {
-  const HistoryItem({required this.kind, required this.at, required this.source, this.sourceName, this.text});
+  const HistoryItem({required this.kind, required this.at, required this.source, this.sourceName, this.text, this.photo});
   final HistoryKind kind;
   final DateTime at;
   final HistorySource source;
@@ -12,6 +12,9 @@ class HistoryItem {
   /// The nursery's or professional's name.
   final String? sourceName;
   final String? text;
+
+  /// A growth photo, base64 JPEG.
+  final String? photo;
 }
 
 /// A garden plant's history, newest first: how it arrived (from the plant
@@ -27,6 +30,7 @@ List<HistoryItem> plantStory(GardenPlant g, List<HistoryEntry> entries, {Nursery
         kind: e.kind,
         at: e.at,
         text: e.text,
+        photo: e.photo,
         sourceName: e.sourceName,
         source: switch (e.kind) {
           HistoryKind.check => HistorySource.askMashtal,

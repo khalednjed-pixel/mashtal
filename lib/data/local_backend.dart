@@ -982,13 +982,14 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
 
   RemoteWrite _putHistory(HistoryEntry e) => RemoteWrite.put('history', e.id, _doc(e.toJson()));
 
-  HistoryEntry _entry(String gardenPlantId, HistoryKind kind, {String? text}) => HistoryEntry(
+  HistoryEntry _entry(String gardenPlantId, HistoryKind kind, {String? text, String? photo}) => HistoryEntry(
         id: _newId('h'),
         ownerId: _currentUser!.id,
         gardenPlantId: gardenPlantId,
         kind: kind,
         at: _now(),
         text: text,
+        photo: photo,
       );
 
   @override
@@ -1007,6 +1008,20 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     final t = text.trim();
     if (t.isEmpty || t.length > noteMaxLength) throw ArgumentError('text');
     final e = _entry(gardenPlantId, HistoryKind.note, text: t);
+    await _push([_putHistory(e)]);
+    _history.add(e);
+    await _save();
+  }
+
+  /// Largest growth photo kept, in base64 characters (well inside a
+  /// Firestore document); the picker shrinks photos far below this.
+  static const photoMaxLength = 400000;
+
+  @override
+  Future<void> addGrowthPhoto(String gardenPlantId, String photo) async {
+    _ownGarden(gardenPlantId, 'addGrowthPhoto');
+    if (photo.isEmpty || photo.length > photoMaxLength) throw ArgumentError('photo');
+    final e = _entry(gardenPlantId, HistoryKind.photo, photo: photo);
     await _push([_putHistory(e)]);
     _history.add(e);
     await _save();

@@ -695,6 +695,9 @@ enum HistoryKind {
   watered,
   note,
 
+  /// A growth photo the customer took.
+  photo,
+
   /// An Ask Mashtal photo check result (Sprint 4).
   check,
 
@@ -712,9 +715,13 @@ class HistoryEntry {
     required this.at,
     this.text,
     this.sourceName,
+    this.photo,
   });
 
   final String id;
+
+  /// A growth photo, as base64 JPEG, for [HistoryKind.photo].
+  final String? photo;
 
   /// The customer who owns the plant.
   final String ownerId;
@@ -736,6 +743,7 @@ class HistoryEntry {
         'at': at.toUtc().toIso8601String(),
         'text': ?text,
         'sourceName': ?sourceName,
+        'photo': ?photo,
       };
 
   factory HistoryEntry.fromJson(Map<String, dynamic> j) => HistoryEntry(
@@ -746,5 +754,6 @@ class HistoryEntry {
         at: DateTime.parse(j['at']),
         text: j['text'],
         sourceName: j['sourceName'],
+        photo: j['photo'],
       );
 }

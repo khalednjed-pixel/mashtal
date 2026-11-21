@@ -18,10 +18,13 @@ void main() {
     await tester.tap(find.text('Bougainvillea'));
     await tester.pumpAndSettle();
     expect(location(tester), '/garden/plant/${g.id}');
+    await holdToWater(tester);
+    // The history is further down the page, under watering, photos and tips.
+    await tester.scrollUntilVisible(find.text('Plant history'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.text('Plant history'), findsOneWidget);
     expect(find.text('Added to My Garden'), findsOneWidget);
 
-    await holdToWater(tester);
     // The care tips sit above the history, so scroll down to it.
     await tester.ensureVisible(find.byKey(const Key('addNote')));
     await tester.pumpAndSettle();

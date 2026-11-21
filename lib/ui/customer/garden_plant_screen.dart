@@ -8,6 +8,7 @@ import '../../l10n/strings.dart';
 import '../../logic/care_plan.dart';
 import '../../logic/care_tips.dart';
 import '../../logic/history.dart';
+import '../../logic/reminders.dart';
 import '../../logic/watering.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
@@ -17,6 +18,8 @@ import '../widgets/common.dart';
 import '../widgets/garden_art.dart';
 import '../widgets/home_picker.dart';
 import '../widgets/not_found.dart';
+import '../widgets/photo_picker.dart' show choosePhoto;
+import '../widgets/pickup_pass.dart' show openExternal;
 import '../widgets/plant_photo.dart';
 import '../widgets/water_ring.dart';
 import 'garden_screen.dart' show WaterRhythm, planEveryText, planReasonsText;
@@ -161,6 +164,24 @@ class GardenPlantScreen extends StatelessWidget {
                         },
                       ),
                     ],
+                    // Reminders that arrive with the app closed: the phone's calendar.
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        key: const Key('calendarReminder'),
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: MashtalColors.leaf),
+                        icon: const Icon(Icons.event_repeat_outlined),
+                        label: Text(context.tr('remindMe')),
+                        onPressed: () => openExternal(
+                          calendarReminder(
+                            title: context.tr('reminderTitle').replaceAll('{plant}', plant.name(lang)),
+                            details: context.tr('reminderDetails'),
+                            firstDay: DateTime.now().add(Duration(days: plan.dueInDays < 0 ? 0 : plan.dueInDays)),
+                            everyDays: plan.everyDays,
+                          ),
+                        ),
+                      ),
+                    ),
                     // How to tell, for someone who has never checked soil.
                     Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -184,6 +205,14 @@ class GardenPlantScreen extends StatelessWidget {
               icon: const Icon(Icons.handyman_outlined),
               label: Text(context.tr('bookCare')),
               onPressed: () => bookPlantCare(context, garden: g, plantName: plant.name(lang)),
+            ),
+            const SizedBox(height: MashtalSpace.xl),
+            _GrowthPhotos(
+              garden: g,
+              photos: [
+                for (final e in market.historyOf(g.id))
+                  if (e.kind == HistoryKind.photo && e.photo != null) e,
+              ],
             ),
             const SizedBox(height: MashtalSpace.xl),
             _CareTips(plant: plant),
@@ -265,6 +294,191 @@ class GardenPlantScreen extends StatelessWidget {
   }
 }
 
+/// Growth photos: a strip that starts with "add photo", newest first, and
+/// once there are two, the first and the latest side by side.
+class _GrowthPhotos extends StatelessWidget {
+  const _GrowthPhotos({required this.garden, required this.photos});
+  final GardenPlant garden;
+
+  /// Newest first.
+  final List<HistoryEntry> photos;
+
+  Future<void> _add(BuildContext context) async {
+    final market = context.read<AppState>().backend;
+    final messenger = ScaffoldMessenger.of(context);
+    final done = context.tr('photoAdded');
+    final photo = await choosePhoto(context);
+    if (photo == null) return;
+    await market.addGrowthPhoto(garden.id, photo);
+    messenger.showSnackBar(SnackBar(content: Text(done)));
+  }
+
+  void _open(BuildContext context, HistoryEntry e) {
+    final date = DateFormat('d MMMM y', context.lang).format(e.at.toLocal());
+    showDialog<void>(
+      context: context,
+      builder: (c) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.cardRadius)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InteractiveViewer(child: Image.memory(decodePhoto(e.photo!), fit: BoxFit.contain)),
+            Padding(
+              padding: const EdgeInsets.all(MashtalSpace.md),
+              child: Text(date, style: Theme.of(c).textTheme.titleMedium),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final lang = context.lang;
+    String day(DateTime t) => DateFormat('d MMM', lang).format(t.toLocal());
+    return Column(
+      key: const Key('growthPhotos'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(context.tr('growthPhotos'), style: text.titleLarge),
+        const SizedBox(height: MashtalSpace.xs),
+        Text(context.tr('growthPhotosBody'), style: text.bodySmall),
+        const SizedBox(height: MashtalSpace.md),
+        if (photos.length >= 2) ...[
+          _ThenAndNow(first: photos.last, latest: photos.first, onOpen: (e) => _open(context, e)),
+          const SizedBox(height: MashtalSpace.md),
+        ],
+        SizedBox(
+          height: 132,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              // The first tile adds a photo: a soft framed tile with a camera.
+              Align(
+                alignment: AlignmentDirectional.topStart,
+                child: InkWell(
+                  key: const Key('addGrowthPhoto'),
+                  borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                  onTap: () => _add(context),
+                  child: Container(
+                    width: 104,
+                    height: 104,
+                    margin: const EdgeInsetsDirectional.only(end: MashtalSpace.sm),
+                    decoration: BoxDecoration(
+                      color: MashtalColors.ground,
+                      borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                      border: Border.all(color: MashtalColors.leaf, width: 1.5),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.add_a_photo_outlined, color: MashtalColors.leaf, size: 28),
+                        const SizedBox(height: MashtalSpace.xs),
+                        Text(context.tr('addGrowthPhoto'), style: text.labelLarge?.copyWith(color: MashtalColors.leaf)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              for (final e in photos)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: MashtalSpace.sm),
+                  child: InkWell(
+                    key: Key('growth-${e.id}'),
+                    borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                    onTap: () => _open(context, e),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                          child: Image.memory(decodePhoto(e.photo!), width: 104, height: 104, fit: BoxFit.cover),
+                        ),
+                        const SizedBox(height: MashtalSpace.xs),
+                        Text(day(e.at), style: text.bodySmall),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The first photo and the latest, side by side, with how far apart they are.
+class _ThenAndNow extends StatelessWidget {
+  const _ThenAndNow({required this.first, required this.latest, required this.onOpen});
+  final HistoryEntry first;
+  final HistoryEntry latest;
+  final ValueChanged<HistoryEntry> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final lang = context.lang;
+    final days = latest.at.difference(first.at).inDays;
+    Widget side(HistoryEntry e, String label) => Expanded(
+      child: GestureDetector(
+        onTap: () => onOpen(e),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                child: Image.memory(decodePhoto(e.photo!), fit: BoxFit.cover),
+              ),
+            ),
+            const SizedBox(height: MashtalSpace.xs),
+            Text(label, style: text.titleSmall),
+            Text(DateFormat('d MMMM y', lang).format(e.at.toLocal()), style: text.bodySmall),
+          ],
+        ),
+      ),
+    );
+    return Container(
+      key: const Key('thenAndNow'),
+      padding: const EdgeInsets.all(MashtalSpace.md),
+      decoration: BoxDecoration(
+        color: MashtalColors.surface,
+        borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+        border: Border.all(color: MashtalColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(context.tr('thenAndNow'), style: text.titleMedium)),
+              if (days > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.md, vertical: MashtalSpace.xs),
+                  decoration: BoxDecoration(color: MashtalColors.mint, borderRadius: BorderRadius.circular(MashtalSpace.pill)),
+                  child: Text(context.trCount('daysApart', days), style: text.labelLarge?.copyWith(color: MashtalColors.forest)),
+                ),
+            ],
+          ),
+          const SizedBox(height: MashtalSpace.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              side(first, context.tr('then')),
+              const SizedBox(width: MashtalSpace.md),
+              side(latest, context.tr('nowLabel')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// General care tips for this plant, as one calm panel of rows. They come
 /// from the plant's needs, not from a guide, and the caption says so.
 class _CareTips extends StatelessWidget {
@@ -334,6 +548,7 @@ class _StoryEntry extends StatelessWidget {
     HistoryKind.pickedUp => Icons.storefront_outlined,
     HistoryKind.watered => Icons.water_drop_outlined,
     HistoryKind.note => Icons.edit_note,
+    HistoryKind.photo => Icons.photo_camera_back_outlined,
     HistoryKind.check => Icons.photo_camera_outlined,
     HistoryKind.proFeedback => Icons.handyman_outlined,
   };
@@ -374,6 +589,13 @@ class _StoryEntry extends StatelessWidget {
                   Text(context.tr('h.${item.kind.name}'), style: text.titleMedium),
                   Text('$source · $date', style: text.bodySmall),
                   if (item.text != null) ...[const SizedBox(height: MashtalSpace.xs), Text(item.text!, style: text.bodyMedium)],
+                  if (item.photo != null) ...[
+                    const SizedBox(height: MashtalSpace.sm),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(MashtalSpace.radius),
+                      child: Image.memory(decodePhoto(item.photo!), width: 120, height: 120, fit: BoxFit.cover),
+                    ),
+                  ],
                 ],
               ),
             ),

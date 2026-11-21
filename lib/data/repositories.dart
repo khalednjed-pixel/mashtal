@@ -180,4 +180,7 @@ abstract interface class GardenRepository {
 
   /// Customer only, own plants: a short note in the plant's history.
   Future<void> addNote(String gardenPlantId, String text);
+
+  /// Customer only, own plants: a growth photo (base64 JPEG) in its history.
+  Future<void> addGrowthPhoto(String gardenPlantId, String photo);
 }

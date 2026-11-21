@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mashtal/models/models.dart';
+import 'package:mashtal/ui/widgets/photo_picker.dart' show choosePhoto;
 import 'package:mashtal/ui/widgets/pickup_pass.dart';
 
 import 'app_harness.dart';
@@ -196,5 +197,74 @@ void main() {
     expect(app.awayTrip, isNull);
     expect(find.byKey(const Key('todayPanel')), findsOneWidget);
     expect(find.text('Check the soil of every plant today and water the dry ones.'), findsOneWidget);
+  });
+
+  testWidgets('growth photos: add from the plant page, then and now with two, and a calendar reminder', (tester) async {
+    const pixel = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    choosePhoto = (_) async => pixel;
+    final opened = <Uri>[];
+    openExternal = (uri) async {
+      opened.add(uri);
+      return true;
+    };
+    var now = DateTime.now().subtract(const Duration(days: 30));
+    final app = await pumpMashtal(tester, clock: () => now);
+    go(tester, '/login');
+    await tester.pumpAndSettle();
+    await signInWithPhone(tester, '0500000005');
+    late GardenPlant g;
+    await tester.runAsync(() async {
+      g = await app.backend.addToGarden('p23', home: PlantHome.bigPot);
+      await app.backend.addGrowthPhoto(g.id, pixel);
+    });
+    now = DateTime.now();
+    go(tester, '/garden/plant/${g.id}');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('calendarReminder')));
+    await tester.pumpAndSettle();
+    expect(opened.single.host, 'calendar.google.com');
+    expect(opened.single.queryParameters['recur'], startsWith('RRULE:FREQ=DAILY;INTERVAL='));
+
+    expect(find.byKey(const Key('thenAndNow')), findsNothing, reason: 'one photo so far');
+    await tester.ensureVisible(find.byKey(const Key('addGrowthPhoto')));
+    await tester.tap(find.byKey(const Key('addGrowthPhoto')));
+    await tester.pumpAndSettle();
+    expect(app.backend.historyOf(g.id).where((e) => e.kind == HistoryKind.photo), hasLength(2));
+    expect(find.byKey(const Key('thenAndNow')), findsOneWidget);
+    expect(find.text('30 days later'), findsOneWidget);
+  });
+
+  testWidgets('a nursery filters its listings by stock', (tester) async {
+    final app = await pumpMashtal(tester);
+    go(tester, '/login');
+    await tester.pumpAndSettle();
+    await signInWithPhone(tester, '0500000002');
+    final mine = app.backend.listings.where((l) => l.nurseryId == app.user!.partnerId).toList();
+    final low = mine.firstWhere((l) => !l.hidden && l.quantity > 0 && l.quantity <= 5);
+    final plenty = mine.firstWhere((l) => !l.hidden && l.quantity > 5);
+    expect(find.byKey(Key('stock-${plenty.id}')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(Key('stock-${low.id}')), matching: find.text('Only ${low.quantity} left')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('filter-low')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(Key('listing-${low.id}')), findsOneWidget);
+    expect(find.byKey(Key('listing-${plenty.id}')), findsNothing);
+  });
+
+  testWidgets("the account page shows the customer's garden, saved plants and reservations", (tester) async {
+    final app = await pumpMashtal(tester);
+    go(tester, '/login');
+    await tester.pumpAndSettle();
+    await signInWithPhone(tester, '0500000005');
+    await tester.runAsync(() => app.backend.addToGarden('p23'));
+    app.toggleSaved('p04');
+    go(tester, '/account');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('myReservations')), findsOneWidget);
+    expect(find.byKey(const Key('savedPlants')), findsOneWidget);
+    await tester.tap(find.text('Saved').first);
+    await tester.pumpAndSettle();
+    expect(location(tester), '/saved');
   });
 }

@@ -368,6 +368,15 @@ describe('US-22 plant history', () => {
     await assertFails(setDoc(doc(as('cust'), 'history/h5'), entry({ text: 'x'.repeat(281) })));
   });
 
+  test('the owner adds growth photos, size-limited, only as photo entries', async () => {
+    const photo = { ownerId: 'cust', gardenPlantId: 'g1', kind: 'photo', at: '2026-11-21T10:00:00Z', photo: 'abc' };
+    await assertSucceeds(setDoc(doc(as('cust'), 'history/p1'), photo));
+    await assertFails(setDoc(doc(as('cust'), 'history/p2'), { ...photo, photo: 'x'.repeat(400001) }));
+    await assertFails(setDoc(doc(as('cust'), 'history/p3'), { ownerId: 'cust', gardenPlantId: 'g1', kind: 'photo', at: '2026-11-21T10:00:00Z' }));
+    await assertFails(setDoc(doc(as('cust'), 'history/p4'), entry({ photo: 'abc' })));
+    await assertFails(setDoc(doc(as('cust'), 'history/p5'), { ...photo, gardenPlantId: 'g9' }));
+  });
+
   test('history is private and cannot be rewritten', async () => {
     await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'history/h1'), entry()));
     await assertFails(getDoc(doc(as('n1owner'), 'history/h1')));

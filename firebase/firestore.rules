@@ -200,9 +200,13 @@ service cloud.firestore {
     match /history/{id} {
       allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
       allow create: if hasRole('customer')
-        && request.resource.data.keys().hasOnly(['ownerId', 'gardenPlantId', 'kind', 'at', 'text'])
+        && request.resource.data.keys().hasOnly(['ownerId', 'gardenPlantId', 'kind', 'at', 'text', 'photo'])
         && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.kind in ['watered', 'note']
+        && request.resource.data.kind in ['watered', 'note', 'photo']
+        // Growth photos: base64 JPEG, only on photo entries, size-limited.
+        && (request.resource.data.kind == 'photo'
+          ? request.resource.data.photo is string && request.resource.data.photo.size() <= 400000
+          : !('photo' in request.resource.data))
         && request.resource.data.at is string
         && (!('text' in request.resource.data) || (request.resource.data.text is string && request.resource.data.text.size() <= 280))
         && get(/databases/$(database)/documents/garden/$(request.resource.data.gardenPlantId)).data.ownerId == request.auth.uid;

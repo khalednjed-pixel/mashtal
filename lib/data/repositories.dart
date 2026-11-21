@@ -159,10 +159,17 @@ abstract interface class GardenRepository {
   List<GardenPlant> get garden;
 
   /// Customer only: adds a plant bought outside the app.
-  Future<GardenPlant> addToGarden(String plantId);
+  Future<GardenPlant> addToGarden(String plantId, {PlantHome? home});
 
   /// Customer only, own plants: records a watering now.
   Future<void> markWatered(String gardenPlantId);
+
+  /// Customer only, own plants: the soil was still moist when checked, so
+  /// the next check comes a little later and the plant's pace stretches.
+  Future<void> markStillMoist(String gardenPlantId);
+
+  /// Customer only, own plants: where the plant lives.
+  Future<void> setHome(String gardenPlantId, PlantHome home);
 
   /// Customer only, own plants.
   Future<void> removeFromGarden(String gardenPlantId);

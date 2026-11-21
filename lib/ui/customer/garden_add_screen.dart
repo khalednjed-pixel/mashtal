@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/care_plan.dart';
 import '../../logic/text_match.dart';
 import '../../logic/watering.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/home_picker.dart';
 import '../widgets/plant_photo.dart';
 
 /// Adds a plant bought outside the app to My Garden (US-21 AC-02 empty
@@ -70,7 +72,11 @@ class _GardenAddScreenState extends State<GardenAddScreen> {
                       final messenger = ScaffoldMessenger.of(context);
                       final router = GoRouter.of(context);
                       final msg = '${context.tr('addedToGarden')}: ${p.name(lang)}';
-                      await app.backend.addToGarden(p.id);
+                      // One question, with our guess marked, so watering fits
+                      // the pot or the ground from day one.
+                      final home = await pickHome(context, current: guessHome(p), guessed: true);
+                      if (home == null) return;
+                      await app.backend.addToGarden(p.id, home: home);
                       router.go('/garden');
                       messenger.showSnackBar(SnackBar(content: Text(msg)));
                     },

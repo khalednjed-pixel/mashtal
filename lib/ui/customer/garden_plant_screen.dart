@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/local_backend.dart';
 import '../../l10n/strings.dart';
+import '../../logic/care_plan.dart';
 import '../../logic/care_tips.dart';
 import '../../logic/history.dart';
 import '../../logic/watering.dart';
@@ -13,9 +14,11 @@ import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
+import '../widgets/home_picker.dart';
 import '../widgets/not_found.dart';
 import '../widgets/plant_photo.dart';
-import 'garden_screen.dart' show WaterRhythm;
+import '../widgets/water_ring.dart';
+import 'garden_screen.dart' show WaterRhythm, planEveryText, planReasonsText;
 
 /// One plant in My Garden: its watering rhythm and its history (US-22), a
 /// timeline growing down a stem, newest first, each entry with its date and
@@ -34,13 +37,8 @@ class GardenPlantScreen extends StatelessWidget {
     final plant = g == null ? null : market.plantById(g.plantId);
     if (g == null || plant == null) return const NotFoundScreen();
 
-    final plan = WateringPlan.of(g, plant, DateTime.now());
-    final story = plantStory(
-      g,
-      market.historyOf(g.id),
-      nursery: g.nurseryId == null ? null : market.nurseryById(g.nurseryId!),
-      lang: lang,
-    );
+    final plan = CarePlan.of(g, plant, DateTime.now());
+    final story = plantStory(g, market.historyOf(g.id), nursery: g.nurseryId == null ? null : market.nurseryById(g.nurseryId!), lang: lang);
     final title = g.quantity > 1 ? '${plant.name(lang)} × ${g.quantity}' : plant.name(lang);
 
     return Scaffold(
@@ -63,52 +61,119 @@ class GardenPlantScreen extends StatelessWidget {
         child: ListView(
           padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
-              child: AspectRatio(aspectRatio: 4 / 3, child: PlantPhoto.fill(plant: plant)),
+            // A small round portrait, so the watering ring fits on the first
+            // screen of a phone.
+            Row(
+              children: [
+                PlantPhoto(plant: plant, size: 64, radius: 32),
+                const SizedBox(width: MashtalSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Latin name: LTR, but on the reading side of the screen.
+                      Text(
+                        plant.scientificName,
+                        textDirection: TextDirection.ltr,
+                        style: text.bodyMedium?.copyWith(fontStyle: FontStyle.italic, fontSize: 13, color: MashtalColors.muted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text('${context.tr('inGardenSince')} ${DateFormat('d MMMM y', lang).format(g.addedAt.toLocal())}', style: text.bodyMedium),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: MashtalSpace.md),
-            // Latin name: LTR, but on the reading side of the screen.
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                plant.scientificName,
-                textDirection: TextDirection.ltr,
-                style: text.bodyMedium?.copyWith(fontStyle: FontStyle.italic, fontSize: 13, color: MashtalColors.muted),
+            const SizedBox(height: MashtalSpace.lg),
+            // Watering: the ring is the screen's one action. Press and hold
+            // to water; under it, why the plan is what it is.
+            Center(
+              child: WaterRing(
+                plan: plan,
+                onWatered: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final msg = '${context.tr('wateredDone')} ${plant.name(lang)}';
+                  await market.markWatered(g.id);
+                  messenger.showSnackBar(SnackBar(content: Text(msg)));
+                },
               ),
             ),
             const SizedBox(height: MashtalSpace.md),
-            // Watering: how often, the coming week, and the screen's one action.
-            Container(
-              padding: const EdgeInsets.all(MashtalSpace.lg),
-              decoration: BoxDecoration(color: MashtalColors.ground, borderRadius: BorderRadius.circular(MashtalSpace.radius)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.water_drop_outlined, color: MashtalColors.leaf),
-                      const SizedBox(width: MashtalSpace.sm),
-                      Text(wateringEveryText(lang, plant.wateringEveryDays), style: text.titleMedium),
-                      const Spacer(),
-                      Text(nextWateringText(lang, plan.dueInDays), style: text.bodyMedium),
+            Material(
+              color: MashtalColors.waterSoft,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+              child: Padding(
+                padding: const EdgeInsets.all(MashtalSpace.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.water_drop_outlined, color: MashtalColors.water),
+                        const SizedBox(width: MashtalSpace.sm),
+                        Expanded(
+                          child: Text(planEveryText(context, plan), key: const Key('planEvery'), style: text.titleMedium),
+                        ),
+                        Text(nextWateringText(lang, plan.dueInDays), style: text.bodyMedium),
+                      ],
+                    ),
+                    if (plan.reasons.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 32, top: 2),
+                        child: Text(planReasonsText(context, plan), key: const Key('planReasons'), style: text.bodySmall),
+                      ),
+                    const SizedBox(height: MashtalSpace.md),
+                    WaterRhythm(days: plan.nextDays()),
+                    const SizedBox(height: MashtalSpace.md),
+                    // Where it lives: one tap to change; the guess is said out loud.
+                    Row(
+                      children: [
+                        Icon(homeIcon(plan.home), size: 20, color: MashtalColors.leaf),
+                        const SizedBox(width: MashtalSpace.sm),
+                        Expanded(
+                          child: Text(
+                            '${context.tr('livesIn')}: ${context.tr('home.${plan.home.name}')}${plan.homeGuessed ? ' (${context.tr('ourGuess')})' : ''}',
+                            style: text.bodyMedium,
+                          ),
+                        ),
+                        TextButton(
+                          key: const Key('changeHome'),
+                          onPressed: () async {
+                            final h = await pickHome(context, current: plan.home, guessed: plan.homeGuessed);
+                            if (h != null) await market.setHome(g.id, h);
+                          },
+                          child: Text(context.tr('change')),
+                        ),
+                      ],
+                    ),
+                    if (plan.isDue) ...[
+                      const SizedBox(height: MashtalSpace.xs),
+                      OutlinedButton.icon(
+                        key: const Key('stillMoist'),
+                        icon: const Icon(Icons.back_hand_outlined),
+                        label: Text(context.tr('stillMoist')),
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final msg = context.tr('stillMoistDone');
+                          await market.markStillMoist(g.id);
+                          messenger.showSnackBar(SnackBar(content: Text(msg)));
+                        },
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: MashtalSpace.md),
-                  WaterRhythm(days: plan.nextDays()),
-                  const SizedBox(height: MashtalSpace.lg),
-                  FilledButton.icon(
-                    key: const Key('waterNow'),
-                    icon: const Icon(Icons.water_drop),
-                    label: Text(context.tr('iWatered')),
-                    onPressed: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final msg = '${context.tr('wateredDone')} ${plant.name(lang)}';
-                      await market.markWatered(g.id);
-                      messenger.showSnackBar(SnackBar(content: Text(msg)));
-                    },
-                  ),
-                ],
+                    // How to tell, for someone who has never checked soil.
+                    Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        key: const Key('howToCheck'),
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: MashtalSpace.sm),
+                        leading: const Icon(Icons.help_outline, color: MashtalColors.leaf),
+                        title: Text(context.tr('howToCheck'), style: text.bodyMedium?.copyWith(color: MashtalColors.leaf)),
+                        children: [Text(context.tr('howToCheckBody'), style: text.bodyMedium)],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: MashtalSpace.md),
@@ -206,13 +271,13 @@ class _CareTips extends StatelessWidget {
   final Plant plant;
 
   static IconData _icon(TipTopic t) => switch (t) {
-        TipTopic.light => Icons.wb_sunny_outlined,
-        TipTopic.water => Icons.water_drop_outlined,
-        TipTopic.heat => Icons.thermostat_outlined,
-        TipTopic.indoor => Icons.ac_unit,
-        TipTopic.soil => Icons.grass_outlined,
-        TipTopic.safety => Icons.child_care_outlined,
-      };
+    TipTopic.light => Icons.wb_sunny_outlined,
+    TipTopic.water => Icons.water_drop_outlined,
+    TipTopic.heat => Icons.thermostat_outlined,
+    TipTopic.indoor => Icons.ac_unit,
+    TipTopic.soil => Icons.grass_outlined,
+    TipTopic.safety => Icons.child_care_outlined,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +292,10 @@ class _CareTips extends StatelessWidget {
         Text(context.tr('careTipsNote'), style: text.bodySmall),
         const SizedBox(height: MashtalSpace.md),
         DecoratedBox(
-          decoration: BoxDecoration(border: Border.all(color: MashtalColors.line), borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+          decoration: BoxDecoration(
+            border: Border.all(color: MashtalColors.line),
+            borderRadius: BorderRadius.circular(MashtalSpace.radius),
+          ),
           child: Column(
             children: [
               for (final (i, tip) in tips.indexed) ...[
@@ -261,13 +329,13 @@ class _StoryEntry extends StatelessWidget {
   final bool last;
 
   static IconData _icon(HistoryKind k) => switch (k) {
-        HistoryKind.added => Icons.add_circle_outline,
-        HistoryKind.pickedUp => Icons.storefront_outlined,
-        HistoryKind.watered => Icons.water_drop_outlined,
-        HistoryKind.note => Icons.edit_note,
-        HistoryKind.check => Icons.photo_camera_outlined,
-        HistoryKind.proFeedback => Icons.handyman_outlined,
-      };
+    HistoryKind.added => Icons.add_circle_outline,
+    HistoryKind.pickedUp => Icons.storefront_outlined,
+    HistoryKind.watered => Icons.water_drop_outlined,
+    HistoryKind.note => Icons.edit_note,
+    HistoryKind.check => Icons.photo_camera_outlined,
+    HistoryKind.proFeedback => Icons.handyman_outlined,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -304,10 +372,7 @@ class _StoryEntry extends StatelessWidget {
                 children: [
                   Text(context.tr('h.${item.kind.name}'), style: text.titleMedium),
                   Text('$source · $date', style: text.bodySmall),
-                  if (item.text != null) ...[
-                    const SizedBox(height: MashtalSpace.xs),
-                    Text(item.text!, style: text.bodyMedium),
-                  ],
+                  if (item.text != null) ...[const SizedBox(height: MashtalSpace.xs), Text(item.text!, style: text.bodyMedium)],
                 ],
               ),
             ),

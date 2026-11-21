@@ -70,6 +70,7 @@ void main() {
     await answer(tester, 'sun-lots');
     await answer(tester, 'space-lots');
     await answer(tester, 'watering-some');
+    await answer(tester, 'away-no');
     await answer(tester, 'kids-no');
     // Date palm (p04): Al Rawdah in Riyadh at 450, Oasis in Jeddah at 400 (cheaper).
     await tester.scrollUntilVisible(find.byKey(const Key('result-p04')), 300, scrollable: find.byType(Scrollable).first);

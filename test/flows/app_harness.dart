@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Starts the whole app on fresh seed data, in English so finders can use
 /// the English labels. Returns the app state for direct checks.
-Future<AppState> pumpMashtal(WidgetTester tester, {String lang = 'en'}) async {
+Future<AppState> pumpMashtal(WidgetTester tester, {String lang = 'en', DateTime Function()? clock}) async {
   SharedPreferences.setMockInitialValues({'flutter.mashtal.lang': lang});
   WikiPhotos.enabled = false;
   SplashGate.enabled = false;
@@ -22,7 +22,7 @@ Future<AppState> pumpMashtal(WidgetTester tester, {String lang = 'en'}) async {
   addTearDown(tester.view.reset);
   late AppState app;
   await tester.runAsync(() async {
-    final backend = await LocalBackend.open(random: Random(3));
+    final backend = await LocalBackend.open(random: Random(3), clock: clock);
     app = await AppState.create(backend);
   });
   await tester.pumpWidget(ChangeNotifierProvider.value(value: app, child: const MashtalApp()));
@@ -48,3 +48,19 @@ Future<void> signInWithPhone(WidgetTester tester, String phone) async {
 
 String location(WidgetTester tester) =>
     GoRouter.of(tester.element(find.byType(Scaffold).first)).routerDelegate.currentConfiguration.uri.toString();
+
+/// Presses and holds the plant page's water ring until it fills.
+Future<void> holdToWater(WidgetTester tester) async {
+  final ring = find.byKey(const Key('waterNow'));
+  await tester.ensureVisible(ring);
+  await tester.pumpAndSettle();
+  final gesture = await tester.startGesture(tester.getCenter(ring));
+  // The fill starts on the next frame and takes WaterRing.holdFor.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 1300));
+  await gesture.up();
+  await tester.pumpAndSettle();
+  // The ring shows "Watered" for a moment, then empties again.
+  await tester.pump(const Duration(milliseconds: 1300));
+  await tester.pumpAndSettle();
+}

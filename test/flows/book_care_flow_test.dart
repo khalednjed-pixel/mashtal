@@ -42,12 +42,16 @@ void main() {
     final g = app.backend.garden.single;
     go(tester, '/garden/plant/${g.id}');
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('bookCare')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('bookCare')));
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(10, 10)); // outside the sheet
     await tester.pumpAndSettle();
     expect(location(tester), '/garden/plant/${g.id}');
 
+    await tester.ensureVisible(find.byKey(const Key('bookCare')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('bookCare')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('care-pruning')));

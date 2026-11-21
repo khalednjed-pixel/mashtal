@@ -85,4 +85,38 @@ void main() {
       await expectLater(b.addNote(g.id, 'x' * 281), throwsArgumentError);
     });
   });
+
+  group('care plan', () {
+    test('the customer says where a plant lives, and it is kept', () async {
+      final b = await signedIn('0500000005');
+      final g = await b.addToGarden('p23', home: PlantHome.smallPot);
+      expect(b.garden.single.home, PlantHome.smallPot);
+      await b.setHome(g.id, PlantHome.ground);
+      final again = await LocalBackend.open(random: Random(2));
+      await signedIn('0500000005', reuse: again);
+      expect(again.garden.single.home, PlantHome.ground);
+    });
+
+    test('"still moist" records the check and stretches the pace, up to a limit', () async {
+      final b = await signedIn('0500000005');
+      final g = await b.addToGarden('p23');
+      await b.markStillMoist(g.id);
+      expect(b.garden.single.lastCheckedAt, isNotNull);
+      expect(b.garden.single.pace, closeTo(1.15, 0.001));
+      for (var i = 0; i < 10; i++) {
+        await b.markStillMoist(g.id);
+      }
+      expect(b.garden.single.pace, 2.0);
+      expect(b.historyOf(g.id), isEmpty, reason: 'a check is not a watering');
+    });
+
+    test("nobody else can change another customer's plant", () async {
+      final b = await signedIn('0500000005');
+      final g = await b.addToGarden('p23');
+      await b.signOut();
+      await signedIn('0551112222', reuse: b);
+      await expectLater(b.markStillMoist(g.id), throwsA(isA<PermissionDenied>()));
+      await expectLater(b.setHome(g.id, PlantHome.indoor), throwsA(isA<PermissionDenied>()));
+    });
+  });
 }

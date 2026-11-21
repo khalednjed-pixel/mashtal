@@ -139,6 +139,11 @@ class _ChooseScreenState extends State<ChooseScreen> {
         Text('${context.tr('questionOf')} ${step + 1} ${context.tr('of')} ${questions.length}', style: theme.textTheme.bodySmall),
         const SizedBox(height: 24),
         Text(context.tr('q.${q.name}'), key: Key('question-${q.name}'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+        // The two newer questions say why they are asked, in one line.
+        if (q == Question.sunTime || q == Question.away) ...[
+          const SizedBox(height: 8),
+          Text(context.tr('q.${q.name}.why'), style: theme.textTheme.bodyMedium),
+        ],
         const SizedBox(height: 20),
         ..._options(q),
         const SizedBox(height: 24),
@@ -170,6 +175,14 @@ class _ChooseScreenState extends State<ChooseScreen> {
               selected: a.light == v,
               onTap: () => _set(a.copyWith(light: v)),
             ),
+        ],
+      Question.sunTime => [
+          for (final t in SunTime.values)
+            _Option(id: 'sunTime-${t.name}', label: context.tr('a.sunTime.${t.name}'), selected: a.sunTime == t, onTap: () => _set(a.copyWith(sunTime: t))),
+        ],
+      Question.away => [
+          _Option(id: 'away-yes', label: context.tr('a.away.yes'), selected: a.away == true, onTap: () => _set(a.copyWith(away: true))),
+          _Option(id: 'away-no', label: context.tr('no'), selected: a.away == false, onTap: () => _set(a.copyWith(away: false))),
         ],
       Question.space => [
           for (final v in Amount.values)
@@ -528,9 +541,17 @@ Future<void> showScoreExplanation(BuildContext context, PlantScore score, Suitab
       final theme = Theme.of(c);
       String answer(Question q) => switch (q) {
             Question.spot => c.tr('a.spot.${a.spot!.name}'),
-            Question.window || Question.sun => c.tr('a.${q.name}.${a.light!.name}'),
+            Question.window || Question.sun => [
+                c.tr('a.${q.name}.${a.light!.name}'),
+                if (a.asksSunTime && a.sunTime != null) c.tr('a.sunTime.${a.sunTime!.name}'),
+              ].join(' · '),
+            Question.sunTime => c.tr('a.sunTime.${a.sunTime!.name}'),
             Question.space => c.tr('a.space.${a.space!.name}'),
-            Question.watering => c.tr('a.watering.${a.watering!.name}'),
+            Question.watering => [
+                c.tr('a.watering.${a.watering!.name}'),
+                if (a.away == true) c.tr('awayInSummer'),
+              ].join(' · '),
+            Question.away => c.tr(a.away! ? 'a.away.yes' : 'no'),
             Question.kidsOrPets => c.tr(a.kidsOrPets! ? 'yes' : 'no'),
             Question.city => c.trCity(a.city!),
           };

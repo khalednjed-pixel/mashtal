@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mashtal/logic/care_plan.dart';
+import 'package:mashtal/logic/watering.dart';
+import 'package:mashtal/models/models.dart';
 
 import 'app_harness.dart';
 
@@ -38,13 +41,20 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('pick-p16')));
     await tester.pumpAndSettle();
+    // One question: where it lives, with our guess marked.
+    expect(find.byKey(const Key('homePicker')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('home-bigPot')));
+    await tester.pumpAndSettle();
 
     expect(location(tester), '/garden');
     final g = app.backend.garden.single;
     expect(find.byKey(Key('garden-${g.id}')), findsOneWidget);
     expect(find.text('Bougainvillea'), findsOneWidget);
-    // Bougainvillea is watered every 5 days in the guide data.
-    expect(tester.widget<Text>(find.byKey(Key('frequency-${g.id}'))).data, 'Every 5 days');
+    expect(g.home, PlantHome.bigPot);
+    // The care plan adjusts the plant's usual interval for a new plant in a
+    // big pot and the season.
+    final plan = CarePlan.of(g, app.backend.plantById('p16')!, DateTime.now());
+    expect(tester.widget<Text>(find.byKey(Key('frequency-${g.id}'))).data, '${wateringEveryText('en', plan.everyDays)} now');
     expect(find.text('Nothing to water today'), findsOneWidget);
   });
 

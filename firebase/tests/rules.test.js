@@ -311,6 +311,17 @@ describe('US-21 My Garden', () => {
     await assertFails(deleteDoc(doc(as('n1owner'), 'garden/g1')));
     await assertSucceeds(deleteDoc(doc(as('cust'), 'garden/g1')));
   });
+
+  test('the owner sets where it lives and says the soil is still moist', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'garden/g1'), plant()));
+    await assertSucceeds(setDoc(doc(as('cust'), 'garden/g2'), plant({ home: 'smallPot' })));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g3'), plant({ home: 'roof' })));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { home: 'bigPot' }));
+    await assertFails(updateDoc(doc(as('cust'), 'garden/g1'), { home: 'roof' }));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { lastCheckedAt: '2026-11-21T08:00:00Z', pace: 1.15 }));
+    await assertFails(updateDoc(doc(as('cust'), 'garden/g1'), { lastCheckedAt: '2026-11-22T08:00:00Z', pace: 5 }));
+    await assertFails(updateDoc(doc(as('n1owner'), 'garden/g1'), { home: 'indoor' }));
+  });
 });
 
 describe('US-20 picked up into My Garden', () => {

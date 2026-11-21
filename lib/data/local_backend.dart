@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../logic/care_plan.dart' show paceStep, maxPace;
 import '../logic/phone.dart';
 import '../models/models.dart';
 import 'accounts.dart';
@@ -924,7 +925,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   RemoteWrite _putGarden(GardenPlant g) => RemoteWrite.put('garden', g.id, _doc(g.toJson()));
 
   @override
-  Future<GardenPlant> addToGarden(String plantId) async {
+  Future<GardenPlant> addToGarden(String plantId, {PlantHome? home}) async {
     _require(Role.customer, 'addToGarden');
     if (plantById(plantId) == null) throw ArgumentError('Unknown plant $plantId');
     final g = GardenPlant(
@@ -933,6 +934,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       plantId: plantId,
       addedAt: _now(),
       source: GardenSource.manual,
+      home: home,
     );
     await _push([_putGarden(g)]);
     _garden.add(g);
@@ -956,6 +958,25 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     await _push([_putGarden(g), _putHistory(e)]);
     _garden[i] = g;
     _history.add(e);
+    await _save();
+  }
+
+  @override
+  Future<void> markStillMoist(String gardenPlantId) async {
+    final i = _ownGarden(gardenPlantId, 'markStillMoist');
+    final old = _garden[i];
+    final g = old.copyWith(lastCheckedAt: _now(), pace: (old.pace * paceStep).clamp(1.0, maxPace));
+    await _push([_putGarden(g)]);
+    _garden[i] = g;
+    await _save();
+  }
+
+  @override
+  Future<void> setHome(String gardenPlantId, PlantHome home) async {
+    final i = _ownGarden(gardenPlantId, 'setHome');
+    final g = _garden[i].copyWith(home: home);
+    await _push([_putGarden(g)]);
+    _garden[i] = g;
     await _save();
   }
 

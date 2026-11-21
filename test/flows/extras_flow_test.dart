@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mashtal/models/models.dart';
 import 'package:mashtal/ui/widgets/pickup_pass.dart';
 
 import 'app_harness.dart';
@@ -88,5 +89,54 @@ void main() {
     go(tester, '/saved');
     await tester.pumpAndSettle();
     expect(location(tester), isNot('/saved'));
+  });
+
+  testWidgets('the plant page waters by press and hold, says where it lives, and learns from "still moist"', (tester) async {
+    final app = await pumpMashtal(tester);
+    go(tester, '/login');
+    await tester.pumpAndSettle();
+    await signInWithPhone(tester, '0500000005');
+    await tester.runAsync(() => app.backend.addToGarden('p23'));
+    final g = app.backend.garden.single;
+    go(tester, '/garden/plant/${g.id}');
+    await tester.pumpAndSettle();
+
+    // A quick tap does not water.
+    await tester.tap(find.byKey(const Key('waterNow')));
+    await tester.pumpAndSettle();
+    expect(app.backend.garden.single.lastWateredAt, isNull);
+
+    await holdToWater(tester);
+    expect(app.backend.garden.single.lastWateredAt, isNotNull);
+    expect(app.backend.historyOf(g.id).where((e) => e.kind == HistoryKind.watered), hasLength(1));
+
+    // Where it lives: our guess, changed in one tap.
+    expect(find.textContaining('Big pot (Our pick)'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('changeHome')));
+    await tester.tap(find.byKey(const Key('changeHome')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home-smallPot')));
+    await tester.pumpAndSettle();
+    expect(app.backend.garden.single.home, PlantHome.smallPot);
+    expect(find.textContaining('Small pot'), findsWidgets);
+  });
+
+  testWidgets('a plant that is due offers "the soil is still moist"', (tester) async {
+    // The plant was added ten days ago and never watered, so it is due.
+    var now = DateTime.now().subtract(const Duration(days: 10));
+    final app = await pumpMashtal(tester, clock: () => now);
+    go(tester, '/login');
+    await tester.pumpAndSettle();
+    await signInWithPhone(tester, '0500000005');
+    await tester.runAsync(() => app.backend.addToGarden('p24', home: PlantHome.smallPot));
+    now = DateTime.now();
+    final g = app.backend.garden.single;
+    go(tester, '/garden/plant/${g.id}');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('stillMoist')));
+    await tester.tap(find.byKey(const Key('stillMoist')));
+    await tester.pumpAndSettle();
+    expect(app.backend.garden.single.pace, greaterThan(1));
+    expect(find.textContaining("We'll remind you"), findsOneWidget);
   });
 }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/care_plan.dart';
 import '../../logic/watering.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
@@ -26,7 +27,7 @@ class GardenScreen extends StatelessWidget {
     final now = DateTime.now();
     final items = [
       for (final g in market.garden)
-        if (market.plantById(g.plantId) case final plant?) (garden: g, plant: plant, plan: WateringPlan.of(g, plant, now)),
+        if (market.plantById(g.plantId) case final plant?) (garden: g, plant: plant, plan: CarePlan.of(g, plant, now)),
     ]..sort((a, b) => a.plan.dueInDays.compareTo(b.plan.dueInDays)); // thirstiest first
     final due = items.where((i) => i.plan.isDue).toList();
 
@@ -79,7 +80,7 @@ class GardenScreen extends StatelessWidget {
               child: ListView(
                 padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
                 children: [
-                  _TodayPanel(due: [for (final d in due) d.plant], total: items.length),
+                  _TodayPanel(due: [for (final d in due) d.plant], total: items.length, season: riyadhSeason(now)),
                   const SizedBox(height: MashtalSpace.lg),
                   LayoutBuilder(
                     builder: (context, c) {
@@ -108,9 +109,10 @@ class GardenScreen extends StatelessWidget {
 
 /// What needs water today, so the screen answers "what do I do now?" first.
 class _TodayPanel extends StatelessWidget {
-  const _TodayPanel({required this.due, required this.total});
+  const _TodayPanel({required this.due, required this.total, required this.season});
   final List<Plant> due;
   final int total;
+  final Season season;
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +141,11 @@ class _TodayPanel extends StatelessWidget {
                   due.isEmpty ? context.trCount('plantsInGarden', total) : due.map((p) => p.name(lang)).join('، '),
                   style: text.bodyMedium?.copyWith(color: MashtalColors.lime),
                 ),
+                // The season changes every plant's watering; say how, in one line.
+                Padding(
+                  padding: const EdgeInsets.only(top: MashtalSpace.xs),
+                  child: Text(context.tr('season.${season.name}'), key: const Key('seasonLine'), style: text.bodySmall?.copyWith(color: MashtalColors.surface)),
+                ),
               ],
             ),
           ),
@@ -154,7 +161,7 @@ class GardenCard extends StatelessWidget {
   const GardenCard({super.key, required this.garden, required this.plant, required this.plan});
   final GardenPlant garden;
   final Plant plant;
-  final WateringPlan plan;
+  final CarePlan plan;
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +193,7 @@ class GardenCard extends StatelessWidget {
                   PositionedDirectional(
                     end: MashtalSpace.sm,
                     bottom: MashtalSpace.sm,
-                    child: WaterDot(garden: garden, plant: plant, due: plan.isDue),
+                    child: WaterDot(garden: garden, plant: plant, due: plan.isDue, moisture: plan.moisture),
                   ),
                 ],
               ),
@@ -199,10 +206,10 @@ class GardenCard extends StatelessWidget {
                     const SizedBox(height: MashtalSpace.xs),
                     Row(
                       children: [
-                        const Icon(Icons.water_drop_outlined, size: 16, color: MashtalColors.leaf),
+                        const Icon(Icons.water_drop_outlined, size: 16, color: MashtalColors.water),
                         const SizedBox(width: MashtalSpace.xs),
                         Flexible(
-                          child: Text(wateringEveryText(lang, plant.wateringEveryDays), key: Key('frequency-${garden.id}'), style: text.bodyMedium),
+                          child: Text(planEveryText(context, plan), key: Key('frequency-${garden.id}'), style: text.bodyMedium),
                         ),
                       ],
                     ),
@@ -241,10 +248,14 @@ class GardenCard extends StatelessWidget {
 /// Round button on the photo: "I watered it". Filled with the emerald blend
 /// when the plant is due, plain white otherwise.
 class WaterDot extends StatelessWidget {
-  const WaterDot({super.key, required this.garden, required this.plant, required this.due});
+  const WaterDot({super.key, required this.garden, required this.plant, required this.due, this.moisture = 0});
   final GardenPlant garden;
   final Plant plant;
   final bool due;
+
+  /// Water likely left in the soil (1 full, 0 dry), drawn as a ring around
+  /// the drop that drains over the days.
+  final double moisture;
 
   @override
   Widget build(BuildContext context) {
@@ -263,21 +274,46 @@ class WaterDot extends StatelessWidget {
             messenger.showSnackBar(SnackBar(content: Text(msg)));
           },
           child: Ink(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: due ? MashtalColors.emeraldBlend : null,
-              color: due ? null : MashtalColors.surface,
-              boxShadow: const [BoxShadow(color: MashtalColors.shadow, blurRadius: 8, offset: Offset(0, 2))],
+              color: MashtalColors.surface,
+              boxShadow: [BoxShadow(color: MashtalColors.shadow, blurRadius: 8, offset: Offset(0, 2))],
             ),
-            child: Icon(due ? Icons.water_drop : Icons.water_drop_outlined, color: due ? MashtalColors.forestDeep : MashtalColors.leaf, size: 22),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox.square(
+                  dimension: 44,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: moisture),
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeOutCubic,
+                    builder: (_, v, _) => CircularProgressIndicator(
+                      value: v,
+                      strokeWidth: 3.5,
+                      strokeCap: StrokeCap.round,
+                      color: MashtalColors.water,
+                      backgroundColor: MashtalColors.waterSoft,
+                    ),
+                  ),
+                ),
+                Icon(due ? Icons.water_drop : Icons.water_drop_outlined, color: MashtalColors.water, size: 22),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+/// "Every 3 days now": how often while the plan is what it is.
+String planEveryText(BuildContext context, CarePlan plan) => '${wateringEveryText(context.lang, plan.everyDays)} ${context.tr('now')}';
+
+/// Why the plan differs from the plant's usual need: "new plant · summer".
+String planReasonsText(BuildContext context, CarePlan plan) => plan.reasons.map((r) => context.tr('reason.${r.name}')).join(' · ');
 
 /// The next seven days, today first: a drop on each watering day.
 class WaterRhythm extends StatelessWidget {
@@ -306,7 +342,7 @@ class WaterRhythm extends StatelessWidget {
                       duration: const Duration(milliseconds: 260),
                       transitionBuilder: (child, a) => ScaleTransition(scale: a, child: child),
                       child: water
-                          ? const Icon(Icons.water_drop, key: ValueKey(true), size: 14, color: MashtalColors.leaf)
+                          ? const Icon(Icons.water_drop, key: ValueKey(true), size: 14, color: MashtalColors.water)
                           : Container(
                               key: const ValueKey(false),
                               width: 6,

@@ -21,8 +21,14 @@ enum Factor { place, light, water, space }
 /// answer (US-09 AC-02).
 enum Blocker { place, light, water, space, safety }
 
-/// The questions of the suitability flow, in order (US-07).
-enum Question { city, spot, window, sun, space, watering, kidsOrPets }
+/// When a few hours of outdoor sun come. In Riyadh the afternoon sun is the
+/// hard one: plants that like part sun burn in it.
+enum SunTime { morning, afternoon, unsure }
+
+/// The questions of the suitability flow, in order (US-07). [sunTime] is
+/// only asked for a few hours of outdoor sun; [away] is about summer travel,
+/// when a plant left alone needs water most.
+enum Question { city, spot, window, sun, sunTime, space, watering, away, kidsOrPets }
 
 /// Cities with guide data (OD-04: Riyadh only at launch).
 const Set<String> coveredCities = {'riyadh'};
@@ -42,20 +48,41 @@ const Map<Factor, int> factorWeights = {
 };
 
 class SuitabilityAnswers {
-  const SuitabilityAnswers({this.city, this.spot, this.light, this.space, this.watering, this.kidsOrPets});
+  const SuitabilityAnswers({this.city, this.spot, this.light, this.sunTime, this.space, this.watering, this.away, this.kidsOrPets});
 
   final String? city;
   final Spot? spot;
 
   /// Window answer when [spot] is inside, sun answer otherwise.
   final Amount? light;
+
+  /// Morning or afternoon, for a few hours of outdoor sun.
+  final SunTime? sunTime;
   final Amount? space;
 
   /// How often the customer can water.
   final Amount? watering;
+
+  /// Away from home for a week or more in summer.
+  final bool? away;
   final bool? kidsOrPets;
 
   bool get isInside => spot == Spot.inside;
+
+  /// The sun-time question only matters for a few hours of outdoor sun.
+  bool get asksSunTime => !isInside && spot != null && light == Amount.some;
+
+  /// The light the plant really gets: a few hours of afternoon sun in
+  /// Riyadh is as harsh as sun all day.
+  Amount? get effectiveLight => asksSunTime && sunTime == SunTime.afternoon ? Amount.lots : light;
+
+  /// The watering the plant really gets: someone away in summer can water
+  /// one step less often than they would at home.
+  Amount? get effectiveWatering {
+    final w = watering;
+    if (w == null || away != true) return w;
+    return Amount.values[(w.index - 1).clamp(0, Amount.values.length - 1)];
+  }
 
   /// The questions to ask for these answers. The window question is only
   /// asked inside the house, the sun question only outside (US-07 AC-02).
@@ -63,8 +90,10 @@ class SuitabilityAnswers {
         Question.city,
         Question.spot,
         if (spot == null || isInside) Question.window else Question.sun,
+        if (asksSunTime) Question.sunTime,
         Question.space,
         Question.watering,
+        Question.away,
         Question.kidsOrPets,
       ];
 
@@ -72,8 +101,10 @@ class SuitabilityAnswers {
         Question.city => city != null,
         Question.spot => spot != null,
         Question.window || Question.sun => light != null,
+        Question.sunTime => sunTime != null,
         Question.space => space != null,
         Question.watering => watering != null,
+        Question.away => away != null,
         Question.kidsOrPets => kidsOrPets != null,
       };
 
@@ -87,8 +118,10 @@ class SuitabilityAnswers {
       city: city,
       spot: value,
       light: sameSide ? light : null,
+      sunTime: sameSide ? sunTime : null,
       space: space,
       watering: watering,
+      away: away,
       kidsOrPets: kidsOrPets,
     );
   }
@@ -96,16 +129,20 @@ class SuitabilityAnswers {
   SuitabilityAnswers copyWith({
     String? city,
     Amount? light,
+    SunTime? sunTime,
     Amount? space,
     Amount? watering,
+    bool? away,
     bool? kidsOrPets,
   }) =>
       SuitabilityAnswers(
         city: city ?? this.city,
         spot: spot,
         light: light ?? this.light,
+        sunTime: sunTime ?? this.sunTime,
         space: space ?? this.space,
         watering: watering ?? this.watering,
+        away: away ?? this.away,
         kidsOrPets: kidsOrPets ?? this.kidsOrPets,
       );
 }
@@ -189,8 +226,8 @@ PlantScore? scorePlant(Plant plant, SuitabilityAnswers answers) {
   if (answers.kidsOrPets == true && plant.toxic) return null;
   final factors = {
     Factor.place: placeScore(plant, answers.spot!),
-    Factor.light: lightScore(lightNeedOf(plant), answers.light!),
-    Factor.water: waterScore(waterNeedOf(plant), answers.watering!),
+    Factor.light: lightScore(lightNeedOf(plant), answers.effectiveLight!),
+    Factor.water: waterScore(waterNeedOf(plant), answers.effectiveWatering!),
     Factor.space: spaceScore(sizeOf(plant), answers.space!),
   };
   final weighted = factors.entries.fold<int>(0, (sum, e) => sum + e.value * factorWeights[e.key]!);
@@ -224,8 +261,8 @@ class NothingFits extends SuitabilityOutcome {
 /// The question to go back to for each blocker.
 Question questionFor(Blocker b, SuitabilityAnswers a) => switch (b) {
       Blocker.place => Question.spot,
-      Blocker.light => a.isInside ? Question.window : Question.sun,
-      Blocker.water => Question.watering,
+      Blocker.light => a.isInside ? Question.window : (a.asksSunTime && a.sunTime == SunTime.afternoon ? Question.sunTime : Question.sun),
+      Blocker.water => a.away == true ? Question.away : Question.watering,
       Blocker.space => Question.space,
       Blocker.safety => Question.kidsOrPets,
     };

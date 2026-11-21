@@ -21,8 +21,7 @@ void main() {
     expect(find.text('Plant history'), findsOneWidget);
     expect(find.text('Added to My Garden'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('waterNow')));
-    await tester.pumpAndSettle();
+    await holdToWater(tester);
     // The care tips sit above the history, so scroll down to it.
     await tester.ensureVisible(find.byKey(const Key('addNote')));
     await tester.pumpAndSettle();

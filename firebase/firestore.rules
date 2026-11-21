@@ -166,7 +166,8 @@ service cloud.firestore {
     // US-21: My Garden. Each customer reads and changes only their own plants.
     match /garden/{id} {
       function validGarden(d) {
-        return d.keys().hasOnly(['ownerId', 'plantId', 'addedAt', 'source', 'quantity', 'reservationId', 'nurseryId', 'lastWateredAt', 'removedAt'])
+        return d.keys().hasOnly(['ownerId', 'plantId', 'addedAt', 'source', 'quantity', 'reservationId', 'nurseryId', 'lastWateredAt', 'removedAt', 'home', 'pace', 'lastCheckedAt'])
+          && (!('home' in d) || d.home in ['ground', 'bigPot', 'smallPot', 'indoor'])
           && d.ownerId == request.auth.uid
           && d.addedAt is string
           && d.quantity is int && d.quantity > 0 && d.quantity <= 1000
@@ -184,7 +185,12 @@ service cloud.firestore {
           || (request.resource.data.source == 'pickup' && pickedUpFor(request.resource.data)));
       allow update: if hasRole('customer') && resource.data.ownerId == request.auth.uid
         && ((onlyChanges(['lastWateredAt']) && request.resource.data.lastWateredAt is string)
-          || (onlyChanges(['removedAt']) && request.resource.data.removedAt is string));
+          || (onlyChanges(['removedAt']) && request.resource.data.removedAt is string)
+          // Care plan: "the soil is still moist" stretches the plant's pace
+          // (1 to 2), and the customer says where the plant lives.
+          || (onlyChanges(['lastCheckedAt', 'pace']) && request.resource.data.lastCheckedAt is string
+              && request.resource.data.pace is number && request.resource.data.pace >= 1 && request.resource.data.pace <= 2)
+          || (onlyChanges(['home']) && request.resource.data.home in ['ground', 'bigPot', 'smallPot', 'indoor']));
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 

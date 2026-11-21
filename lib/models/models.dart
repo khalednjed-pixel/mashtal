@@ -582,6 +582,10 @@ class Reservation {
 /// How a plant came into My Garden.
 enum GardenSource { pickup, manual }
 
+/// Where a garden plant lives, in the customer's words: in the ground, a big
+/// pot on the floor, a small pot, or indoors.
+enum PlantHome { ground, bigPot, smallPot, indoor }
+
 /// One plant a customer owns (US-21). Picked-up reservations add these
 /// automatically (US-20); plants bought elsewhere are added by hand.
 class GardenPlant {
@@ -596,6 +600,9 @@ class GardenPlant {
     this.nurseryId,
     this.lastWateredAt,
     this.removedAt,
+    this.home,
+    this.pace = 1.0,
+    this.lastCheckedAt,
   });
 
   final String id;
@@ -603,6 +610,16 @@ class GardenPlant {
   final String plantId;
   final DateTime addedAt;
   final GardenSource source;
+
+  /// Where it lives, once the customer has said; null means the app guesses.
+  final PlantHome? home;
+
+  /// The plant's own watering pace, learned from "the soil is still moist":
+  /// 1 is the usual interval, above 1 stretches it.
+  final double pace;
+
+  /// When the customer last checked and found the soil still moist.
+  final DateTime? lastCheckedAt;
 
   /// How many of this plant came together (a reservation line of 3 is one card).
   final int quantity;
@@ -619,7 +636,7 @@ class GardenPlant {
   /// deleted, so the pickup does not add it again.
   final DateTime? removedAt;
 
-  GardenPlant copyWith({DateTime? lastWateredAt, DateTime? removedAt}) => GardenPlant(
+  GardenPlant copyWith({DateTime? lastWateredAt, DateTime? removedAt, PlantHome? home, double? pace, DateTime? lastCheckedAt}) => GardenPlant(
         id: id,
         ownerId: ownerId,
         plantId: plantId,
@@ -630,6 +647,9 @@ class GardenPlant {
         nurseryId: nurseryId,
         lastWateredAt: lastWateredAt ?? this.lastWateredAt,
         removedAt: removedAt ?? this.removedAt,
+        home: home ?? this.home,
+        pace: pace ?? this.pace,
+        lastCheckedAt: lastCheckedAt ?? this.lastCheckedAt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -643,6 +663,9 @@ class GardenPlant {
         'nurseryId': ?nurseryId,
         'lastWateredAt': ?lastWateredAt?.toUtc().toIso8601String(),
         'removedAt': ?removedAt?.toUtc().toIso8601String(),
+        'home': ?home?.name,
+        if (pace != 1.0) 'pace': pace,
+        'lastCheckedAt': ?lastCheckedAt?.toUtc().toIso8601String(),
       };
 
   factory GardenPlant.fromJson(Map<String, dynamic> j) => GardenPlant(
@@ -656,6 +679,9 @@ class GardenPlant {
         nurseryId: j['nurseryId'],
         lastWateredAt: j['lastWateredAt'] == null ? null : DateTime.parse(j['lastWateredAt']),
         removedAt: j['removedAt'] == null ? null : DateTime.parse(j['removedAt']),
+        home: j['home'] == null ? null : _enumByName(PlantHome.values, j['home']),
+        pace: (j['pace'] as num?)?.toDouble() ?? 1.0,
+        lastCheckedAt: j['lastCheckedAt'] == null ? null : DateTime.parse(j['lastCheckedAt']),
       );
 }
 

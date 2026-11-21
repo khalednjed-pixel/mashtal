@@ -33,6 +33,13 @@ class GardenScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(context.tr('myGarden')),
         actions: [
+          if (user != null)
+            IconButton(
+              key: const Key('findProfessionals'),
+              tooltip: context.tr('findProfessionals'),
+              icon: const Icon(Icons.handyman_outlined),
+              onPressed: () => context.go('/garden/care'),
+            ),
           if (user != null && items.isNotEmpty)
             IconButton(
               key: const Key('addManually'),

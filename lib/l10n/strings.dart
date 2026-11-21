@@ -136,6 +136,16 @@ const Map<String, Map<String, String>> _strings = {
   'nothingToWater': {'ar': 'لا شيء يحتاج الري اليوم', 'en': 'Nothing to water today'},
   'plantsInGarden': {'ar': 'في حديقتك {n} نبتة', 'en': '{n} plant(s) in your garden'},
   'iWatered': {'ar': 'سقيتها', 'en': 'I watered it'},
+  // US-24: professionals for plant care.
+  'plantCare': {'ar': 'العناية بالنبات', 'en': 'Plant care'},
+  'careFor': {'ar': 'العناية بـ', 'en': 'Care for'},
+  'inCity': {'ar': 'في', 'en': 'In'},
+  'priceSetBy': {'ar': 'نطاق سعر {service} الذي حدّده مشتل', 'en': 'Mashtal\'s price range for {service}'},
+  'priceAgreed': {'ar': 'يتفق معك المختص على السعر داخل هذا النطاق، وتدفع له مباشرة.', 'en': 'The professional agrees the price with you inside this range; you pay them directly.'},
+  'verifiedByMashtal': {'ar': 'موثّق من مشتل', 'en': 'Verified by Mashtal'},
+  'noProsInArea': {'ar': 'لا يوجد مختصون في منطقتك بعد', 'en': 'No professionals in your area yet'},
+  'noProsInAreaBody': {'ar': 'جرّب نوع خدمة آخر، أو عد لاحقاً، فنحن نضيف مختصين موثّقين باستمرار.', 'en': 'Try another service, or check back later as we add verified professionals.'},
+  'findProfessionals': {'ar': 'مختصو العناية', 'en': 'Care professionals'},
   // US-22: each plant's history.
   'plantStory': {'ar': 'سجل النبتة', 'en': 'Plant history'},
   'addNote': {'ar': 'أضف ملاحظة', 'en': 'Add a note'},

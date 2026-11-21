@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import 'logic/access.dart';
+import 'models/models.dart';
 import 'state/app_state.dart';
 import 'ui/account_screen.dart';
 import 'ui/admin/admin_screen.dart';
@@ -9,6 +10,7 @@ import 'ui/admin/plant_data_screen.dart';
 import 'ui/admin/professional_form_screen.dart';
 import 'ui/auth/login_screen.dart';
 import 'ui/auth/profile_screen.dart';
+import 'ui/customer/care_screen.dart';
 import 'ui/customer/cart_screen.dart';
 import 'ui/customer/choose_screen.dart';
 import 'ui/customer/garden_add_screen.dart';
@@ -63,6 +65,14 @@ GoRouter buildRouter(AppState app) => GoRouter(
             // /reservations below.
             GoRoute(path: '/garden/add', builder: (_, _) => const GardenAddScreen()),
             GoRoute(path: '/garden/plant/:id', builder: (_, s) => GardenPlantScreen(gardenPlantId: s.pathParameters['id']!)),
+            GoRoute(
+              path: '/garden/care',
+              builder: (_, s) => CareScreen(
+                service: ServiceType.values.where((t) => t.name == s.uri.queryParameters['service']).firstOrNull,
+                city: s.uri.queryParameters['city'],
+                gardenPlantId: s.uri.queryParameters['plant'],
+              ),
+            ),
             GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
             // Top level, not under /account: a page stacked on another inside
             // the app's SelectionArea trips a Flutter layout assertion.

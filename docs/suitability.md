@@ -33,7 +33,7 @@ Plant size comes from its type: trees and palms large; shrubs and climbers mediu
 
 ## Sources and not covered (US-10, US-11)
 
-Guide-backed plants show the guide, edition and section, and "Why this score?" lists the plant values used next to the customer's answers. Plants outside the guide are labelled instead. Section is by plant type until TF-06 records each entry's exact section in `Plant.guideSection`.
+Guide-backed plants show the guide, edition and section, and "Why this score?" lists the plant values used next to the customer's answers. Plants outside the guide are labelled instead. The section is the plant's portrait in Part 2 of the manual with its printed page (`Plant.guideSection`), e.g. "Part 2: Plant portraits, p. 230".
 
 Cities other than Riyadh get "not covered yet" (OD-04). If no plant passes, the app names the answer that ruled out the most plants and links back to that question.
 

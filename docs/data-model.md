@@ -32,7 +32,7 @@ The rules reject any write where `public` does not match those two facts. When t
 
 Seed data lives in `lib/data/seed/`:
 
-- `plants_seed.dart`: 37 species. 33 outdoor species are from the RCRC *Manual of Riyadh Plants*. 4 common houseplants are labelled "not guide-backed" (OD-03). Toxicity follows the ASPCA list (OD-10).
+- `plants_seed.dart`: 37 species. 30 outdoor species are from the RCRC *Manual of Riyadh Plants* and record their portrait page in `guideSection`. 3 native outdoor plants without a portrait in the manual and 4 common houseplants are labelled "not guide-backed" (OD-03). Toxicity follows the ASPCA list (OD-10). Online, a knowledge-base plant takes only the admin-editable fields from its Firestore document; names, descriptions and the citation come from the app.
 - `seed_data.dart`: invented demo data, namely 5 nurseries (one pending), 5 professionals (one pending), 43 listings, 4 price ranges and 5 demo accounts.
 
 ## Photos

@@ -33,13 +33,13 @@ class GuideCitation {
 
 const _rcrcGuide = 'Manual of Riyadh Plants';
 const _rcrcPublisher = 'Royal Commission for Riyadh City (RCRC)';
-const _rcrcEdition = 'English version';
+const _rcrcEdition = 'English version, 1st edition 2014';
 const _rcrcGuideAr = 'دليل نباتات الرياض';
 const _rcrcPublisherAr = 'الهيئة الملكية لمدينة الرياض';
-const _rcrcEditionAr = 'النسخة الإنجليزية';
+const _rcrcEditionAr = 'النسخة الإنجليزية، الطبعة الأولى 2014';
 
-/// Section by plant type, used until TF-06 records the exact section of
-/// each entry in [Plant.guideSection].
+/// Section by plant type, for a guide plant without a recorded
+/// [Plant.guideSection] (e.g. one the admin adds later).
 String _sectionFor(PlantCategory c) => switch (c) {
       PlantCategory.tree => 'Trees',
       PlantCategory.palm => 'Palms',
@@ -76,6 +76,12 @@ GuideCitation? citationFor(Plant p) {
     guideAr: _rcrcGuideAr,
     publisherAr: _rcrcPublisherAr,
     editionAr: _rcrcEditionAr,
-    sectionAr: p.guideSection ?? _sectionArFor(p.category),
+    sectionAr: p.guideSection == null ? _sectionArFor(p.category) : sectionInArabic(p.guideSection!),
   );
 }
+
+/// "Part 2: Plant portraits, p. 35 (Acacia …)" → "الجزء 2: بطاقات النباتات، ص 35 (Acacia …)".
+/// The botanical name stays as printed in the guide.
+String sectionInArabic(String section) => section
+    .replaceFirst('Part 2: Plant portraits', 'الجزء 2: بطاقات النباتات')
+    .replaceFirst(', p. ', '، ص ');

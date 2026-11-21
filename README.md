@@ -61,6 +61,26 @@ NFR-01 and NFR-02 are checked over 30 labelled scenarios in `test/logic/nfr_scen
 - A pasted +966 number is turned into 05… instead of being cut off (BUG-7).
 - BUG-6 (empty console errors) did not reproduce as a Dart error in a profile build; the only errors were photos that failed to download, which the app replaces with an icon.
 
+## Sprint 3: Reserve and My Garden (US-15 to US-24)
+
+| Story | What works |
+|---|---|
+| TF-03 Firebase | Accounts and all shop data are in Firebase (project `mashtal-1`, free Spark plan), shared by every device. |
+| US-15 Cart | The cart is a pickup route: one numbered stop per nursery with its plants and subtotal, and a note that each nursery is a separate pickup. A plant that sold out or was hidden stays in the cart, marked, and is not reserved. |
+| US-16 Reserve | Reserving sends one request per nursery and empties the cart. |
+| US-17 Accept or reject | The nursery accepts (the 48-hour hold starts) or rejects with a reason the customer sees. |
+| US-18 Directions | An accepted reservation shows a pickup pass: address, opening hours, how much of the hold is left, a Directions button that opens the map app at the nursery, and a call button. The admin sets each nursery's map point (or pastes a Google Maps link). |
+| US-19 Notices | The customer is told in the app when a reservation is accepted, rejected, has 6 hours left, or has expired: a banner, a count on Account and a Notifications list. Push needs Cloud Functions (paid plan), so the app works the notices out itself from `acceptedAt` + 48 hours and checks every 30 seconds. |
+| US-20 Pickup | The nursery marks an accepted reservation picked up and the plants appear in the customer's My Garden. Pending, rejected or expired reservations cannot be marked. |
+| US-21 My Garden | One card per plant with photo, name, watering frequency ("every 3 days") and the next seven days as watering drops. Plants due today are listed first; a drop records a watering. The empty garden offers Buy Plants and Add a plant manually. |
+| US-22 History | Each garden plant has a page with its history, newest first, with date and source: how it arrived, waterings and the customer's notes. Ask Mashtal results and professional feedback join it in Sprint 4 (AC-02, the professional's view, moved to Sprint 4). |
+| US-23 Book Plant Care | A button on every garden plant asks what it needs (pruning, periodic care, treatment) and opens the professionals list filtered by it. |
+| US-24 Professionals | Verified professionals covering the customer's city and the chosen service, best rated first, with jobs done and the price range the admin set. "No professionals in your area yet" when nobody covers the city. |
+
+### Guide citations
+
+Every plant the app calls guide-backed now cites its exact portrait in the *Manual of Riyadh Plants* (English version, 1st edition 2014), for example "Part 2: Plant portraits, p. 230" for the date palm, with the manual's name when it differs from ours (*Cassia italica* for *Senna italica*). 30 of the 33 outdoor plants have a portrait. Ghaf (*Prosopis cineraria*) is only mentioned on the *Prosopis chilensis* page, and wild moringa (*Moringa peregrina*) and markh (*Leptadenia pyrotechnica*) are not in the manual, so these three are now labelled "not from the official guide" instead of being cited.
+
 ## Try it
 
 Open the live demo and use a demo account. **There is no real SMS**: the code is shown on screen.

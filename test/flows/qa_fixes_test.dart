@@ -92,10 +92,16 @@ void main() {
     expect(find.textContaining('Not in the Riyadh guide'), findsNothing);
     expect(find.textContaining('نبات منزلي شائع'), findsOneWidget);
 
-    go(tester, '/shop/plant/p01');
+    go(tester, '/shop/plant/p04');
     await tester.pumpAndSettle();
     expect(find.textContaining('الهيئة الملكية لمدينة الرياض'), findsOneWidget);
     expect(find.textContaining('RCRC'), findsNothing);
+
+    // Ghaf has no portrait in the manual, so it is labelled, in Arabic.
+    go(tester, '/shop/plant/p01');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('نبات سعودي محلي'), findsOneWidget);
+    expect(find.textContaining('native Saudi'), findsNothing);
   });
 
   testWidgets('BUG-5 nursery and plant pages agree on a sold-out listing', (tester) async {

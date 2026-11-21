@@ -119,11 +119,33 @@ void main() {
 
   group('US-10 citation', () {
     test('guide-backed plants cite the guide, edition and section', () {
-      final ghaf = seedPlants.firstWhere((p) => p.id == 'p01');
-      final c = citationFor(ghaf)!;
+      final palm = seedPlants.firstWhere((p) => p.id == 'p04');
+      final c = citationFor(palm)!;
       expect(c.guide, 'Manual of Riyadh Plants');
-      expect(c.edition, isNotEmpty);
-      expect(c.section, 'Trees');
+      expect(c.edition, 'English version, 1st edition 2014');
+      expect(c.section, 'Part 2: Plant portraits, p. 230');
+      expect(c.sectionAr, 'الجزء 2: بطاقات النباتات، ص 230');
+    });
+
+    test('a portrait under another name cites that name', () {
+      final c = citationFor(seedPlants.firstWhere((p) => p.id == 'p33'))!;
+      expect(c.section, 'Part 2: Plant portraits, p. 88 (Cassia italica)');
+      expect(c.sectionAr, 'الجزء 2: بطاقات النباتات، ص 88 (Cassia italica)');
+    });
+
+    test('every guide plant records its exact portrait page', () {
+      for (final p in seedPlants.where((p) => p.guideBacked)) {
+        expect(p.guideSection, matches(RegExp(r'^Part 2: Plant portraits, p\. \d{2,3}( \(.+\))?$')), reason: p.id);
+      }
+      expect(seedPlants.where((p) => p.guideBacked), hasLength(30));
+    });
+
+    test('native plants without a portrait are labelled, not cited', () {
+      for (final id in ['p01', 'p07', 'p20']) {
+        final p = seedPlants.firstWhere((p) => p.id == id);
+        expect(p.guideBacked, isFalse, reason: id);
+        expect(citationFor(p), isNull, reason: id);
+      }
     });
 
     test('plants outside the guide have no citation, so the UI labels them (NFR-01)', () {

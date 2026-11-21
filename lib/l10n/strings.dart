@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-import '../data/seed/plants_seed.dart' show houseplantSource, rcrcSource;
+import '../data/seed/plants_seed.dart' show houseplantSource, nativeSource, rcrcSource;
 import '../models/models.dart';
 import '../state/app_state.dart';
 
@@ -323,6 +323,7 @@ const Map<String, Map<String, String>> _strings = {
   'cartAdjusted': {'ar': 'عدّلنا سلتك لأن كمية بعض النباتات تغيّرت في المشتل', 'en': 'We updated your cart because a nursery\'s stock changed'},
   'srcRcrc': {'ar': 'الهيئة الملكية لمدينة الرياض — دليل نباتات الرياض', 'en': 'RCRC — Manual of Riyadh Plants'},
   'srcHouseplant': {'ar': 'نبات منزلي شائع؛ السمية من قائمة ASPCA', 'en': 'Common houseplant; toxicity from the ASPCA list'},
+  'srcNative': {'ar': 'نبات سعودي محلي ليس له بطاقة في دليل نباتات الرياض', 'en': 'Native Saudi plant without a portrait in the Manual of Riyadh Plants'},
   'nurseryPhoto': {'ar': 'صورة المشتل', 'en': 'Nursery photo'},
   'typeMaxPrice': {'ar': 'أو اكتب أعلى سعر', 'en': 'Or type a max price'},
   'anyPrice': {'ar': 'أي سعر', 'en': 'Any price'},
@@ -482,6 +483,7 @@ const Map<String, Map<String, String>> _enums = {
 String sourceText(String lang, Plant p) => switch (p.source) {
       rcrcSource => translate(lang, 'srcRcrc'),
       houseplantSource => translate(lang, 'srcHouseplant'),
+      nativeSource => translate(lang, 'srcNative'),
       _ => p.source,
     };
 

@@ -108,6 +108,17 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   }
 
   static final _seedPlantIds = {for (final p in seedPlants) p.id};
+  static final _seedById = {for (final p in seedPlants) p.id: p};
+
+  /// The built-in record of knowledge-base plant [p] with the admin's edits
+  /// (US-14) from [p] applied; null if [p] is not a knowledge-base plant.
+  static Plant? _withSeed(Plant p) => _seedById[p.id]?.copyWith(
+        placements: p.placements,
+        sun: p.sun,
+        water: p.water,
+        wateringEveryDays: p.wateringEveryDays,
+        toxic: p.toxic,
+      );
 
   void _onRemote(String collection, List<Map<String, dynamic>> docs) {
     List<T> parse<T>(T Function(Map<String, dynamic>) fromJson) {
@@ -134,7 +145,10 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         _priceRanges = parse(PriceRange.fromJson);
       case 'plants':
         final all = parse(Plant.fromJson);
-        _plantOverrides = {for (final p in all) if (_seedPlantIds.contains(p.id)) p.id: p};
+        // A knowledge-base plant takes only the admin-editable fields from the
+        // server (US-14); names, descriptions and its guide citation come from
+        // the app, so a newer release corrects them without a data migration.
+        _plantOverrides = {for (final p in all) p.id: ?_withSeed(p)};
         _customPlants = [for (final p in all) if (!_seedPlantIds.contains(p.id)) p];
       case 'reservations':
         _reservations = parse(Reservation.fromJson);
@@ -270,7 +284,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       _listings = _list(j['listings'], Listing.fromJson);
       _priceRanges = _list(j['priceRanges'], PriceRange.fromJson);
       _customPlants = _list(j['customPlants'] ?? [], Plant.fromJson);
-      _plantOverrides = {for (final p in _list(j['plantOverrides'] ?? [], Plant.fromJson)) p.id: p};
+      _plantOverrides = {for (final p in _list(j['plantOverrides'] ?? [], Plant.fromJson)) p.id: ?_withSeed(p)};
       _plantEdits = _list(j['plantEdits'] ?? [], PlantEdit.fromJson);
       _reservations = _list(j['reservations'] ?? [], Reservation.fromJson);
       _garden = _list(j['garden'] ?? [], GardenPlant.fromJson);

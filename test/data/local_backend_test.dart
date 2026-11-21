@@ -279,4 +279,19 @@ void main() {
       expect(() => backend.updatePlant(p.copyWith(placements: {})), throwsArgumentError);
     });
   });
+
+  test('a saved admin edit keeps the plant\'s guide citation from the app', () async {
+    SharedPreferences.setMockInitialValues({});
+    final b = await LocalBackend.open();
+    final otp = await b.sendCode('0500000001');
+    await b.verifyCode('0500000001', otp.demoCode!);
+    final palm = b.plantById('p04')!;
+    await b.updatePlant(palm.copyWith(water: Water.high));
+
+    final again = await LocalBackend.open();
+    final after = again.plantById('p04')!;
+    expect(after.water, Water.high);
+    expect(after.guideSection, 'Part 2: Plant portraits, p. 230');
+    expect(after.guideBacked, isTrue);
+  });
 }

@@ -152,7 +152,7 @@ service cloud.firestore {
         && ((request.resource.data.status == 'accepted' && request.resource.data.acceptedAt is string
               && onlyChanges(['status', 'acceptedAt']))
           || (request.resource.data.status == 'rejected' && request.resource.data.rejectReason in ['outOfStock', 'other']
-              && onlyChanges(['status', 'rejectReason'])));
+              && onlyChanges(['status', 'rejectReason', 'rejectedAt'])));
 
       // US-20: the nursery marks an accepted reservation picked up. A pending,
       // rejected or already collected one cannot be (AC-02). The 48-hour hold

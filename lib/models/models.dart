@@ -498,6 +498,7 @@ class Reservation {
     this.acceptedAt,
     this.rejectReason,
     this.pickedUpAt,
+    this.rejectedAt,
   });
 
   /// How long an accepted reservation is held (OD-01).
@@ -521,6 +522,9 @@ class Reservation {
   /// When the nursery marked it collected (US-20).
   final DateTime? pickedUpAt;
 
+  /// When the nursery rejected it (US-19 notice time).
+  final DateTime? rejectedAt;
+
   DateTime? get expiresAt => acceptedAt?.add(holdFor);
 
   /// An accepted reservation that was not picked up in time.
@@ -529,7 +533,7 @@ class Reservation {
   double get total => items.fold(0, (sum, i) => sum + i.price * i.quantity);
   int get plantCount => items.fold(0, (sum, i) => sum + i.quantity);
 
-  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason, DateTime? pickedUpAt}) => Reservation(
+  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason, DateTime? pickedUpAt, DateTime? rejectedAt}) => Reservation(
         id: id,
         customerId: customerId,
         customerName: customerName,
@@ -541,6 +545,7 @@ class Reservation {
         acceptedAt: acceptedAt ?? this.acceptedAt,
         rejectReason: rejectReason ?? this.rejectReason,
         pickedUpAt: pickedUpAt ?? this.pickedUpAt,
+        rejectedAt: rejectedAt ?? this.rejectedAt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -555,6 +560,7 @@ class Reservation {
         'acceptedAt': ?acceptedAt?.toUtc().toIso8601String(),
         'rejectReason': ?rejectReason?.name,
         'pickedUpAt': ?pickedUpAt?.toUtc().toIso8601String(),
+        'rejectedAt': ?rejectedAt?.toUtc().toIso8601String(),
       };
 
   factory Reservation.fromJson(Map<String, dynamic> j) => Reservation(
@@ -569,6 +575,7 @@ class Reservation {
         acceptedAt: j['acceptedAt'] == null ? null : DateTime.parse(j['acceptedAt']),
         rejectReason: j['rejectReason'] == null ? null : _enumByName(RejectReason.values, j['rejectReason']),
         pickedUpAt: j['pickedUpAt'] == null ? null : DateTime.parse(j['pickedUpAt']),
+        rejectedAt: j['rejectedAt'] == null ? null : DateTime.parse(j['rejectedAt']),
       );
 }
 

@@ -47,6 +47,23 @@ class AccountScreen extends StatelessWidget {
                   onTap: () => context.go('/reservations'),
                 ),
               ),
+              const SizedBox(height: 12),
+              // US-19: reservation notices, with the unseen count.
+              Card(
+                child: ListTile(
+                  key: const Key('notifications'),
+                  leading: const Icon(Icons.notifications_none),
+                  title: Text(context.tr('notifications')),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (app.unseenCount(DateTime.now()) case final n when n > 0) Badge(label: Text('$n'), key: const Key('unseenCount')),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: () => context.go('/notifications'),
+                ),
+              ),
             ],
             const SizedBox(height: 12),
             Card(

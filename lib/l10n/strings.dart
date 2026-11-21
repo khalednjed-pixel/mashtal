@@ -62,6 +62,23 @@ const Map<String, Map<String, String>> _strings = {
   'district': {'ar': 'الحي', 'en': 'District'},
   'cartEmpty': {'ar': 'سلتك فارغة', 'en': 'Your cart is empty'},
   'reserve': {'ar': 'احجز', 'en': 'Reserve'},
+  // US-19: in-app reservation notices.
+  'notifications': {'ar': 'الإشعارات', 'en': 'Notifications'},
+  'noNotifications': {'ar': 'لا توجد إشعارات', 'en': 'No notifications'},
+  'noNotificationsBody': {'ar': 'سنخبرك هنا حين يرد المشتل على حجزك وقبل انتهاء مدته.', 'en': 'We tell you here when a nursery answers and before a hold runs out.'},
+  'n.accepted': {'ar': '{nursery} قبِل حجزك', 'en': '{nursery} accepted your reservation'},
+  'n.acceptedBody': {'ar': 'محجوز لك حتى {time}.', 'en': 'Held for you until {time}.'},
+  'n.rejected': {'ar': '{nursery} اعتذر عن حجزك', 'en': '{nursery} declined your reservation'},
+  'n.expiringSoon': {'ar': 'باقي أقل من 6 ساعات على حجزك', 'en': 'Less than 6 hours left on your reservation'},
+  'n.expiringSoonBody': {'ar': 'استلم من {nursery} قبل {time}.', 'en': 'Collect from {nursery} before {time}.'},
+  'n.expired': {'ar': 'انتهت مدة حجزك في {nursery}', 'en': 'Your hold at {nursery} has ended'},
+  'n.expiredBody': {'ar': 'يمكنك الحجز مرة أخرى من المتجر.', 'en': 'You can reserve again from the shop.'},
+  'view': {'ar': 'عرض', 'en': 'View'},
+  'justNow': {'ar': 'الآن', 'en': 'Just now'},
+  // Arabic forms are built in agoText (number agreement).
+  'ago.min': {'en': '{n} min ago'},
+  'ago.h': {'en': '{n} h ago'},
+  'ago.d': {'en': '{n} days ago'},
   // US-15: the cart as a pickup route, one stop per nursery.
   'pickupStop': {'ar': 'محطة الاستلام {n}', 'en': 'Pickup {n}'},
   'separatePickups': {

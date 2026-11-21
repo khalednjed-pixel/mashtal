@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/local_backend.dart';
+import '../logic/notices.dart';
 import '../models/models.dart';
 
 /// App-wide UI state: language, carts and one-off notices.
@@ -21,12 +22,19 @@ class AppState extends ChangeNotifier {
         _carts[e.key] = Map<String, int>.from(e.value as Map);
       }
     }
+    final seen = _prefs.getString(_seenKey);
+    if (seen != null) {
+      for (final e in (jsonDecode(seen) as Map<String, dynamic>).entries) {
+        _seen[e.key] = {...List<String>.from(e.value as List)};
+      }
+    }
     _owner = _ownerFor(backend.currentUser);
     if (backend.loaded) _fitCartsToStock();
     backend.addListener(_onBackendChanged);
   }
 
   static const _langKey = 'mashtal.lang';
+  static const _seenKey = 'mashtal.seenNotices.v1';
   static const _cartsKey = 'mashtal.carts.v2';
   static const _guest = 'guest';
 
@@ -167,6 +175,26 @@ class AppState extends ChangeNotifier {
     _carts.clear();
     await _prefs.remove(_cartsKey);
     await backend.resetDemoData();
+  }
+
+  // ------------------------------------------------- Reservation notices
+
+  /// Notice ids each account has seen (US-19), kept on the device.
+  final Map<String, Set<String>> _seen = {};
+
+  /// The signed-in customer's reservation notices at [now], newest first.
+  List<ReservationNotice> noticesAt(DateTime now) =>
+      role == Role.customer ? reservationNotices(backend.reservations, now) : const [];
+
+  bool isSeen(ReservationNotice n) => _seen[_owner]?.contains(n.id) ?? false;
+
+  int unseenCount(DateTime now) => noticesAt(now).where((n) => !isSeen(n)).length;
+
+  void markSeen(Iterable<ReservationNotice> notices) {
+    final mine = _seen.putIfAbsent(_owner, () => {});
+    if (!notices.any((n) => mine.add(n.id))) return;
+    _prefs.setString(_seenKey, jsonEncode({for (final e in _seen.entries) e.key: e.value.toList()}));
+    notifyListeners();
   }
 
   // -------------------------------------------------------------- Notices

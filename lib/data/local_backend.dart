@@ -895,7 +895,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   @override
   Future<void> rejectReservation(String id, RejectReason reason) async {
     final i = _pendingFor(id, 'rejectReservation');
-    await _replaceReservation(i, _reservations[i].copyWith(status: ReservationStatus.rejected, rejectReason: reason));
+    await _replaceReservation(i, _reservations[i].copyWith(status: ReservationStatus.rejected, rejectReason: reason, rejectedAt: _now()));
   }
 
   // --------------------------------------------------------------- Garden

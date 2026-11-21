@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import 'customer/notifications_screen.dart' show noticeText;
 import 'theme.dart';
 
 class _Tab {
@@ -54,17 +57,58 @@ class RoleShell extends StatefulWidget {
 class _RoleShellState extends State<RoleShell> {
   late final ValueNotifier<String?> _notice = context.read<AppState>().notice;
 
+  /// US-19: re-checks the clock every 30 seconds, so the 6-hour reminder and
+  /// the expiry notice appear within a minute while the app is open.
+  Timer? _tick;
+
+  /// Reservation notices already announced in this session, per account.
+  final Set<String> _announced = {};
+  String? _announcedFor;
+
   @override
   void initState() {
     super.initState();
     _notice.addListener(_onNotice);
     _onNotice();
+    _tick = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _tick?.cancel();
     _notice.removeListener(_onNotice);
     super.dispose();
+  }
+
+  /// Shows the newest notice the customer has not seen yet as a banner, once.
+  void _announce(AppState app, DateTime now) {
+    if (_announcedFor != app.user?.id) {
+      _announced.clear();
+      _announcedFor = app.user?.id;
+    }
+    if (widget.location.startsWith('/notifications')) return;
+    final fresh = [for (final n in app.noticesAt(now)) if (!app.isSeen(n) && !_announced.contains(n.id)) n];
+    if (fresh.isEmpty) return;
+    _announced.addAll(fresh.map((n) => n.id));
+    final newest = fresh.first;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final (title, _) = noticeText(context, newest);
+      final router = GoRouter.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        key: const Key('noticeBanner'),
+        content: Row(
+          children: [
+            const Icon(Icons.notifications_active_outlined, color: MashtalColors.lime),
+            const SizedBox(width: MashtalSpace.md),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        action: SnackBarAction(label: context.tr('view'), textColor: MashtalColors.lime, onPressed: () => router.go('/notifications')),
+      ));
+    });
   }
 
   // Posted from the router's redirect, so show it after the current frame.
@@ -83,11 +127,14 @@ class _RoleShellState extends State<RoleShell> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final tabs = _tabsFor(app.role);
+    final now = DateTime.now();
+    _announce(app, now);
+    final unseen = app.unseenCount(now);
     // Longest matching prefix wins, so /nursery/reservations beats /nursery.
     var index = -1;
     var best = 0;
     // My reservations is opened from Account, so Account stays selected.
-    final location = widget.location.startsWith('/reservations') ? '/account' : widget.location;
+    final location = widget.location.startsWith('/reservations') || widget.location.startsWith('/notifications') ? '/account' : widget.location;
     for (final (i, t) in tabs.indexed) {
       if (location.startsWith(t.path) && t.path.length > best) {
         index = i;
@@ -107,7 +154,12 @@ class _RoleShellState extends State<RoleShell> {
         items: [
           for (final t in tabs)
             (
-              icon: t.path == '/cart' ? _CartBadge(count: app.cartCount, child: Icon(t.icon)) : Icon(t.icon),
+              icon: switch (t.path) {
+                '/cart' => _CartBadge(count: app.cartCount, child: Icon(t.icon)),
+                // US-19: unseen reservation notices wait in Account.
+                '/account' => _CartBadge(count: unseen, child: Icon(t.icon)),
+                _ => Icon(t.icon),
+              },
               // On the cart tab itself the count is on screen, so no badge.
               selectedIcon: Icon(t.selectedIcon),
               label: context.tr(t.label),

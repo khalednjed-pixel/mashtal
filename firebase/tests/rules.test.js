@@ -364,3 +364,13 @@ describe('US-22 plant history', () => {
     await assertSucceeds(getDocs(query(collection(as('cust'), 'history'), where('ownerId', '==', 'cust'))));
   });
 });
+
+describe('US-19 notice times', () => {
+  test('a rejection records when it happened', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'reservations/r1'), {
+      customerId: 'cust', customerName: 'Sara', customerPhone: '0500000005', nurseryId: 'n1',
+      items: [{ listingId: 'l1', plantId: 'p01', quantity: 1, price: 180 }], createdAt: '2026-11-20T10:00:00Z', status: 'pending',
+    }));
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'rejected', rejectReason: 'other', rejectedAt: '2026-11-20T11:00:00Z' }));
+  });
+});

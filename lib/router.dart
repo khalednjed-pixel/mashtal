@@ -17,6 +17,7 @@ import 'ui/customer/garden_add_screen.dart';
 import 'ui/customer/garden_plant_screen.dart';
 import 'ui/customer/garden_screen.dart';
 import 'ui/customer/my_reservations_screen.dart';
+import 'ui/customer/notifications_screen.dart';
 import 'ui/customer/nursery_detail_screen.dart';
 import 'ui/customer/plant_detail_screen.dart';
 import 'ui/customer/shop_screen.dart';
@@ -77,6 +78,7 @@ GoRouter buildRouter(AppState app) => GoRouter(
             // Top level, not under /account: a page stacked on another inside
             // the app's SelectionArea trips a Flutter layout assertion.
             GoRoute(path: '/reservations', builder: (_, _) => const MyReservationsScreen()),
+            GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
             GoRoute(
               path: '/nursery',
               builder: (_, _) => const ListingsScreen(),

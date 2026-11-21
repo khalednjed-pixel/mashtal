@@ -188,6 +188,22 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 
+    // US-22: each garden plant's history. The owner reads it and adds
+    // waterings and notes; entries are never changed. Ask Mashtal results and
+    // professional feedback are added with those features (Sprint 4).
+    match /history/{id} {
+      allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if hasRole('customer')
+        && request.resource.data.keys().hasOnly(['ownerId', 'gardenPlantId', 'kind', 'at', 'text'])
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.kind in ['watered', 'note']
+        && request.resource.data.at is string
+        && (!('text' in request.resource.data) || (request.resource.data.text is string && request.resource.data.text.size() <= 280))
+        && get(/databases/$(database)/documents/garden/$(request.resource.data.gardenPlantId)).data.ownerId == request.auth.uid;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
     // US-14: every admin edit to plant data is logged and the log cannot be
     // changed afterwards.
     match /plantEdits/{editId} {

@@ -12,6 +12,7 @@ import 'ui/auth/profile_screen.dart';
 import 'ui/customer/cart_screen.dart';
 import 'ui/customer/choose_screen.dart';
 import 'ui/customer/garden_add_screen.dart';
+import 'ui/customer/garden_plant_screen.dart';
 import 'ui/customer/garden_screen.dart';
 import 'ui/customer/my_reservations_screen.dart';
 import 'ui/customer/nursery_detail_screen.dart';
@@ -57,13 +58,11 @@ GoRouter buildRouter(AppState app) => GoRouter(
             ),
             GoRoute(path: '/choose', builder: (_, _) => const ChooseScreen()),
             GoRoute(path: '/cart', builder: (_, _) => const CartScreen()),
-            GoRoute(
-              path: '/garden',
-              builder: (_, _) => const GardenScreen(),
-              routes: [
-                GoRoute(path: 'add', builder: (_, _) => const GardenAddScreen()),
-              ],
-            ),
+            GoRoute(path: '/garden', builder: (_, _) => const GardenScreen()),
+            // Not nested under /garden, for the same SelectionArea reason as
+            // /reservations below.
+            GoRoute(path: '/garden/add', builder: (_, _) => const GardenAddScreen()),
+            GoRoute(path: '/garden/plant/:id', builder: (_, s) => GardenPlantScreen(gardenPlantId: s.pathParameters['id']!)),
             GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
             // Top level, not under /account: a page stacked on another inside
             // the app's SelectionArea trips a Flutter layout assertion.

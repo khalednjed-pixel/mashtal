@@ -34,7 +34,11 @@ class _GardenAddScreenState extends State<GardenAddScreen> {
     ]..sort((a, b) => a.name(lang).compareTo(b.name(lang)));
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('addManually')), actions: const [LanguageButton()]),
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.go('/garden')),
+        title: Text(context.tr('addManually')),
+        actions: const [LanguageButton()],
+      ),
       body: Constrained(
         child: ListView(
           padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),

@@ -166,4 +166,11 @@ abstract interface class GardenRepository {
 
   /// Customer only, own plants.
   Future<void> removeFromGarden(String gardenPlantId);
+
+  /// US-22: the stored history of one of the customer's plants, newest
+  /// first. How the plant arrived is not stored; see logic/history.dart.
+  List<HistoryEntry> historyOf(String gardenPlantId);
+
+  /// Customer only, own plants: a short note in the plant's history.
+  Future<void> addNote(String gardenPlantId, String text);
 }

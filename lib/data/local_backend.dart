@@ -51,6 +51,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   late List<PlantEdit> _plantEdits;
   late List<Reservation> _reservations;
   late List<GardenPlant> _garden;
+  late List<HistoryEntry> _history;
   AppUser? _currentUser;
 
   final Map<String, _PendingCode> _pending = {};
@@ -97,6 +98,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _plantEdits = [];
     _reservations = [];
     _garden = [];
+    _history = [];
   }
 
   void _watch() {
@@ -137,6 +139,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       case 'reservations':
         _reservations = parse(Reservation.fromJson);
         _reservationsLoaded = true;
+      case 'history':
+        _history = parse(HistoryEntry.fromJson);
       case 'garden':
         _garden = parse(GardenPlant.fromJson);
         _gardenLoaded = true;
@@ -270,6 +274,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       _plantEdits = _list(j['plantEdits'] ?? [], PlantEdit.fromJson);
       _reservations = _list(j['reservations'] ?? [], Reservation.fromJson);
       _garden = _list(j['garden'] ?? [], GardenPlant.fromJson);
+      _history = _list(j['history'] ?? [], HistoryEntry.fromJson);
     }
     final sessionId = _accounts != null ? null : _prefs.getString(_sessionKey);
     _currentUser = sessionId == null ? null : _users.where((u) => u.id == sessionId).firstOrNull;
@@ -289,6 +294,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
     _plantEdits = [];
     _reservations = [];
     _garden = [];
+    _history = [];
   }
 
   Future<void> _save() async {
@@ -309,6 +315,7 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
         'plantEdits': _plantEdits.map((e) => e.toJson()).toList(),
         'reservations': _reservations.map((e) => e.toJson()).toList(),
         'garden': _garden.map((e) => e.toJson()).toList(),
+        'history': _history.map((e) => e.toJson()).toList(),
       }),
     ).catchError((_) => false);
     notifyListeners();
@@ -931,8 +938,42 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
   Future<void> markWatered(String gardenPlantId) async {
     final i = _ownGarden(gardenPlantId, 'markWatered');
     final g = _garden[i].copyWith(lastWateredAt: _now());
-    await _push([_putGarden(g)]);
+    final e = _entry(gardenPlantId, HistoryKind.watered);
+    await _push([_putGarden(g), _putHistory(e)]);
     _garden[i] = g;
+    _history.add(e);
+    await _save();
+  }
+
+  RemoteWrite _putHistory(HistoryEntry e) => RemoteWrite.put('history', e.id, _doc(e.toJson()));
+
+  HistoryEntry _entry(String gardenPlantId, HistoryKind kind, {String? text}) => HistoryEntry(
+        id: _newId('h'),
+        ownerId: _currentUser!.id,
+        gardenPlantId: gardenPlantId,
+        kind: kind,
+        at: _now(),
+        text: text,
+      );
+
+  @override
+  List<HistoryEntry> historyOf(String gardenPlantId) {
+    final me = _currentUser;
+    if (me == null) return const [];
+    return _history.where((e) => e.gardenPlantId == gardenPlantId && e.ownerId == me.id).toList()
+      ..sort((a, b) => b.at.compareTo(a.at));
+  }
+
+  static const noteMaxLength = 280;
+
+  @override
+  Future<void> addNote(String gardenPlantId, String text) async {
+    _ownGarden(gardenPlantId, 'addNote');
+    final t = text.trim();
+    if (t.isEmpty || t.length > noteMaxLength) throw ArgumentError('text');
+    final e = _entry(gardenPlantId, HistoryKind.note, text: t);
+    await _push([_putHistory(e)]);
+    _history.add(e);
     await _save();
   }
 

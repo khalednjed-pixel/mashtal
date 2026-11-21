@@ -339,3 +339,28 @@ describe('US-20 picked up into My Garden', () => {
     await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { removedAt: '2026-11-22T10:00:00Z' }));
   });
 });
+
+describe('US-22 plant history', () => {
+  const entry = (extra = {}) => ({ ownerId: 'cust', gardenPlantId: 'g1', kind: 'note', at: '2026-11-21T10:00:00Z', text: 'Moved it', ...extra });
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'garden/g1'), { ownerId: 'cust', plantId: 'p01', addedAt: '2026-11-20T10:00:00Z', source: 'manual', quantity: 1 });
+      await setDoc(doc(ctx.firestore(), 'garden/g9'), { ownerId: 'someoneElse', plantId: 'p01', addedAt: '2026-11-20T10:00:00Z', source: 'manual', quantity: 1 });
+    });
+  });
+
+  test('the owner adds waterings and notes to their own plants', async () => {
+    await assertSucceeds(setDoc(doc(as('cust'), 'history/h1'), entry()));
+    await assertSucceeds(setDoc(doc(as('cust'), 'history/h2'), { ownerId: 'cust', gardenPlantId: 'g1', kind: 'watered', at: '2026-11-21T10:00:00Z' }));
+    await assertFails(setDoc(doc(as('cust'), 'history/h3'), entry({ gardenPlantId: 'g9' })));
+    await assertFails(setDoc(doc(as('cust'), 'history/h4'), entry({ kind: 'proFeedback' })));
+    await assertFails(setDoc(doc(as('cust'), 'history/h5'), entry({ text: 'x'.repeat(281) })));
+  });
+
+  test('history is private and cannot be rewritten', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'history/h1'), entry()));
+    await assertFails(getDoc(doc(as('n1owner'), 'history/h1')));
+    await assertFails(updateDoc(doc(as('cust'), 'history/h1'), { text: 'changed' }));
+    await assertSucceeds(getDocs(query(collection(as('cust'), 'history'), where('ownerId', '==', 'cust'))));
+  });
+});

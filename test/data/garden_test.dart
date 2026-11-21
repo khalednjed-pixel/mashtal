@@ -58,4 +58,31 @@ void main() {
       await expectLater(b.addToGarden('nope'), throwsArgumentError);
     });
   });
+
+  group('US-22 plant history', () {
+    test('waterings and notes are kept, newest first, for the owner only', () async {
+      var now = DateTime(2026, 11, 16, 9);
+      final b = await signedIn('0500000005', clock: () => now);
+      final g = await b.addToGarden('p16');
+      now = now.add(const Duration(days: 1));
+      await b.markWatered(g.id);
+      now = now.add(const Duration(days: 1));
+      await b.addNote(g.id, '  New leaves on the left side  ');
+      final h = b.historyOf(g.id);
+      expect(h.map((e) => e.kind), [HistoryKind.note, HistoryKind.watered]);
+      expect(h.first.text, 'New leaves on the left side');
+
+      await b.signOut();
+      await signedIn('0551112222', reuse: b);
+      expect(b.historyOf(g.id), isEmpty);
+      await expectLater(b.addNote(g.id, 'hi'), throwsA(isA<PermissionDenied>()));
+    });
+
+    test('notes are short and not empty', () async {
+      final b = await signedIn('0500000005');
+      final g = await b.addToGarden('p16');
+      await expectLater(b.addNote(g.id, '   '), throwsArgumentError);
+      await expectLater(b.addNote(g.id, 'x' * 281), throwsArgumentError);
+    });
+  });
 }

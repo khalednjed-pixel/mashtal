@@ -651,3 +651,67 @@ class GardenPlant {
         removedAt: j['removedAt'] == null ? null : DateTime.parse(j['removedAt']),
       );
 }
+
+/// Kinds of entries in a garden plant's history (US-22).
+enum HistoryKind {
+  /// Added by hand (from the garden plant itself, not stored).
+  added,
+
+  /// Collected from a nursery (from the garden plant itself, not stored).
+  pickedUp,
+  watered,
+  note,
+
+  /// An Ask Mashtal photo check result (Sprint 4).
+  check,
+
+  /// A professional's feedback after a job (Sprint 4).
+  proFeedback,
+}
+
+/// One stored event in a garden plant's history (US-22).
+class HistoryEntry {
+  const HistoryEntry({
+    required this.id,
+    required this.ownerId,
+    required this.gardenPlantId,
+    required this.kind,
+    required this.at,
+    this.text,
+    this.sourceName,
+  });
+
+  final String id;
+
+  /// The customer who owns the plant.
+  final String ownerId;
+  final String gardenPlantId;
+  final HistoryKind kind;
+  final DateTime at;
+
+  /// The note, the likely cause, or the feedback.
+  final String? text;
+
+  /// Who it came from when not the customer, e.g. the professional's name.
+  final String? sourceName;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'ownerId': ownerId,
+        'gardenPlantId': gardenPlantId,
+        'kind': kind.name,
+        'at': at.toUtc().toIso8601String(),
+        'text': ?text,
+        'sourceName': ?sourceName,
+      };
+
+  factory HistoryEntry.fromJson(Map<String, dynamic> j) => HistoryEntry(
+        id: j['id'],
+        ownerId: j['ownerId'],
+        gardenPlantId: j['gardenPlantId'],
+        kind: _enumByName(HistoryKind.values, j['kind']),
+        at: DateTime.parse(j['at']),
+        text: j['text'],
+        sourceName: j['sourceName'],
+      );
+}

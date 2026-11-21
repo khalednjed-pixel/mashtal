@@ -46,51 +46,54 @@ class GardenScreen extends StatelessWidget {
       body: user == null
           ? SignInPrompt(icon: Icons.yard_outlined, body: context.tr('guestGardenBody'), from: '/garden')
           : items.isEmpty
-              ? EmptyState(
-                  icon: Icons.yard_outlined,
-                  title: '${context.tr('welcome')} ${user.name}. ${context.tr('gardenEmpty')}',
-                  body: context.tr('gardenEmptyBody'),
-                  actions: [
-                    FilledButton.icon(
-                      key: const Key('gardenBuyPlants'),
-                      style: FilledButton.styleFrom(minimumSize: const Size(240, 48)),
-                      icon: const Icon(Icons.storefront_outlined),
-                      label: Text(context.tr('buyPlants')),
-                      onPressed: () => context.go('/shop'),
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('addManually'),
-                      style: OutlinedButton.styleFrom(minimumSize: const Size(240, 48)),
-                      icon: const Icon(Icons.add),
-                      label: Text(context.tr('addManually')),
-                      onPressed: () => context.go('/garden/add'),
-                    ),
-                  ],
-                )
-              : Constrained(
-                  child: ListView(
-                    padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
-                    children: [
-                      _TodayPanel(due: [for (final d in due) d.plant], total: items.length),
-                      const SizedBox(height: MashtalSpace.lg),
-                      LayoutBuilder(
-                        builder: (context, c) {
-                          const gap = MashtalSpace.md;
-                          final columns = c.maxWidth >= 560 ? 3 : 2;
-                          final width = (c.maxWidth - gap * (columns - 1)) / columns;
-                          return Wrap(
-                            spacing: gap,
-                            runSpacing: gap,
-                            children: [
-                              for (final i in items)
-                                SizedBox(width: width, child: GardenCard(garden: i.garden, plant: i.plant, plan: i.plan)),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+          ? EmptyState(
+              icon: Icons.yard_outlined,
+              title: '${context.tr('welcome')} ${user.name}. ${context.tr('gardenEmpty')}',
+              body: context.tr('gardenEmptyBody'),
+              actions: [
+                FilledButton.icon(
+                  key: const Key('gardenBuyPlants'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(240, 48)),
+                  icon: const Icon(Icons.storefront_outlined),
+                  label: Text(context.tr('buyPlants')),
+                  onPressed: () => context.go('/shop'),
                 ),
+                OutlinedButton.icon(
+                  key: const Key('addManually'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(240, 48)),
+                  icon: const Icon(Icons.add),
+                  label: Text(context.tr('addManually')),
+                  onPressed: () => context.go('/garden/add'),
+                ),
+              ],
+            )
+          : Constrained(
+              child: ListView(
+                padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
+                children: [
+                  _TodayPanel(due: [for (final d in due) d.plant], total: items.length),
+                  const SizedBox(height: MashtalSpace.lg),
+                  LayoutBuilder(
+                    builder: (context, c) {
+                      const gap = MashtalSpace.md;
+                      final columns = c.maxWidth >= 560 ? 3 : 2;
+                      final width = (c.maxWidth - gap * (columns - 1)) / columns;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          for (final i in items)
+                            SizedBox(
+                              width: width,
+                              child: GardenCard(garden: i.garden, plant: i.plant, plan: i.plan),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -108,8 +111,8 @@ class _TodayPanel extends StatelessWidget {
     final title = due.isEmpty
         ? context.tr('nothingToWater')
         : due.length == 1
-            ? context.tr('toWaterOne')
-            : context.tr('toWaterMany').replaceAll('{n}', '${due.length}');
+        ? context.tr('toWaterOne')
+        : context.tr('toWaterMany').replaceAll('{n}', '${due.length}');
     return Container(
       key: const Key('todayPanel'),
       padding: const EdgeInsets.all(MashtalSpace.lg),
@@ -129,9 +132,7 @@ class _TodayPanel extends StatelessWidget {
               children: [
                 Text(title, style: text.titleMedium?.copyWith(color: MashtalColors.surface)),
                 Text(
-                  due.isEmpty
-                      ? context.tr('plantsInGarden').replaceAll('{n}', '$total')
-                      : due.map((p) => p.name(lang)).join('، '),
+                  due.isEmpty ? context.tr('plantsInGarden').replaceAll('{n}', '$total') : due.map((p) => p.name(lang)).join('، '),
                   style: text.bodyMedium?.copyWith(color: MashtalColors.lime),
                 ),
               ],
@@ -156,65 +157,67 @@ class GardenCard extends StatelessWidget {
     final lang = context.lang;
     final text = Theme.of(context).textTheme;
     final late = plan.dueInDays < 0;
-    return Container(
+    return Material(
       key: Key('garden-${garden.id}'),
-      decoration: BoxDecoration(
-        color: MashtalColors.surface,
+      color: MashtalColors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
-        border: Border.all(color: MashtalColors.line),
+        side: const BorderSide(color: MashtalColors.line),
       ),
-      padding: const EdgeInsets.all(MashtalSpace.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Stack(
+      clipBehavior: Clip.antiAlias,
+      // US-22: the card opens the plant's page with its history.
+      child: InkWell(
+        onTap: () => context.go('/garden/plant/${garden.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(MashtalSpace.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AspectRatio(aspectRatio: 1, child: PlantPhoto.fill(plant: plant, radius: MashtalSpace.radius)),
-              PositionedDirectional(
-                end: MashtalSpace.sm,
-                bottom: MashtalSpace.sm,
-                child: WaterDot(garden: garden, plant: plant, due: plan.isDue),
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: PlantPhoto.fill(plant: plant, radius: MashtalSpace.radius),
+                  ),
+                  PositionedDirectional(
+                    end: MashtalSpace.sm,
+                    bottom: MashtalSpace.sm,
+                    child: WaterDot(garden: garden, plant: plant, due: plan.isDue),
+                  ),
+                ],
               ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(MashtalSpace.xs, MashtalSpace.sm, MashtalSpace.xs, MashtalSpace.xs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  garden.quantity > 1 ? '${plant.name(lang)} × ${garden.quantity}' : plant.name(lang),
-                  style: text.titleMedium,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: MashtalSpace.xs),
-                Row(
+              Padding(
+                padding: const EdgeInsets.fromLTRB(MashtalSpace.xs, MashtalSpace.sm, MashtalSpace.xs, MashtalSpace.xs),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.water_drop_outlined, size: 16, color: MashtalColors.leaf),
-                    const SizedBox(width: MashtalSpace.xs),
-                    Flexible(
-                      child: Text(
-                        wateringEveryText(lang, plant.wateringEveryDays),
-                        key: Key('frequency-${garden.id}'),
-                        style: text.bodyMedium,
+                    Text(garden.quantity > 1 ? '${plant.name(lang)} × ${garden.quantity}' : plant.name(lang), style: text.titleMedium, maxLines: 2),
+                    const SizedBox(height: MashtalSpace.xs),
+                    Row(
+                      children: [
+                        const Icon(Icons.water_drop_outlined, size: 16, color: MashtalColors.leaf),
+                        const SizedBox(width: MashtalSpace.xs),
+                        Flexible(
+                          child: Text(wateringEveryText(lang, plant.wateringEveryDays), key: Key('frequency-${garden.id}'), style: text.bodyMedium),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: MashtalSpace.sm),
+                    WaterRhythm(days: plan.nextDays()),
+                    const SizedBox(height: MashtalSpace.xs),
+                    Text(
+                      nextWateringText(lang, plan.dueInDays),
+                      style: text.labelSmall?.copyWith(
+                        color: late ? MashtalColors.error : (plan.isDue ? MashtalColors.forest : MashtalColors.muted),
+                        fontWeight: plan.isDue ? FontWeight.w700 : null,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: MashtalSpace.sm),
-                WaterRhythm(days: plan.nextDays()),
-                const SizedBox(height: MashtalSpace.xs),
-                Text(
-                  nextWateringText(lang, plan.dueInDays),
-                  style: text.labelSmall?.copyWith(
-                    color: late ? MashtalColors.error : (plan.isDue ? MashtalColors.forest : MashtalColors.muted),
-                    fontWeight: plan.isDue ? FontWeight.w700 : null,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

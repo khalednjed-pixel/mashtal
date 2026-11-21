@@ -10,7 +10,6 @@ import '../../logic/watering.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
-import '../widgets/arch.dart';
 import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
 import '../widgets/garden_art.dart';
@@ -272,7 +271,7 @@ class GardenCard extends StatelessWidget {
                 children: [
                   AspectRatio(
                     aspectRatio: 1,
-                    child: Arch(child: PlantPhoto.fill(plant: plant, radius: 0)),
+                    child: PlantPhoto.fill(plant: plant, radius: MashtalSpace.radius),
                   ),
                   PositionedDirectional(
                     end: MashtalSpace.sm,

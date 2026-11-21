@@ -14,6 +14,7 @@ import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 import '../widgets/home_picker.dart';
 import '../widgets/not_found.dart';
 import '../widgets/plant_photo.dart';
@@ -128,7 +129,7 @@ class GardenPlantScreen extends StatelessWidget {
                     // Where it lives: one tap to change; the guess is said out loud.
                     Row(
                       children: [
-                        Icon(homeIcon(plan.home), size: 20, color: MashtalColors.leaf),
+                        GardenArt(homeArt(plan.home), size: 32),
                         const SizedBox(width: MashtalSpace.sm),
                         Expanded(
                           child: Text(

@@ -8,6 +8,7 @@ import '../../logic/notices.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 
 /// Title and body of a reservation notice in the current language.
 (String, String) noticeText(BuildContext context, ReservationNotice n) {
@@ -63,7 +64,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('notifications')), actions: const [LanguageButton()]),
       body: notices.isEmpty
-          ? EmptyState(icon: Icons.notifications_none, title: context.tr('noNotifications'), body: context.tr('noNotificationsBody'))
+          ? EmptyState(icon: Icons.notifications_none, art: Art.bell, title: context.tr('noNotifications'), body: context.tr('noNotificationsBody'))
           : Constrained(
               child: ListView(
                 padding: clearNav(context, const EdgeInsets.all(MashtalSpace.screen)),

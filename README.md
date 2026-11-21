@@ -91,6 +91,7 @@ Every plant the app calls guide-backed now cites its exact portrait in the *Manu
 | Where it lives | Asked once when a plant is added by hand, with the app's guess marked. Picked-up plants start with the guess and can be changed in one tap. |
 | Choose question | For a few hours of outdoor sun: morning or afternoon? Riyadh's afternoon sun counts as full sun; "not sure" changes nothing. |
 | Going away | In My Garden: how long, and will someone at home (a maid or family) water? If yes, a simple watering plan per plant to send on WhatsApp, in Arabic or English. If not, what to do before leaving and which plants will not last that long alone, with when they need water. Away mode shows on My Garden; on return it says to check every plant's soil. Kept on the device. |
+| Look | Plant photos are framed in a Najdi arch. Answers in Choose, where a plant lives, going away, the Today panel and the empty screens use one set of simple garden line drawings drawn in code (`lib/ui/widgets/garden_art.dart`). |
 | Saved, share, tips | A heart saves plants to a Saved list; the plant page shares a plant on WhatsApp or as a link; garden plants show general care tips. |
 
 These are general household rules, not quotes from the guide, and the screens say "check the soil" rather than promising exact days. Watering colours (`water`, `waterLight`, `waterSoft`) are the one colour family outside the greens and are used for water only.

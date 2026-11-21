@@ -13,6 +13,7 @@ import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 import '../widgets/pickup_pass.dart' show openExternal;
 import '../widgets/plant_photo.dart';
 
@@ -74,6 +75,8 @@ class _AwayScreenState extends State<AwayScreen> {
         child: ListView(
           padding: clearNav(context, const EdgeInsets.fromLTRB(MashtalSpace.screen, MashtalSpace.xs, MashtalSpace.screen, MashtalSpace.xl)),
           children: [
+            const Center(child: GardenArt(Art.suitcase, size: 112)),
+            const SizedBox(height: MashtalSpace.md),
             Text(context.tr('awayHowLong'), style: text.titleLarge),
             const SizedBox(height: MashtalSpace.md),
             Wrap(
@@ -105,7 +108,7 @@ class _AwayScreenState extends State<AwayScreen> {
             const SizedBox(height: MashtalSpace.md),
             _Choice(
               id: 'helper-yes',
-              icon: Icons.groups_outlined,
+              art: Art.helper,
               title: context.tr('awayHelperYes'),
               body: context.tr('awayHelperYesBody'),
               selected: _helper == true,
@@ -114,7 +117,7 @@ class _AwayScreenState extends State<AwayScreen> {
             const SizedBox(height: MashtalSpace.sm),
             _Choice(
               id: 'helper-no',
-              icon: Icons.luggage_outlined,
+              art: Art.suitcase,
               title: context.tr('awayHelperNo'),
               body: context.tr('awayHelperNoBody'),
               selected: _helper == false,
@@ -280,11 +283,11 @@ class _AwayScreenState extends State<AwayScreen> {
   }
 }
 
-/// A big tappable answer card with an icon, a title and one line of help.
+/// A big tappable answer card with a drawing, a title and one line of help.
 class _Choice extends StatelessWidget {
-  const _Choice({required this.id, required this.icon, required this.title, required this.body, required this.selected, required this.onTap});
+  const _Choice({required this.id, required this.art, required this.title, required this.body, required this.selected, required this.onTap});
   final String id;
-  final IconData icon;
+  final Art art;
   final String title;
   final String body;
   final bool selected;
@@ -307,7 +310,7 @@ class _Choice extends StatelessWidget {
           padding: const EdgeInsets.all(MashtalSpace.lg),
           child: Row(
             children: [
-              Icon(icon, size: 28, color: MashtalColors.leaf),
+              GardenArt(art, size: 52, fill: selected ? MashtalColors.surface : MashtalColors.mint),
               const SizedBox(width: MashtalSpace.md),
               Expanded(
                 child: Column(

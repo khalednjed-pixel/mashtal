@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../theme.dart';
+import 'garden_art.dart';
 
 /// Asks where a garden plant lives, as four big picture tiles. [current] is
 /// marked; when [guessed] it is labelled "our pick", so a customer who is not
@@ -11,33 +12,38 @@ Future<PlantHome?> pickHome(BuildContext context, {required PlantHome current, r
   return showModalBottomSheet<PlantHome>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (sheet) {
       final text = Theme.of(sheet).textTheme;
       return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, 0, MashtalSpace.screen, MashtalSpace.lg),
-          child: Column(
-            key: const Key('homePicker'),
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(sheet.tr('whereLives'), style: text.titleLarge),
-              const SizedBox(height: MashtalSpace.xs),
-              Text(sheet.tr('whereLivesBody'), style: text.bodyMedium),
-              const SizedBox(height: MashtalSpace.lg),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: MashtalSpace.md,
-                crossAxisSpacing: MashtalSpace.md,
-                childAspectRatio: 1.35,
-                children: [
-                  for (final h in PlantHome.values)
-                    _HomeTile(home: h, selected: h == current, guess: guessed && h == current, onTap: () => Navigator.pop(sheet, h)),
-                ],
-              ),
-            ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(MashtalSpace.screen, 0, MashtalSpace.screen, MashtalSpace.lg),
+            child: Column(
+              key: const Key('homePicker'),
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(sheet.tr('whereLives'), style: text.titleLarge),
+                const SizedBox(height: MashtalSpace.xs),
+                Text(sheet.tr('whereLivesBody'), style: text.bodyMedium),
+                const SizedBox(height: MashtalSpace.lg),
+                GridView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: MashtalSpace.md,
+                    crossAxisSpacing: MashtalSpace.md,
+                    mainAxisExtent: 150,
+                  ),
+                  children: [
+                    for (final h in PlantHome.values)
+                      _HomeTile(home: h, selected: h == current, guess: guessed && h == current, onTap: () => Navigator.pop(sheet, h)),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -45,12 +51,13 @@ Future<PlantHome?> pickHome(BuildContext context, {required PlantHome current, r
   );
 }
 
-/// The drawing for each place: the pot icon grows with the pot.
-IconData homeIcon(PlantHome h) => switch (h) {
-      PlantHome.ground => Icons.yard_outlined,
-      PlantHome.bigPot || PlantHome.smallPot => Icons.local_florist_outlined,
-      PlantHome.indoor => Icons.chair_outlined,
-    };
+/// The drawing for each place.
+Art homeArt(PlantHome h) => switch (h) {
+  PlantHome.ground => Art.ground,
+  PlantHome.bigPot => Art.bigPot,
+  PlantHome.smallPot => Art.smallPot,
+  PlantHome.indoor => Art.indoor,
+};
 
 class _HomeTile extends StatelessWidget {
   const _HomeTile({required this.home, required this.selected, required this.guess, required this.onTap});
@@ -77,7 +84,7 @@ class _HomeTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(homeIcon(home), size: home == PlantHome.smallPot ? 24 : 32, color: MashtalColors.leaf),
+              GardenArt(homeArt(home), size: 56),
               const SizedBox(height: MashtalSpace.sm),
               Text(context.tr('home.${home.name}'), style: text.titleMedium, textAlign: TextAlign.center),
               if (guess) Text(context.tr('ourGuess'), style: text.bodySmall?.copyWith(color: MashtalColors.leaf)),

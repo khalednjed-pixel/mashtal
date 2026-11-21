@@ -181,7 +181,9 @@ void main() {
     final jasmine = app.backend.garden.firstWhere((g) => g.plantId == 'p23');
     expect(find.byKey(Key('atRisk-${jasmine.id}')), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('awayStart')));
+    // Scroll it to the middle, clear of the floating navigation bar.
+    await tester.runAsync(() => Scrollable.ensureVisible(tester.element(find.byKey(const Key('awayStart'))), alignment: 0.5));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('awayStart')));
     await tester.pumpAndSettle();
     expect(location(tester), '/garden');

@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 import '../widgets/plant_photo.dart';
 
 typedef _Line = ({Listing listing, int qty, Plant plant});
@@ -72,6 +73,7 @@ class CartScreen extends StatelessWidget {
       body: stops.isEmpty
           ? EmptyState(
               icon: Icons.shopping_basket_outlined,
+              art: Art.basket,
               title: context.tr('cartEmpty'),
               actions: [OutlinedButton(onPressed: () => context.go('/shop'), child: Text(context.tr('buyPlants')))],
             )

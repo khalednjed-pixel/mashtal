@@ -10,6 +10,7 @@ import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_to_cart_button.dart';
+import '../widgets/arch.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 import '../widgets/save_button.dart';
@@ -261,13 +262,13 @@ class _PhotoGalleryState extends State<_PhotoGallery> {
             child: AspectRatio(
               aspectRatio: 1,
               child: photos.length == 1
-                  ? PlantPhoto.fill(plant: widget.plant, radius: MashtalSpace.radius)
+                  ? Arch(child: PlantPhoto.fill(plant: widget.plant, radius: 0))
                   : PageView.builder(
                       itemCount: photos.length,
                       onPageChanged: (i) => setState(() => _page = i),
                       itemBuilder: (_, i) => Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: PlantPhoto.fill(plant: widget.plant, listingPhoto: photos[i], radius: MashtalSpace.radius),
+                        child: Arch(child: PlantPhoto.fill(plant: widget.plant, listingPhoto: photos[i], radius: 0)),
                       ),
                     ),
             ),

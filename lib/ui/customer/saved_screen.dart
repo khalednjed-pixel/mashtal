@@ -8,6 +8,7 @@ import '../../logic/shop_filters.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 import '../widgets/plant_photo.dart';
 import '../widgets/save_button.dart';
 
@@ -33,6 +34,7 @@ class SavedScreen extends StatelessWidget {
       body: ids.isEmpty
           ? EmptyState(
               icon: Icons.favorite_border,
+              art: Art.savedLeaf,
               title: context.tr('noSaved'),
               body: context.tr('noSavedBody'),
               actions: [OutlinedButton(onPressed: () => context.go('/shop'), child: Text(context.tr('browseShop')))],

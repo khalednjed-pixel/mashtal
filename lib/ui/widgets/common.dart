@@ -7,6 +7,7 @@ import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import 'garden_art.dart';
 
 /// Icon on a ground-tinted tile, standing in for a plant photo.
 class PlantAvatar extends StatelessWidget {
@@ -103,9 +104,12 @@ class LanguageButton extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.icon, required this.title, this.body, this.actions = const []});
+  const EmptyState({super.key, required this.icon, required this.title, this.body, this.actions = const [], this.art});
 
   final IconData icon;
+
+  /// A drawing shown instead of [icon], for the screens a customer sees most.
+  final Art? art;
   final String title;
   final String? body;
   final List<Widget> actions;
@@ -119,7 +123,16 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: theme.colorScheme.primary),
+            if (art case final a?)
+              Container(
+                width: 132,
+                height: 132,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(color: MashtalColors.ground, shape: BoxShape.circle),
+                child: GardenArt(a, size: 96, fill: MashtalColors.surface),
+              )
+            else
+              Icon(icon, size: 56, color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text(title, style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
             if (body != null) ...[

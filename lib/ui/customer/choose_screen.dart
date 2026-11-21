@@ -10,6 +10,7 @@ import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 import '../widgets/plant_photo.dart';
 
 /// "What suits your place?": the suitability questions (US-07, US-08) and
@@ -145,7 +146,22 @@ class _ChooseScreenState extends State<ChooseScreen> {
           Text(context.tr('q.${q.name}.why'), style: theme.textTheme.bodyMedium),
         ],
         const SizedBox(height: 20),
-        ..._options(q),
+        // Answers with a drawing are picture tiles; the rest stay a list.
+        if (_options(q) case final options when options.every((o) => o is _Option) && options.any((o) => (o as _Option).art != null))
+          LayoutBuilder(
+            builder: (context, c) {
+              const gap = MashtalSpace.md;
+              final columns = options.length == 3 ? 3 : 2;
+              final width = (c.maxWidth - gap * (columns - 1)) / columns;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [for (final o in options.cast<_Option>()) SizedBox(width: width, child: _ArtTile(option: o))],
+              );
+            },
+          )
+        else
+          ..._options(q),
         const SizedBox(height: 24),
         TextButton.icon(
           key: const Key('skipQuestions'),
@@ -165,24 +181,45 @@ class _ChooseScreenState extends State<ChooseScreen> {
         ],
       Question.spot => [
           for (final s in Spot.values)
-            _Option(id: 'spot-${s.name}', label: context.tr('a.spot.${s.name}'), selected: a.spot == s, onTap: () => _set(a.withSpot(s))),
+            _Option(
+              id: 'spot-${s.name}',
+              label: context.tr('a.spot.${s.name}'),
+              art: switch (s) { Spot.inside => Art.indoor, Spot.balcony => Art.balcony, Spot.garden => Art.ground },
+              selected: a.spot == s,
+              onTap: () => _set(a.withSpot(s)),
+            ),
         ],
       Question.window || Question.sun => [
           for (final v in Amount.values.reversed)
             _Option(
               id: '${q.name}-${v.name}',
               label: context.tr('a.${q.name}.${v.name}'),
+              art: q == Question.window
+                  ? switch (v) { Amount.lots => Art.windowSun, Amount.some => Art.windowBright, Amount.little => Art.windowFar }
+                  : switch (v) { Amount.lots => Art.sunLots, Amount.some => Art.sunSome, Amount.little => Art.sunLittle },
               selected: a.light == v,
               onTap: () => _set(a.copyWith(light: v)),
             ),
         ],
       Question.sunTime => [
           for (final t in SunTime.values)
-            _Option(id: 'sunTime-${t.name}', label: context.tr('a.sunTime.${t.name}'), selected: a.sunTime == t, onTap: () => _set(a.copyWith(sunTime: t))),
+            _Option(
+              id: 'sunTime-${t.name}',
+              label: context.tr('a.sunTime.${t.name}'),
+              art: switch (t) { SunTime.morning => Art.morning, SunTime.afternoon => Art.afternoon, SunTime.unsure => null },
+              selected: a.sunTime == t,
+              onTap: () => _set(a.copyWith(sunTime: t)),
+            ),
         ],
       Question.space => [
           for (final v in Amount.values)
-            _Option(id: 'space-${v.name}', label: context.tr('a.space.${v.name}'), selected: a.space == v, onTap: () => _set(a.copyWith(space: v))),
+            _Option(
+              id: 'space-${v.name}',
+              label: context.tr('a.space.${v.name}'),
+              art: switch (v) { Amount.little => Art.smallPot, Amount.some => Art.bigPot, Amount.lots => Art.ground },
+              selected: a.space == v,
+              onTap: () => _set(a.copyWith(space: v)),
+            ),
         ],
       Question.watering => [
           for (final v in Amount.values)
@@ -202,11 +239,14 @@ class _ChooseScreenState extends State<ChooseScreen> {
 }
 
 class _Option extends StatelessWidget {
-  const _Option({required this.id, required this.label, required this.selected, required this.onTap});
+  const _Option({required this.id, required this.label, required this.selected, required this.onTap, this.art});
   final String id;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
+  /// A drawing of the answer; when the answers have them, they show as tiles.
+  final Art? art;
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +260,43 @@ class _Option extends StatelessWidget {
           title: Text(label),
           trailing: Icon(selected ? Icons.check_circle : Icons.chevron_right, color: selected ? scheme.primary : null),
           onTap: onTap,
+        ),
+      ),
+    );
+  }
+}
+
+/// A picture answer: the drawing over its label, mint when chosen.
+class _ArtTile extends StatelessWidget {
+  const _ArtTile({required this.option});
+  final _Option option;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final o = option;
+    return Material(
+      color: o.selected ? MashtalColors.mint : MashtalColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+        side: BorderSide(color: o.selected ? MashtalColors.leaf : MashtalColors.line, width: o.selected ? 1.5 : 1),
+      ),
+      child: InkWell(
+        key: Key('option-${o.id}'),
+        borderRadius: BorderRadius.circular(MashtalSpace.cardRadius),
+        onTap: o.onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(MashtalSpace.sm, MashtalSpace.lg, MashtalSpace.sm, MashtalSpace.md),
+          child: Column(
+            children: [
+              if (o.art case final art?)
+                GardenArt(art, size: 72)
+              else
+                const SizedBox.square(dimension: 72, child: Icon(Icons.help_outline, size: 40, color: MashtalColors.leaf)),
+              const SizedBox(height: MashtalSpace.sm),
+              Text(o.label, textAlign: TextAlign.center, style: text.titleSmall, maxLines: 3),
+            ],
+          ),
         ),
       ),
     );

@@ -10,8 +10,10 @@ import '../../logic/watering.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/arch.dart';
 import '../widgets/care_sheet.dart';
 import '../widgets/common.dart';
+import '../widgets/garden_art.dart';
 import '../widgets/plant_photo.dart';
 
 /// My Garden (US-21): one card per plant with its watering frequency from
@@ -59,6 +61,7 @@ class GardenScreen extends StatelessWidget {
           : items.isEmpty
           ? EmptyState(
               icon: Icons.yard_outlined,
+              art: Art.sprout,
               title: '${context.tr('welcome')} ${user.name}. ${context.tr('gardenEmpty')}',
               body: context.tr('gardenEmptyBody'),
               actions: [
@@ -97,7 +100,7 @@ class GardenScreen extends StatelessWidget {
                       child: ListTile(
                         key: const Key('goingAway'),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MashtalSpace.radius)),
-                        leading: const Icon(Icons.luggage_outlined, color: MashtalColors.leaf),
+                        leading: const GardenArt(Art.suitcase, size: 40),
                         title: Text(context.tr('goingAwayRow'), style: Theme.of(context).textTheme.bodyLarge),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.go('/garden/away'),
@@ -149,10 +152,10 @@ class _TodayPanel extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 64,
+            height: 64,
             decoration: const BoxDecoration(color: MashtalColors.lime, shape: BoxShape.circle),
-            child: Icon(due.isEmpty ? Icons.check : Icons.water_drop, color: MashtalColors.forest),
+            child: GardenArt(due.isEmpty ? Art.sprout : Art.wateringCan, size: 44, fill: MashtalColors.surface),
           ),
           const SizedBox(width: MashtalSpace.md),
           Expanded(
@@ -198,10 +201,10 @@ class _AwayPanel extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 64,
+            height: 64,
             decoration: const BoxDecoration(color: MashtalColors.lime, shape: BoxShape.circle),
-            child: Icon(over ? Icons.home_outlined : Icons.flight_takeoff, color: MashtalColors.forest),
+            child: GardenArt(over ? Art.wateringCan : Art.suitcase, size: 44, fill: MashtalColors.surface),
           ),
           const SizedBox(width: MashtalSpace.md),
           Expanded(
@@ -269,7 +272,7 @@ class GardenCard extends StatelessWidget {
                 children: [
                   AspectRatio(
                     aspectRatio: 1,
-                    child: PlantPhoto.fill(plant: plant, radius: MashtalSpace.radius),
+                    child: Arch(child: PlantPhoto.fill(plant: plant, radius: 0)),
                   ),
                   PositionedDirectional(
                     end: MashtalSpace.sm,

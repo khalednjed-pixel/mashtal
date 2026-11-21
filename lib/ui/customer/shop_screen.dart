@@ -9,6 +9,7 @@ import '../../logic/shop_filters.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/arch.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
 import '../widgets/save_button.dart';
@@ -400,9 +401,10 @@ class _PlantCard extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      PlantPhoto.fill(plant: p, radius: MashtalSpace.radius),
-                      // Save for later: a small white disc in the photo's corner.
-                      PositionedDirectional(top: 0, end: 0, child: SaveButton(plantId: p.id, onPhoto: true)),
+                      // Framed in a Najdi arch rather than a plain rectangle.
+                      Arch(child: PlantPhoto.fill(plant: p, radius: 0)),
+                      // Save for later: a small white disc at the photo's foot.
+                      PositionedDirectional(bottom: 0, end: 0, child: SaveButton(plantId: p.id, onPhoto: true)),
                     ],
                   ),
                 ),

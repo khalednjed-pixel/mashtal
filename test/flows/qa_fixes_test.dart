@@ -59,7 +59,9 @@ void main() {
     await signOut(tester);
 
     await signIn(tester, '0500000005');
-    expect(app.cart, {'l1': 2});
+    // The sold-out line stays, flagged and not reserved (US-15 AC-02).
+    expect(app.cart, {'l1': 2, 'l2': 1});
+    expect(app.reservableCart, {'l1': 2});
   });
 
   testWidgets('BUG-2 the cart + and − buttons are named for screen readers', (tester) async {

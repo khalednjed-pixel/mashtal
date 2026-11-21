@@ -62,6 +62,16 @@ const Map<String, Map<String, String>> _strings = {
   'district': {'ar': 'الحي', 'en': 'District'},
   'cartEmpty': {'ar': 'سلتك فارغة', 'en': 'Your cart is empty'},
   'reserve': {'ar': 'احجز', 'en': 'Reserve'},
+  // US-15: the cart as a pickup route, one stop per nursery.
+  'pickupStop': {'ar': 'محطة الاستلام {n}', 'en': 'Pickup {n}'},
+  'separatePickups': {
+    'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من {n} مشاتل.',
+    'en': 'Each nursery is a separate pickup with its own reservation. You will collect from {n} nurseries.'
+  },
+  'subtotal': {'ar': 'المجموع عند هذا المشتل', 'en': 'Subtotal at this nursery'},
+  'total': {'ar': 'الإجمالي', 'en': 'Total'},
+  'unavailableNow': {'ar': 'غير متوفر الآن، لن يُحجز', 'en': 'Not available now, will not be reserved'},
+  'willSend': {'ar': 'سيُرسل طلب حجز إلى {n} مشتل', 'en': 'A request goes to {n} nursery(ies)'},
   'reservedDone': {'ar': 'أُرسل طلب الحجز إلى {n} مشتل', 'en': 'Reservation sent to {n} nursery(ies)'},
   'reserveNothing': {'ar': 'لا يوجد في السلة ما يمكن حجزه الآن', 'en': 'Nothing in the cart can be reserved right now'},
   'myReservations': {'ar': 'حجوزاتي', 'en': 'My reservations'},

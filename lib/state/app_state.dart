@@ -51,20 +51,22 @@ class AppState extends ChangeNotifier {
 
   static String _ownerFor(AppUser? u) => u?.id ?? _guest;
 
-  /// Cart lines never ask for more than the nursery has (QA BUG-1): lines
-  /// whose listing was deleted, hidden or sold out are dropped, the rest are
-  /// capped at the listing's quantity. Returns true if anything changed.
+  /// Cart lines never ask for more than the nursery has (QA BUG-1): a line
+  /// whose listing was deleted is dropped, and a line is capped at the
+  /// listing's quantity. A line whose listing is hidden or sold out stays in
+  /// the cart, flagged as unavailable and left out of the reservation
+  /// (US-15 AC-02). Returns true if anything changed.
   bool _fitCartsToStock() {
-    final stock = {for (final l in backend.listings) if (l.isAvailable) l.id: l.quantity};
+    final byId = {for (final l in backend.listings) l.id: l};
     var changed = false;
     for (final c in _carts.values) {
       for (final id in c.keys.toList()) {
-        final max = stock[id];
-        if (max == null) {
+        final listing = byId[id];
+        if (listing == null) {
           c.remove(id);
           changed = true;
-        } else if (c[id]! > max) {
-          c[id] = max;
+        } else if (listing.isAvailable && c[id]! > listing.quantity) {
+          c[id] = listing.quantity;
           changed = true;
         }
       }
@@ -131,12 +133,25 @@ class AppState extends ChangeNotifier {
     _saveCarts();
   }
 
-  /// US-16: sends the cart to the nurseries (one reservation each) and
-  /// empties it. Returns how many reservations were made.
+  /// Whether the cart line [listingId] can be reserved now (US-15 AC-02).
+  bool isReservable(String listingId) =>
+      backend.listings.where((l) => l.id == listingId).firstOrNull?.isAvailable ?? false;
+
+  /// The cart lines that can be reserved now: unavailable lines are left out.
+  Map<String, int> get reservableCart => {
+        for (final MapEntry(key: id, value: qty) in cart.entries)
+          if (isReservable(id)) id: qty,
+      };
+
+  /// US-16: sends the reservable lines to the nurseries (one reservation
+  /// each) and takes them out of the cart. Unavailable lines stay, flagged.
+  /// Returns how many reservations were made.
   Future<int> reserveCart() async {
-    final made = await backend.reserve(cart);
+    final lines = reservableCart;
+    if (lines.isEmpty) return 0;
+    final made = await backend.reserve(lines);
     if (made.isNotEmpty) {
-      _carts.remove(_owner);
+      lines.keys.forEach(_cart.remove);
       _saveCarts();
     }
     return made.length;

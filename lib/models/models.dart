@@ -203,6 +203,8 @@ class Nursery {
     required this.status,
     this.rating = 0,
     this.ratingCount = 0,
+    this.lat,
+    this.lng,
   });
 
   final String id;
@@ -216,10 +218,14 @@ class Nursery {
   final double rating;
   final int ratingCount;
 
+  /// Map location for directions (US-18), set by the admin.
+  final double? lat;
+  final double? lng;
+
   String name(String lang) => lang == 'ar' ? nameAr : nameEn;
   bool get isVerified => status == PartnerStatus.verified;
 
-  Nursery copyWith({String? id, String? nameAr, String? nameEn, String? city, String? district, String? phone, String? hours, PartnerStatus? status}) => Nursery(
+  Nursery copyWith({String? id, String? nameAr, String? nameEn, String? city, String? district, String? phone, String? hours, PartnerStatus? status, (double, double)? Function()? location}) => Nursery(
         id: id ?? this.id,
         nameAr: nameAr ?? this.nameAr,
         nameEn: nameEn ?? this.nameEn,
@@ -230,6 +236,8 @@ class Nursery {
         status: status ?? this.status,
         rating: rating,
         ratingCount: ratingCount,
+        lat: location != null ? location()?.$1 : lat,
+        lng: location != null ? location()?.$2 : lng,
       );
 
   Map<String, dynamic> toJson() => {
@@ -243,6 +251,8 @@ class Nursery {
         'status': status.name,
         'rating': rating,
         'ratingCount': ratingCount,
+        'lat': ?lat,
+        'lng': ?lng,
       };
 
   factory Nursery.fromJson(Map<String, dynamic> j) => Nursery(
@@ -256,6 +266,8 @@ class Nursery {
         status: _enumByName(PartnerStatus.values, j['status']),
         rating: (j['rating'] as num).toDouble(),
         ratingCount: j['ratingCount'],
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
       );
 }
 

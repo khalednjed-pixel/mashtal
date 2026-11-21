@@ -1,28 +1,34 @@
 import '../../models/models.dart';
 
 /// Synthetic partner data for development and the demo (TF-07, A-03).
-/// Names are invented; no real businesses are represented.
+/// Names are invented; no real businesses are represented. Nursery map
+/// points are the approximate centre of their district.
 
 const List<Nursery> seedNurseries = [
   Nursery(
     id: 'n1', nameAr: 'مشتل الروضة', nameEn: 'Al Rawdah Nursery', city: 'riyadh', district: 'الروضة',
     phone: '0500000101', hours: '8:00–22:00', status: PartnerStatus.verified, rating: 4.6, ratingCount: 38,
+    lat: 24.7376, lng: 46.7725,
   ),
   Nursery(
     id: 'n2', nameAr: 'مشاتل النخيل الخضراء', nameEn: 'Green Palms Nurseries', city: 'riyadh', district: 'الملقا',
     phone: '0500000102', hours: '7:00–21:00', status: PartnerStatus.verified, rating: 4.3, ratingCount: 21,
+    lat: 24.8126, lng: 46.6131,
   ),
   Nursery(
     id: 'n3', nameAr: 'مشتل الياسمين', nameEn: 'Yasmin Nursery', city: 'riyadh', district: 'السويدي',
     phone: '0500000103', hours: '9:00–23:00', status: PartnerStatus.verified, rating: 4.8, ratingCount: 54,
+    lat: 24.5923, lng: 46.6564,
   ),
   Nursery(
     id: 'n4', nameAr: 'مشتل الواحة', nameEn: 'Oasis Nursery', city: 'jeddah', district: 'الروضة',
     phone: '0500000104', hours: '8:00–22:00', status: PartnerStatus.verified, rating: 4.1, ratingCount: 12,
+    lat: 21.5675, lng: 39.1505,
   ),
   Nursery(
     id: 'n5', nameAr: 'مشتل الفجر', nameEn: 'Al Fajr Nursery', city: 'riyadh', district: 'النرجس',
     phone: '0500000105', hours: '8:00–20:00', status: PartnerStatus.pending,
+    lat: 24.8385, lng: 46.664,
   ),
 ];
 

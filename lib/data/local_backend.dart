@@ -508,6 +508,8 @@ class LocalBackend extends ChangeNotifier implements AuthRepository, MarketRepos
       phone: draft.phone,
       hours: draft.hours,
       status: PartnerStatus.pending,
+      lat: draft.lat,
+      lng: draft.lng,
     );
     _nurseries.add(n);
     // Give the nursery a sign-in account on its phone number.

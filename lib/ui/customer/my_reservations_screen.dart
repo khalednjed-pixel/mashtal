@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/pickup_pass.dart';
 import '../widgets/reservation_card.dart';
 
 /// The customer's reservations with their status (US-16 AC-02): an accepted
@@ -19,6 +20,7 @@ class MyReservationsScreen extends StatelessWidget {
     final app = context.watch<AppState>();
     final list = app.backend.reservations;
     final lang = context.lang;
+    final now = DateTime.now();
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('myReservations')), actions: const [LanguageButton()]),
       body: list.isEmpty
@@ -37,6 +39,12 @@ class MyReservationsScreen extends StatelessWidget {
                       child: ReservationCard(
                         reservation: r,
                         title: app.backend.nurseryById(r.nurseryId)?.name(lang) ?? '',
+                        // US-18: once accepted, where to collect and directions.
+                        footer: switch (app.backend.nurseryById(r.nurseryId)) {
+                          final nursery? when r.status == ReservationStatus.accepted && !r.isExpired(now) =>
+                            PickupPass(reservation: r, nursery: nursery, now: now),
+                          _ => null,
+                        },
                         actions: [
                           if (r.status == ReservationStatus.pickedUp)
                             TextButton.icon(

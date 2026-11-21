@@ -83,6 +83,14 @@ const Map<String, Map<String, String>> _strings = {
   'res.expired': {'ar': 'انتهت مدة الحجز', 'en': 'Hold expired'},
   'heldUntil': {'ar': 'محجوز لك حتى', 'en': 'Held for you until'},
   'rejectReason': {'ar': 'السبب', 'en': 'Reason'},
+  // US-18: where to collect.
+  'pickupAt': {'ar': 'الاستلام من', 'en': 'Pick up at'},
+  'directions': {'ar': 'الاتجاهات', 'en': 'Directions'},
+  'callNursery': {'ar': 'اتصل بالمشتل', 'en': 'Call the nursery'},
+  'hoursLeft': {'ar': 'باقي {h} ساعة', 'en': '{h} h left'},
+  'mapLocation': {'ar': 'الموقع على الخريطة', 'en': 'Map location'},
+  'mapLocationHelp': {'ar': 'خط العرض والطول، أو الصق رابط الموقع من خرائط Google', 'en': 'Latitude and longitude, or paste the place link from Google Maps'},
+  'mapLocationInvalid': {'ar': 'لم نجد إحداثيات في هذا النص', 'en': 'No coordinates found in this text'},
   // US-20: pickup puts the plants into My Garden.
   'markPickedUp': {'ar': 'تم التسليم', 'en': 'Mark picked up'},
   'pickedUpConfirmTitle': {'ar': 'هل استلم العميل النباتات؟', 'en': 'Has the customer collected the plants?'},
@@ -90,6 +98,7 @@ const Map<String, Map<String, String>> _strings = {
   'confirmPickedUp': {'ar': 'نعم، استلمها', 'en': 'Yes, collected'},
   'inYourGarden': {'ar': 'استلمتها في {date}، وهي الآن في حديقتك', 'en': 'Collected {date}, now in My Garden'},
   'openGarden': {'ar': 'افتح حديقتي', 'en': 'Open My Garden'},
+  'collectedOn': {'ar': 'استلمها العميل في {date}', 'en': 'Collected by the customer on {date}'},
   'accept': {'ar': 'قبول', 'en': 'Accept'},
   'reject': {'ar': 'رفض', 'en': 'Reject'},
   'rejectWhy': {'ar': 'سبب الرفض', 'en': 'Why are you rejecting it?'},

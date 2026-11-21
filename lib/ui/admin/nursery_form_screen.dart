@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/directions.dart';
 import '../../logic/phone.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
@@ -28,11 +29,12 @@ class _NurseryFormScreenState extends State<NurseryFormScreen> {
   late final _district = TextEditingController(text: _existing?.district);
   late final _phone = TextEditingController(text: _existing?.phone);
   late final _hours = TextEditingController(text: _existing?.hours ?? '8:00–22:00');
+  late final _location = TextEditingController(text: _existing?.lat == null ? '' : '${_existing!.lat}, ${_existing.lng}');
   late String _city = _existing?.city ?? 'riyadh';
 
   @override
   void dispose() {
-    for (final c in [_nameAr, _nameEn, _district, _phone, _hours]) {
+    for (final c in [_nameAr, _nameEn, _district, _phone, _hours, _location]) {
       c.dispose();
     }
     super.dispose();
@@ -41,6 +43,7 @@ class _NurseryFormScreenState extends State<NurseryFormScreen> {
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     final backend = context.read<AppState>().backend;
+    final point = parseLocation(_location.text);
     final draft = Nursery(
       id: _existing?.id ?? '',
       nameAr: _nameAr.text.trim(),
@@ -52,6 +55,8 @@ class _NurseryFormScreenState extends State<NurseryFormScreen> {
       status: _existing?.status ?? PartnerStatus.pending,
       rating: _existing?.rating ?? 0,
       ratingCount: _existing?.ratingCount ?? 0,
+      lat: point?.$1,
+      lng: point?.$2,
     );
     if (_existing == null) {
       await backend.createNursery(draft);
@@ -97,6 +102,21 @@ class _NurseryFormScreenState extends State<NurseryFormScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(controller: _hours, decoration: InputDecoration(labelText: context.tr('hours'))),
+                const SizedBox(height: 12),
+                // US-18: where the directions button points.
+                TextFormField(
+                  key: const Key('nurseryLocation'),
+                  controller: _location,
+                  textDirection: TextDirection.ltr,
+                  decoration: InputDecoration(
+                    labelText: context.tr('mapLocation'),
+                    hintText: '24.7136, 46.6753',
+                    helperText: context.tr('mapLocationHelp'),
+                    helperMaxLines: 2,
+                    prefixIcon: const Icon(Icons.place_outlined),
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty || parseLocation(v) != null) ? null : context.tr('mapLocationInvalid'),
+                ),
                 const SizedBox(height: 24),
                 FilledButton(key: const Key('savePartner'), onPressed: _save, child: Text(context.tr('save'))),
               ],

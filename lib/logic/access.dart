@@ -26,7 +26,7 @@ String homeFor(Role? role) => switch (role) {
 
 /// Paths a guest or customer can use. Partners do not see the shop tabs.
 bool _isCustomerArea(String path) =>
-    path.startsWith('/shop') || path.startsWith('/choose') || path.startsWith('/cart') || path.startsWith('/garden');
+    path.startsWith('/shop') || path.startsWith('/choose') || path.startsWith('/cart') || path.startsWith('/saved') || path.startsWith('/garden');
 
 /// The admin may browse the shop to check what customers see, but has no cart.
 bool _adminMayBrowse(String path) => path.startsWith('/shop') || path.startsWith('/choose');

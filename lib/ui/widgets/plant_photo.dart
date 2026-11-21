@@ -118,7 +118,7 @@ class PlantPhoto extends StatelessWidget {
     final Widget fallback = size == null ? PlantAvatar.fill(plant: plant) : PlantAvatar(plant: plant, size: size);
     Widget child;
     if (own != null) {
-      child = Image.memory(decodePhoto(own), width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true);
+      child = Image.memory(decodePhoto(own), width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true, frameBuilder: _fadeIn);
     } else {
       child = FutureBuilder<WikiPhoto?>(
         future: WikiPhotos.of(plant),
@@ -126,7 +126,7 @@ class PlantPhoto extends StatelessWidget {
           final photo = snap.data;
           if (photo == null) return fallback;
           if (photo.asset != null) {
-            return Image.asset(photo.asset!, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
+            return Image.asset(photo.asset!, width: size, height: size, fit: BoxFit.cover, frameBuilder: _fadeIn, errorBuilder: (_, _, _) => fallback);
           }
           return Image.network(
             photo.imageUrl,
@@ -134,6 +134,7 @@ class PlantPhoto extends StatelessWidget {
             height: size,
             fit: BoxFit.cover,
             webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+            frameBuilder: _fadeIn,
             errorBuilder: (_, _, _) => fallback,
             loadingBuilder: (_, img, progress) => progress == null ? img : fallback,
           );
@@ -149,6 +150,18 @@ class PlantPhoto extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A photo that was not ready at once fades in over the tinted placeholder
+/// instead of popping in.
+Widget _fadeIn(BuildContext context, Widget child, int? frame, bool wasSynchronouslyLoaded) {
+  if (wasSynchronouslyLoaded) return child;
+  return AnimatedOpacity(
+    opacity: frame == null ? 0 : 1,
+    duration: const Duration(milliseconds: 280),
+    curve: Curves.easeOut,
+    child: child,
+  );
 }
 
 /// Credit under a species photo. Imported Commons photos show author and

@@ -370,7 +370,7 @@ class _ResultCard extends StatelessWidget {
                                     ],
                                   ),
                                   Text(
-                                    nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}',
+                                    context.trCount('nurseryCount', nurseries),
                                     style: text.bodySmall,
                                   ),
                                 ],

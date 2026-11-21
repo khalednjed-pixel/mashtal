@@ -264,5 +264,17 @@ class _CartBadge extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Badge(isLabelVisible: count > 0, label: Text('$count'), child: child);
+  Widget build(BuildContext context) => Badge(
+        isLabelVisible: count > 0,
+        // The count gives a small bump each time it changes.
+        label: TweenAnimationBuilder<double>(
+          key: ValueKey(count),
+          tween: Tween(begin: 1.4, end: 1),
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutBack,
+          builder: (_, scale, label) => Transform.scale(scale: scale, child: label),
+          child: Text('$count'),
+        ),
+        child: child,
+      );
 }

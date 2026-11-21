@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/local_backend.dart';
 import '../../l10n/strings.dart';
+import '../../logic/care_tips.dart';
 import '../../logic/history.dart';
 import '../../logic/watering.dart';
 import '../../models/models.dart';
@@ -119,6 +120,8 @@ class GardenPlantScreen extends StatelessWidget {
               onPressed: () => bookPlantCare(context, garden: g, plantName: plant.name(lang)),
             ),
             const SizedBox(height: MashtalSpace.xl),
+            _CareTips(plant: plant),
+            const SizedBox(height: MashtalSpace.xl),
             Row(
               children: [
                 Expanded(child: Text(context.tr('plantStory'), style: text.titleLarge)),
@@ -193,6 +196,60 @@ class GardenPlantScreen extends StatelessWidget {
     if (ok != true) return;
     await app.backend.removeFromGarden(g.id);
     router.go('/garden');
+  }
+}
+
+/// General care tips for this plant, as one calm panel of rows. They come
+/// from the plant's needs, not from a guide, and the caption says so.
+class _CareTips extends StatelessWidget {
+  const _CareTips({required this.plant});
+  final Plant plant;
+
+  static IconData _icon(TipTopic t) => switch (t) {
+        TipTopic.light => Icons.wb_sunny_outlined,
+        TipTopic.water => Icons.water_drop_outlined,
+        TipTopic.heat => Icons.thermostat_outlined,
+        TipTopic.indoor => Icons.ac_unit,
+        TipTopic.soil => Icons.grass_outlined,
+        TipTopic.safety => Icons.child_care_outlined,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final tips = careTipsFor(plant);
+    return Column(
+      key: const Key('careTips'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(context.tr('careTips'), style: text.titleLarge),
+        const SizedBox(height: MashtalSpace.xs),
+        Text(context.tr('careTipsNote'), style: text.bodySmall),
+        const SizedBox(height: MashtalSpace.md),
+        DecoratedBox(
+          decoration: BoxDecoration(border: Border.all(color: MashtalColors.line), borderRadius: BorderRadius.circular(MashtalSpace.radius)),
+          child: Column(
+            children: [
+              for (final (i, tip) in tips.indexed) ...[
+                if (i > 0) const Divider(height: 1, indent: MashtalSpace.lg, endIndent: MashtalSpace.lg),
+                Padding(
+                  key: Key('tip-${tip.topic.name}'),
+                  padding: const EdgeInsets.symmetric(horizontal: MashtalSpace.lg, vertical: MashtalSpace.md),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(_icon(tip.topic), size: 20, color: tip.topic == TipTopic.safety ? MashtalColors.error : MashtalColors.leaf),
+                      const SizedBox(width: MashtalSpace.md),
+                      Expanded(child: Text(context.tr(tip.key), style: text.bodyMedium)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

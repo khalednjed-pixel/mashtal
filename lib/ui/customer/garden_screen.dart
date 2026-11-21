@@ -300,14 +300,21 @@ class WaterRhythm extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    water
-                        ? const Icon(Icons.water_drop, size: 14, color: MashtalColors.leaf)
-                        : Container(
-                            width: 6,
-                            height: 6,
-                            margin: const EdgeInsets.only(bottom: 4),
-                            decoration: const BoxDecoration(color: MashtalColors.line, shape: BoxShape.circle),
-                          ),
+                    // After watering, the drops move to their new days with a
+                    // small grow-in rather than jumping.
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      transitionBuilder: (child, a) => ScaleTransition(scale: a, child: child),
+                      child: water
+                          ? const Icon(Icons.water_drop, key: ValueKey(true), size: 14, color: MashtalColors.leaf)
+                          : Container(
+                              key: const ValueKey(false),
+                              width: 6,
+                              height: 6,
+                              margin: const EdgeInsets.only(bottom: 4),
+                              decoration: const BoxDecoration(color: MashtalColors.line, shape: BoxShape.circle),
+                            ),
+                    ),
                     // Today is underlined.
                     Container(width: 10, height: 2, color: i == 0 ? MashtalColors.forest : Colors.transparent),
                   ],

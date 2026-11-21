@@ -23,6 +23,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('waterNow')));
     await tester.pumpAndSettle();
+    // The care tips sit above the history, so scroll down to it.
+    await tester.ensureVisible(find.byKey(const Key('addNote')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addNote')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('noteField')), 'Moved it to the balcony');

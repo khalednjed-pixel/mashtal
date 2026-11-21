@@ -20,6 +20,7 @@ import 'ui/customer/my_reservations_screen.dart';
 import 'ui/customer/notifications_screen.dart';
 import 'ui/customer/nursery_detail_screen.dart';
 import 'ui/customer/plant_detail_screen.dart';
+import 'ui/customer/saved_screen.dart';
 import 'ui/customer/shop_screen.dart';
 import 'ui/nursery/listing_form_screen.dart';
 import 'ui/nursery/listings_screen.dart';
@@ -61,6 +62,7 @@ GoRouter buildRouter(AppState app) => GoRouter(
             ),
             GoRoute(path: '/choose', builder: (_, _) => const ChooseScreen()),
             GoRoute(path: '/cart', builder: (_, _) => const CartScreen()),
+            GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
             GoRoute(path: '/garden', builder: (_, _) => const GardenScreen()),
             // Not nested under /garden, for the same SelectionArea reason as
             // /reservations below.

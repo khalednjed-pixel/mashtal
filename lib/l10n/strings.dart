@@ -49,6 +49,10 @@ const Map<String, Map<String, String>> _strings = {
   'inStock': {'ar': 'متوفر', 'en': 'In stock'},
   'nurseriesCount': {'ar': 'مشاتل', 'en': 'nurseries'},
   'oneNursery': {'ar': 'مشتل واحد', 'en': '1 nursery'},
+  'nurseryCount.one': {'ar': 'مشتل واحد', 'en': '1 nursery'},
+  'nurseryCount.two': {'ar': 'مشتلان'},
+  'nurseryCount.few': {'ar': '{n} مشاتل'},
+  'nurseryCount.many': {'ar': '{n} مشتلاً', 'en': '{n} nurseries'},
   'addToCart': {'ar': 'أضف للسلة', 'en': 'Add to cart'},
   'addedToCart': {'ar': 'أضيفت إلى السلة', 'en': 'Added to cart'},
   'whereToBuy': {'ar': 'أين تجدها', 'en': 'Where to buy'},
@@ -449,6 +453,32 @@ const Map<String, Map<String, String>> _strings = {
   'field.water': {'ar': 'الماء', 'en': 'Water'},
   'field.wateringEveryDays': {'ar': 'الري كل (أيام)', 'en': 'Water every (days)'},
   'field.toxic': {'ar': 'سامة', 'en': 'Toxic'},
+  // Saved plants
+  'savedPlants': {'ar': 'المحفوظة', 'en': 'Saved'},
+  'savePlant': {'ar': 'احفظ النبتة', 'en': 'Save plant'},
+  'unsavePlant': {'ar': 'إزالة من المحفوظة', 'en': 'Remove from saved'},
+  'savedDone': {'ar': 'حُفظت في المحفوظة', 'en': 'Saved for later'},
+  'unsavedDone': {'ar': 'أُزيلت من المحفوظة', 'en': 'Removed from saved'},
+  'noSaved': {'ar': 'لا توجد نباتات محفوظة', 'en': 'No saved plants yet'},
+  'noSavedBody': {'ar': 'اضغط على القلب في أي نبتة لتعود إليها لاحقاً.', 'en': 'Tap the heart on any plant to come back to it later.'},
+  // Sharing a plant
+  'sharePlant': {'ar': 'شارك النبتة', 'en': 'Share plant'},
+  'shareWhatsApp': {'ar': 'أرسلها في واتساب', 'en': 'Send on WhatsApp'},
+  'copyLink': {'ar': 'انسخ الرابط', 'en': 'Copy link'},
+  'linkCopied': {'ar': 'نُسخ الرابط', 'en': 'Link copied'},
+  // Care tips on a garden plant: general advice from the plant's needs.
+  'careTips': {'ar': 'نصائح العناية', 'en': 'Care tips'},
+  'careTipsNote': {'ar': 'نصائح عامة مبنية على احتياجات النبتة.', 'en': 'General tips based on what this plant needs.'},
+  'tip.sun.full': {'ar': 'تحب الشمس المباشرة معظم النهار، فاختر لها أكثر مكان مشمس.', 'en': 'Loves direct sun most of the day: give it your sunniest spot.'},
+  'tip.sun.partial': {'ar': 'تناسبها شمس الصباح، مع ظلّ وقت الظهيرة والعصر.', 'en': 'Morning sun suits it best, with shade from the midday and afternoon sun.'},
+  'tip.sun.shade': {'ar': 'أبعدها عن الشمس المباشرة، ويكفيها الضوء غير المباشر.', 'en': 'Keep it out of direct sun; indirect light is enough.'},
+  'tip.water.low': {'ar': 'اترك التربة تجف بين كل سقاية والتي بعدها، فالماء الزائد يضرها أكثر من القليل.', 'en': 'Let the soil dry out between waterings: too much water harms it more than too little.'},
+  'tip.water.medium': {'ar': 'اسقها حين يجف سطح التربة عند لمسه.', 'en': 'Water when the top of the soil feels dry.'},
+  'tip.water.high': {'ar': 'حافظ على التربة رطبة من غير أن تتشبع بالماء.', 'en': 'Keep the soil moist, but never waterlogged.'},
+  'tip.heat': {'ar': 'في الصيف اسقها في الصباح الباكر أو بعد المغرب، حتى لا يتبخر الماء في الحر.', 'en': 'In summer, water early in the morning or after sunset, so less is lost to the heat.'},
+  'tip.ac': {'ar': 'أبعدها عن هواء المكيّف المباشر.', 'en': "Keep it out of the air conditioner's direct draft."},
+  'tip.drainage': {'ar': 'ازرعها في تربة رملية سريعة التصريف، وفي أصيص له فتحة تصريف.', 'en': 'Use sandy, fast-draining soil and a pot with a drainage hole.'},
+  'tip.toxic': {'ar': 'ضعها بعيداً عن متناول الأطفال والحيوانات الأليفة.', 'en': 'Keep it out of reach of children and pets.'},
 };
 
 const Map<String, Map<String, String>> _cities = {

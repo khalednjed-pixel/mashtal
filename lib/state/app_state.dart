@@ -28,6 +28,12 @@ class AppState extends ChangeNotifier {
         _seen[e.key] = {...List<String>.from(e.value as List)};
       }
     }
+    final saved = _prefs.getString(_savedKey);
+    if (saved != null) {
+      for (final e in (jsonDecode(saved) as Map<String, dynamic>).entries) {
+        _saved[e.key] = List<String>.from(e.value as List);
+      }
+    }
     _owner = _ownerFor(backend.currentUser);
     if (backend.loaded) _fitCartsToStock();
     backend.addListener(_onBackendChanged);
@@ -36,6 +42,7 @@ class AppState extends ChangeNotifier {
   static const _langKey = 'mashtal.lang';
   static const _seenKey = 'mashtal.seenNotices.v1';
   static const _cartsKey = 'mashtal.carts.v2';
+  static const _savedKey = 'mashtal.saved.v1';
   static const _guest = 'guest';
 
   static Future<AppState> create(LocalBackend backend) async =>
@@ -90,6 +97,13 @@ class AppState extends ChangeNotifier {
         final mine = _carts.putIfAbsent(owner, () => {});
         guestCart.forEach((id, q) => mine.update(id, (v) => v + q, ifAbsent: () => q));
       }
+      // Plants a guest saved move into the account too, like the cart.
+      final guestSaved = _saved.remove(_guest);
+      if (_owner == _guest && owner != _guest && guestSaved != null && user?.role == Role.customer) {
+        final mine = _saved.putIfAbsent(owner, () => []);
+        mine.insertAll(0, guestSaved.where((id) => !mine.contains(id)));
+      }
+      _saveSaved();
       _owner = owner;
     }
     // Online, stock is unknown until the first data arrives; carts wait.
@@ -171,9 +185,41 @@ class AppState extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
+  // --------------------------------------------------------- Saved plants
+
+  /// Plants each account (or the guest) saved to come back to, newest
+  /// first. Kept on the device, like the cart.
+  final Map<String, List<String>> _saved = {};
+
+  /// Saved plant ids that still exist, newest first.
+  List<String> get savedPlantIds => [
+        for (final id in _saved[_owner] ?? const <String>[])
+          if (backend.plantById(id) != null) id,
+      ];
+
+  bool isSaved(String plantId) => _saved[_owner]?.contains(plantId) ?? false;
+
+  /// Saves [plantId], or un-saves it if it was saved. Returns true when the
+  /// plant is now saved.
+  bool toggleSaved(String plantId) {
+    final mine = _saved.putIfAbsent(_owner, () => []);
+    final now = !mine.remove(plantId);
+    if (now) mine.insert(0, plantId);
+    _saveSaved();
+    notifyListeners();
+    return now;
+  }
+
+  void _saveSaved() {
+    _saved.removeWhere((_, l) => l.isEmpty);
+    _prefs.setString(_savedKey, jsonEncode(_saved));
+  }
+
   Future<void> resetDemo() async {
     _carts.clear();
+    _saved.clear();
     await _prefs.remove(_cartsKey);
+    await _prefs.remove(_savedKey);
     await backend.resetDemoData();
   }
 

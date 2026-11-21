@@ -48,6 +48,22 @@ class AccountScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  key: const Key('savedPlants'),
+                  leading: const Icon(Icons.favorite_border),
+                  title: Text(context.tr('savedPlants')),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (app.savedPlantIds.isNotEmpty) Text('${app.savedPlantIds.length}', style: theme.textTheme.bodyMedium),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: () => context.go('/saved'),
+                ),
+              ),
+              const SizedBox(height: 12),
               // US-19: reservation notices, with the unseen count.
               Card(
                 child: ListTile(

@@ -81,24 +81,17 @@ NFR-01 and NFR-02 are checked over 30 labelled scenarios in `test/logic/nfr_scen
 
 Every plant the app calls guide-backed now cites its exact portrait in the *Manual of Riyadh Plants* (English version, 1st edition 2014), for example "Part 2: Plant portraits, p. 230" for the date palm, with the manual's name when it differs from ours (*Cassia italica* for *Senna italica*). 30 of the 33 outdoor plants have a portrait. Ghaf (*Prosopis cineraria*) is only mentioned on the *Prosopis chilensis* page, and wild moringa (*Moringa peregrina*) and markh (*Leptadenia pyrotechnica*) are not in the manual, so these three are now labelled "not from the official guide" instead of being cited.
 
-## Beyond the sprints: care plan and extras
+## Extra features (to review in Sprint 4)
 
-| Feature | What works |
-|---|---|
-| Care plan | Each garden plant's watering adapts to the Riyadh season (summer more often, winter less), where it lives (in the ground, a big pot, a small pot, indoors), and whether it is new (more water while it settles in). The plant page says why, e.g. "Every 3 days now · new plant · big pot". |
-| Check the soil | Reminders ask the customer to check the soil. "Soil is still moist" moves the next check a little later and slowly stretches that plant's pace, so the plan learns the home. "How do I tell?" explains the finger test. |
-| Hold to water | The plant page's main action is a round "soil" that drains as days pass and turns sandy when dry. Press and hold fills it with water (a quick tap does nothing), with a small vibration on phones. Garden cards show the same moisture ring. |
-| Where it lives | Asked once when a plant is added by hand, with the app's guess marked. Picked-up plants start with the guess and can be changed in one tap. |
-| Choose question | For a few hours of outdoor sun: morning or afternoon? Riyadh's afternoon sun counts as full sun; "not sure" changes nothing. |
-| Going away | In My Garden: how long, and will someone at home (a maid or family) water? If yes, a simple watering plan per plant to send on WhatsApp, in Arabic or English. If not, what to do before leaving and which plants will not last that long alone, with when they need water. Away mode shows on My Garden; on return it says to check every plant's soil. Kept on the device. |
-| Look | Answers in Choose, where a plant lives, going away, the Today panel and the empty screens use one set of simple garden line drawings drawn in code (`lib/ui/widgets/garden_art.dart`). |
-| Reminders | "Remind me in my calendar" on a garden plant adds a repeating soil-check reminder to the phone's calendar (Google Calendar link), so reminders arrive with the app closed and without paid push notifications. The My Garden tab shows how many plants are due today. |
-| Growth photos | Each garden plant has a photo strip; with two or more photos it shows the first and the latest side by side ("then and now", with the days between). Photos are kept in the plant's history; the Firestore rules allow them only as photo entries, up to about 400 KB. |
-| Nursery listings | A photo grid with the stock on each photo ("12 in stock", "Only 3 left", "Sold out", "Hidden") and filters for what needs attention. |
-| Account | A profile card, the customer's garden, saved plants and reservations as counts, and the menu in grouped panels. |
-| Saved, share, tips | A heart saves plants to a Saved list; the plant page shares a plant on WhatsApp or as a link; garden plants show general care tips. |
+- **Watering plan:** watering changes with the season, the pot size and how new the plant is. The customer checks the soil and can say it is still moist, and the app adjusts.
+- **Press and hold to water** on the plant page, so a plant isn't marked watered by mistake.
+- **Going away:** a watering plan to send to whoever looks after the plants, or a short checklist if nobody will.
+- **Calendar reminders** for watering, without paid push notifications.
+- **Growth photos** for each plant, with a before and after view.
+- **Saved plants** and **sharing a plant** on WhatsApp.
+- **Nursery listings** as a photo grid with stock filters.
 
-These are general household rules, not quotes from the guide, and the screens say "check the soil" rather than promising exact days. Watering colours (`water`, `waterLight`, `waterSoft`) are the one colour family outside the greens and are used for water only.
+The care advice is general advice, not taken from the Riyadh guide.
 
 ## Try it
 

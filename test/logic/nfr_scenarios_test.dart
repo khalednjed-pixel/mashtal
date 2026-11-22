@@ -23,6 +23,7 @@ SuitabilityAnswers a(Spot spot, Amount light, Amount space, Amount water, {bool 
       light: light,
       space: space,
       watering: water,
+      sunTime: SunTime.morning,
       kidsOrPets: kids,
     );
 

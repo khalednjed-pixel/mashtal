@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/strings.dart';
+import '../../logic/citation.dart';
 import '../../logic/catalog_search.dart';
 import '../../logic/shop_filters.dart';
 import '../../models/models.dart';
@@ -11,6 +12,8 @@ import '../theme.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
+import '../widgets/save_button.dart';
+import '../widgets/share_sheet.dart';
 import '../widgets/not_found.dart';
 
 /// A plant, what it needs, and the verified nurseries that sell it.
@@ -59,8 +62,28 @@ class PlantDetailScreen extends StatelessWidget {
             // the nurseries' own photos of this plant; the credit stays underneath.
             _PhotoGallery(plant: plant, listingPhotos: [for (final (l, _) in offers) if (l.photo != null) l.photo!]),
             const SizedBox(height: MashtalSpace.sm),
-            Text(plant.name(lang), style: theme.textTheme.headlineSmall),
-            const SizedBox(height: MashtalSpace.xs),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: MashtalSpace.xs),
+                    child: Text(plant.name(lang), style: theme.textTheme.headlineSmall),
+                  ),
+                ),
+                IconButton(
+                  key: const Key('sharePlant'),
+                  tooltip: context.tr('sharePlant'),
+                  icon: const Icon(Icons.ios_share),
+                  onPressed: () => sharePlant(
+                    context,
+                    plant: plant,
+                    fromPrice: [for (final (l, _) in offers) if (l.isAvailable) l.price].fold<double?>(null, (a, b) => a == null || b < a ? b : a),
+                  ),
+                ),
+                SaveButton(plantId: plant.id),
+              ],
+            ),
             // LTR inside RTL, but kept on the same (start) edge as the name.
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -128,7 +151,11 @@ class PlantDetailScreen extends StatelessWidget {
                     child: Text(
                       plant.isCustom
                           ? context.tr('addedByNursery')
-                          : '${context.tr('source')}: ${sourceText(lang, plant)}${plant.guideBacked ? '' : ' — ${context.tr('notGuideBacked')}'}',
+                          : switch (citationFor(plant)) {
+                              // A guide plant names its portrait page too (US-10).
+                              final c? => '${context.tr('source')}: ${sourceText(lang, plant)}${lang == 'ar' ? '، ' : ', '}${c.sectionIn(lang)}',
+                              null => '${context.tr('source')}: ${sourceText(lang, plant)} — ${context.tr('notGuideBacked')}',
+                            },
                       style: theme.textTheme.bodySmall?.copyWith(color: MashtalColors.forestDeep),
                     ),
                   ),

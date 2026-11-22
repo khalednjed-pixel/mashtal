@@ -11,12 +11,15 @@ import 'common.dart';
 /// One reservation: who or where, the plants, the total and its status.
 /// [title] is the nursery for a customer, the customer for a nursery.
 class ReservationCard extends StatelessWidget {
-  const ReservationCard({super.key, required this.reservation, required this.title, this.subtitle, this.actions = const []});
+  const ReservationCard({super.key, required this.reservation, required this.title, this.subtitle, this.actions = const [], this.footer});
 
   final Reservation reservation;
   final String title;
   final String? subtitle;
   final List<Widget> actions;
+
+  /// Shown under everything else, e.g. the pickup pass.
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +62,26 @@ class ReservationCard extends StatelessWidget {
                   style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep),
                 ),
               ),
+            if (r.status == ReservationStatus.pickedUp && r.pickedUpAt != null)
+              Padding(
+                padding: const EdgeInsets.only(top: MashtalSpace.xs),
+                child: Row(
+                  children: [
+                    const Icon(Icons.yard_outlined, size: 18, color: MashtalColors.leaf),
+                    const SizedBox(width: MashtalSpace.xs),
+                    Expanded(
+                      child: Text(
+                        // The customer is told where the plants went; the nursery only when.
+                        context
+                            .tr(context.read<AppState>().role == Role.customer ? 'inYourGarden' : 'collectedOn')
+                            .replaceAll('{date}', when.format(r.pickedUpAt!.toLocal())),
+                        key: Key('inGarden-${r.id}'),
+                        style: text.bodyMedium?.copyWith(color: MashtalColors.forestDeep),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (r.status == ReservationStatus.rejected && r.rejectReason != null)
               Padding(
                 padding: const EdgeInsets.only(top: MashtalSpace.xs),
@@ -68,6 +91,7 @@ class ReservationCard extends StatelessWidget {
                   style: text.bodyMedium?.copyWith(color: MashtalColors.error),
                 ),
               ),
+            ?footer,
             if (actions.isNotEmpty) ...[
               const SizedBox(height: MashtalSpace.sm),
               Wrap(spacing: MashtalSpace.sm, alignment: WrapAlignment.end, children: actions),

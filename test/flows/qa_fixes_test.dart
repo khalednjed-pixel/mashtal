@@ -59,7 +59,9 @@ void main() {
     await signOut(tester);
 
     await signIn(tester, '0500000005');
-    expect(app.cart, {'l1': 2});
+    // The sold-out line stays, flagged and not reserved (US-15 AC-02).
+    expect(app.cart, {'l1': 2, 'l2': 1});
+    expect(app.reservableCart, {'l1': 2});
   });
 
   testWidgets('BUG-2 the cart + and − buttons are named for screen readers', (tester) async {
@@ -90,10 +92,16 @@ void main() {
     expect(find.textContaining('Not in the Riyadh guide'), findsNothing);
     expect(find.textContaining('نبات منزلي شائع'), findsOneWidget);
 
-    go(tester, '/shop/plant/p01');
+    go(tester, '/shop/plant/p04');
     await tester.pumpAndSettle();
     expect(find.textContaining('الهيئة الملكية لمدينة الرياض'), findsOneWidget);
     expect(find.textContaining('RCRC'), findsNothing);
+
+    // Ghaf has no portrait in the manual, so it is labelled, in Arabic.
+    go(tester, '/shop/plant/p01');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('نبات سعودي محلي'), findsOneWidget);
+    expect(find.textContaining('native Saudi'), findsNothing);
   });
 
   testWidgets('BUG-5 nursery and plant pages agree on a sold-out listing', (tester) async {

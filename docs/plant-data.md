@@ -5,6 +5,7 @@ Mashtal combines several free sources. Each field comes from the source that is 
 | Field | Source | Licence | Where in the code |
 |---|---|---|---|
 | Place, sun, water, watering days | RCRC *Manual of Riyadh Plants* (TF-06) | Cited, not copied in bulk | `lib/data/seed/plants_seed.dart` |
+| Guide section (portrait page) | RCRC *Manual of Riyadh Plants*, English version, 1st edition 2014, Part 2 "Plant portraits A to Z" | Cited | `guideSection` in `plants_seed.dart` |
 | Toxic to children or pets | ASPCA toxic plants list (OD-10) | Cited | `plants_seed.dart` |
 | Arabic and English names, plant type, description | Mashtal team | Ours | `plants_seed.dart` |
 | Wikidata id, extra Arabic and English names | [Wikidata](https://www.wikidata.org) | CC0, no conditions | `lib/data/seed/plant_media.g.dart` |

@@ -7,6 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../l10n/strings.dart';
 import 'plant_photo.dart';
 
+/// The picker the garden uses for growth photos; tests replace it.
+Future<String?> Function(BuildContext) choosePhoto = pickPlantPhoto;
+
 /// Picks a photo from the gallery (or camera on a phone), shrunk so it fits in
 /// device storage, and returns it as base64 JPEG.
 Future<String?> pickPlantPhoto(BuildContext context) async {

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import 'logic/access.dart';
+import 'models/models.dart';
 import 'state/app_state.dart';
 import 'ui/account_screen.dart';
 import 'ui/admin/admin_screen.dart';
@@ -9,12 +10,18 @@ import 'ui/admin/plant_data_screen.dart';
 import 'ui/admin/professional_form_screen.dart';
 import 'ui/auth/login_screen.dart';
 import 'ui/auth/profile_screen.dart';
+import 'ui/customer/care_screen.dart';
+import 'ui/customer/away_screen.dart';
 import 'ui/customer/cart_screen.dart';
 import 'ui/customer/choose_screen.dart';
+import 'ui/customer/garden_add_screen.dart';
+import 'ui/customer/garden_plant_screen.dart';
 import 'ui/customer/garden_screen.dart';
 import 'ui/customer/my_reservations_screen.dart';
+import 'ui/customer/notifications_screen.dart';
 import 'ui/customer/nursery_detail_screen.dart';
 import 'ui/customer/plant_detail_screen.dart';
+import 'ui/customer/saved_screen.dart';
 import 'ui/customer/shop_screen.dart';
 import 'ui/nursery/listing_form_screen.dart';
 import 'ui/nursery/listings_screen.dart';
@@ -56,11 +63,26 @@ GoRouter buildRouter(AppState app) => GoRouter(
             ),
             GoRoute(path: '/choose', builder: (_, _) => const ChooseScreen()),
             GoRoute(path: '/cart', builder: (_, _) => const CartScreen()),
+            GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
             GoRoute(path: '/garden', builder: (_, _) => const GardenScreen()),
+            // Not nested under /garden, for the same SelectionArea reason as
+            // /reservations below.
+            GoRoute(path: '/garden/add', builder: (_, _) => const GardenAddScreen()),
+            GoRoute(path: '/garden/away', builder: (_, _) => const AwayScreen()),
+            GoRoute(path: '/garden/plant/:id', builder: (_, s) => GardenPlantScreen(gardenPlantId: s.pathParameters['id']!)),
+            GoRoute(
+              path: '/garden/care',
+              builder: (_, s) => CareScreen(
+                service: ServiceType.values.where((t) => t.name == s.uri.queryParameters['service']).firstOrNull,
+                city: s.uri.queryParameters['city'],
+                gardenPlantId: s.uri.queryParameters['plant'],
+              ),
+            ),
             GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
             // Top level, not under /account: a page stacked on another inside
             // the app's SelectionArea trips a Flutter layout assertion.
             GoRoute(path: '/reservations', builder: (_, _) => const MyReservationsScreen()),
+            GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
             GoRoute(
               path: '/nursery',
               builder: (_, _) => const ListingsScreen(),

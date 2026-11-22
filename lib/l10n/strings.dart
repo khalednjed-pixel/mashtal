@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-import '../data/seed/plants_seed.dart' show houseplantSource, rcrcSource;
+import '../data/seed/plants_seed.dart' show houseplantSource, nativeSource, rcrcSource;
 import '../models/models.dart';
 import '../state/app_state.dart';
 
@@ -49,6 +49,10 @@ const Map<String, Map<String, String>> _strings = {
   'inStock': {'ar': 'متوفر', 'en': 'In stock'},
   'nurseriesCount': {'ar': 'مشاتل', 'en': 'nurseries'},
   'oneNursery': {'ar': 'مشتل واحد', 'en': '1 nursery'},
+  'nurseryCount.one': {'ar': 'مشتل واحد', 'en': '1 nursery'},
+  'nurseryCount.two': {'ar': 'مشتلان'},
+  'nurseryCount.few': {'ar': '{n} مشاتل'},
+  'nurseryCount.many': {'ar': '{n} مشتلاً', 'en': '{n} nurseries'},
   'addToCart': {'ar': 'أضف للسلة', 'en': 'Add to cart'},
   'addedToCart': {'ar': 'أضيفت إلى السلة', 'en': 'Added to cart'},
   'whereToBuy': {'ar': 'أين تجدها', 'en': 'Where to buy'},
@@ -62,7 +66,43 @@ const Map<String, Map<String, String>> _strings = {
   'district': {'ar': 'الحي', 'en': 'District'},
   'cartEmpty': {'ar': 'سلتك فارغة', 'en': 'Your cart is empty'},
   'reserve': {'ar': 'احجز', 'en': 'Reserve'},
-  'reservedDone': {'ar': 'أُرسل طلب الحجز إلى {n} مشتل', 'en': 'Reservation sent to {n} nursery(ies)'},
+  // US-19: in-app reservation notices.
+  'notifications': {'ar': 'الإشعارات', 'en': 'Notifications'},
+  'noNotifications': {'ar': 'لا توجد إشعارات', 'en': 'No notifications'},
+  'noNotificationsBody': {'ar': 'سنخبرك هنا حين يرد المشتل على حجزك وقبل انتهاء مدته.', 'en': 'We tell you here when a nursery answers and before a hold runs out.'},
+  'n.accepted': {'ar': '{nursery} قبِل حجزك', 'en': '{nursery} accepted your reservation'},
+  'n.acceptedBody': {'ar': 'محجوز لك حتى {time}.', 'en': 'Held for you until {time}.'},
+  'n.rejected': {'ar': '{nursery} اعتذر عن حجزك', 'en': '{nursery} declined your reservation'},
+  'n.expiringSoon': {'ar': 'باقي أقل من 6 ساعات على حجزك', 'en': 'Less than 6 hours left on your reservation'},
+  'n.expiringSoonBody': {'ar': 'استلم من {nursery} قبل {time}.', 'en': 'Collect from {nursery} before {time}.'},
+  'n.expired': {'ar': 'انتهت مدة حجزك في {nursery}', 'en': 'Your hold at {nursery} has ended'},
+  'n.expiredBody': {'ar': 'يمكنك الحجز مرة أخرى من المتجر.', 'en': 'You can reserve again from the shop.'},
+  'view': {'ar': 'عرض', 'en': 'View'},
+  'justNow': {'ar': 'الآن', 'en': 'Just now'},
+  // Arabic forms are built in agoText (number agreement).
+  'ago.min': {'en': '{n} min ago'},
+  'ago.h': {'en': '{n} h ago'},
+  'ago.d': {'en': '{n} days ago'},
+  // US-15: the cart as a pickup route, one stop per nursery.
+  'pickupStop': {'ar': 'محطة الاستلام {n}', 'en': 'Pickup {n}'},
+  // Counted texts: .one/.two/.few (3–10)/.many in Arabic, .one/.many in English (trCount).
+  'separatePickups.two': {'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من مشتلين.'},
+  'separatePickups.few': {'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من {n} مشاتل.'},
+  'separatePickups.many': {
+    'ar': 'لكل مشتل استلام منفصل وحجز خاص به. ستستلم من {n} مشتلاً.',
+    'en': 'Each nursery is a separate pickup with its own reservation. You will collect from {n} nurseries.'
+  },
+  'subtotal': {'ar': 'المجموع عند هذا المشتل', 'en': 'Subtotal at this nursery'},
+  'total': {'ar': 'الإجمالي', 'en': 'Total'},
+  'unavailableNow': {'ar': 'غير متوفر الآن، لن يُحجز', 'en': 'Not available now, will not be reserved'},
+  'willSend.one': {'ar': 'سيُرسل طلب الحجز إلى مشتل واحد', 'en': 'The request goes to 1 nursery'},
+  'willSend.two': {'ar': 'سيُرسل طلب حجز إلى كل من المشتلين'},
+  'willSend.few': {'ar': 'سيُرسل طلب حجز إلى كل مشتل من {n} مشاتل'},
+  'willSend.many': {'ar': 'سيُرسل طلب حجز إلى كل مشتل من {n} مشتلاً', 'en': 'A request goes to each of {n} nurseries'},
+  'reservedDone.one': {'ar': 'أُرسل طلب الحجز إلى المشتل', 'en': 'Reservation sent to the nursery'},
+  'reservedDone.two': {'ar': 'أُرسل طلب الحجز إلى المشتلين'},
+  'reservedDone.few': {'ar': 'أُرسل طلب الحجز إلى {n} مشاتل'},
+  'reservedDone.many': {'ar': 'أُرسل طلب الحجز إلى {n} مشتلاً', 'en': 'Reservation sent to {n} nurseries'},
   'reserveNothing': {'ar': 'لا يوجد في السلة ما يمكن حجزه الآن', 'en': 'Nothing in the cart can be reserved right now'},
   'myReservations': {'ar': 'حجوزاتي', 'en': 'My reservations'},
   'noReservations': {'ar': 'لا توجد حجوزات بعد', 'en': 'No reservations yet'},
@@ -73,6 +113,22 @@ const Map<String, Map<String, String>> _strings = {
   'res.expired': {'ar': 'انتهت مدة الحجز', 'en': 'Hold expired'},
   'heldUntil': {'ar': 'محجوز لك حتى', 'en': 'Held for you until'},
   'rejectReason': {'ar': 'السبب', 'en': 'Reason'},
+  // US-18: where to collect.
+  'pickupAt': {'ar': 'الاستلام من', 'en': 'Pick up at'},
+  'directions': {'ar': 'الاتجاهات', 'en': 'Directions'},
+  'callNursery': {'ar': 'اتصل بالمشتل', 'en': 'Call the nursery'},
+  'hoursLeft': {'ar': 'باقي {h} ساعة', 'en': '{h} h left'},
+  'mapLocation': {'ar': 'الموقع على الخريطة', 'en': 'Map location'},
+  'mapLocationHelp': {'ar': 'خط العرض والطول، أو الصق رابط الموقع من خرائط Google', 'en': 'Latitude and longitude, or paste the place link from Google Maps'},
+  'mapLocationInvalid': {'ar': 'لم نجد إحداثيات في هذا النص', 'en': 'No coordinates found in this text'},
+  // US-20: pickup puts the plants into My Garden.
+  'markPickedUp': {'ar': 'تم التسليم', 'en': 'Mark picked up'},
+  'pickedUpConfirmTitle': {'ar': 'هل استلم العميل النباتات؟', 'en': 'Has the customer collected the plants?'},
+  'pickedUpConfirmBody': {'ar': 'ستُضاف النباتات إلى حديقة {name} في التطبيق.', 'en': 'The plants will be added to {name}\'s My Garden.'},
+  'confirmPickedUp': {'ar': 'نعم، استلمها', 'en': 'Yes, collected'},
+  'inYourGarden': {'ar': 'استلمتها في {date}، وهي الآن في حديقتك', 'en': 'Collected {date}, now in My Garden'},
+  'openGarden': {'ar': 'افتح حديقتي', 'en': 'Open My Garden'},
+  'collectedOn': {'ar': 'استلمها العميل في {date}', 'en': 'Collected by the customer on {date}'},
   'accept': {'ar': 'قبول', 'en': 'Accept'},
   'reject': {'ar': 'رفض', 'en': 'Reject'},
   'rejectWhy': {'ar': 'سبب الرفض', 'en': 'Why are you rejecting it?'},
@@ -95,10 +151,64 @@ const Map<String, Map<String, String>> _strings = {
   'removeFromCartTitle': {'ar': 'إزالة من السلة؟', 'en': 'Remove from cart?'},
   'removeFromCartBody': {'ar': 'هل أنت متأكد أنك تريد إزالة {item} من سلتك؟', 'en': 'Are you sure you want to remove {item} from your cart?'},
   'gardenEmpty': {'ar': 'لا توجد نباتات في حديقتك بعد', 'en': 'No plants in your garden yet'},
-  'gardenSoon': {
-    'ar': 'النباتات التي تستلمها من المشتل ستظهر هنا تلقائياً (السبرنت الثالث).',
-    'en': 'Plants you pick up from a nursery will appear here automatically (Sprint 3).'
+  'gardenEmptyBody': {
+    'ar': 'النباتات التي تستلمها من المشتل تظهر هنا تلقائياً. وأضف بنفسك ما اشتريته من مكان آخر.',
+    'en': 'Plants you pick up from a nursery appear here by themselves. Add plants you bought elsewhere yourself.'
   },
+  'addManuallyBody': {
+    'ar': 'اختر النبتة من القائمة لتظهر في حديقتك مع موعد ريّها.',
+    'en': 'Pick the plant from the list to see it in your garden with its watering rhythm.'
+  },
+  'gardenSearchHint': {'ar': 'ابحث باسم النبتة', 'en': 'Search by plant name'},
+  'addedToGarden': {'ar': 'أضيفت إلى حديقتك', 'en': 'Added to your garden'},
+  'toWater.one': {'ar': 'نبتة واحدة تحتاج الري اليوم', 'en': '1 plant to water today'},
+  'toWater.two': {'ar': 'نبتتان تحتاجان الري اليوم'},
+  'toWater.few': {'ar': '{n} نباتات تحتاج الري اليوم'},
+  'toWater.many': {'ar': '{n} نبتة تحتاج الري اليوم', 'en': '{n} plants to water today'},
+  'nothingToWater': {'ar': 'لا شيء يحتاج الري اليوم', 'en': 'Nothing to water today'},
+  'plantsInGarden.one': {'ar': 'في حديقتك نبتة واحدة', 'en': '1 plant in your garden'},
+  'plantsInGarden.two': {'ar': 'في حديقتك نبتتان'},
+  'plantsInGarden.few': {'ar': 'في حديقتك {n} نباتات'},
+  'plantsInGarden.many': {'ar': 'في حديقتك {n} نبتة', 'en': '{n} plants in your garden'},
+  'iWatered': {'ar': 'سقيتها', 'en': 'I watered it'},
+  // US-24: professionals for plant care.
+  'plantCare': {'ar': 'العناية بالنبات', 'en': 'Plant care'},
+  'careFor': {'ar': 'العناية بـ', 'en': 'Care for'},
+  'inCity': {'ar': 'في', 'en': 'In'},
+  'priceSetBy': {'ar': 'نطاق سعر {service} الذي حدّده مشتل', 'en': 'Mashtal\'s price range for {service}'},
+  'priceAgreed': {'ar': 'يتفق معك المختص على السعر داخل هذا النطاق، وتدفع له مباشرة.', 'en': 'The professional agrees the price with you inside this range; you pay them directly.'},
+  'verifiedByMashtal': {'ar': 'موثّق من مشتل', 'en': 'Verified by Mashtal'},
+  'noProsInArea': {'ar': 'لا يوجد مختصون في منطقتك بعد', 'en': 'No professionals in your area yet'},
+  'noProsInAreaBody': {'ar': 'جرّب نوع خدمة آخر، أو عد لاحقاً، فنحن نضيف مختصين موثّقين باستمرار.', 'en': 'Try another service, or check back later as we add verified professionals.'},
+  'findProfessionals': {'ar': 'مختصو العناية', 'en': 'Care professionals'},
+  // US-23: Book Plant Care from a plant.
+  'bookCare': {'ar': 'احجز عناية', 'en': 'Book Plant Care'},
+  'whatNeeds': {'ar': 'ما الذي تحتاجه {plant}؟', 'en': 'What does {plant} need?'},
+  'svc.pruning': {'ar': 'قص الأغصان اليابسة أو الزائدة وتشكيل النبتة', 'en': 'Cut back dry or extra branches and shape it'},
+  'svc.periodicCare': {'ar': 'زيارات منتظمة للتسميد والتنظيف والمتابعة', 'en': 'Regular visits to feed, tidy and check it'},
+  'svc.treatment': {'ar': 'فحص نبتة مريضة أو مصابة بآفة وعلاجها', 'en': 'Check and treat a sick or pest-hit plant'},
+  // US-22: each plant's history.
+  'plantStory': {'ar': 'سجل النبتة', 'en': 'Plant history'},
+  'addNote': {'ar': 'أضف ملاحظة', 'en': 'Add a note'},
+  'noteHint': {'ar': 'مثلاً: نقلتها إلى الشرفة', 'en': 'e.g. Moved it to the balcony'},
+  'h.added': {'ar': 'أضفتها إلى حديقتك', 'en': 'Added to My Garden'},
+  'h.pickedUp': {'ar': 'استلمتها من المشتل', 'en': 'Picked up from the nursery'},
+  'h.watered': {'ar': 'سقيتها', 'en': 'Watered'},
+  'h.note': {'ar': 'ملاحظة', 'en': 'Note'},
+  'h.check': {'ar': 'فحص اسأل مشتل: السبب المرجّح', 'en': 'Ask Mashtal check: likely cause'},
+  'h.proFeedback': {'ar': 'ملاحظات المختص', 'en': 'Professional\'s feedback'},
+  'src.you': {'ar': 'أنت', 'en': 'You'},
+  'src.nursery': {'ar': 'المشتل', 'en': 'Nursery'},
+  'src.askMashtal': {'ar': 'اسأل مشتل', 'en': 'Ask Mashtal'},
+  'src.professional': {'ar': 'مختص', 'en': 'Professional'},
+  'historyLater': {
+    'ar': 'نتائج فحص «اسأل مشتل» وملاحظات المختصين تُضاف هنا أيضاً.',
+    'en': 'Ask Mashtal results and professionals\' feedback are added here too.'
+  },
+  'removeFromGarden': {'ar': 'إزالة من حديقتي', 'en': 'Remove from My Garden'},
+  'removeFromGardenBody': {'ar': 'ستُزال {item} من حديقتك.', 'en': '{item} will be removed from your garden.'},
+  'wateredDone': {'ar': 'سُجّل الري:', 'en': 'Watering recorded:'},
+  'nextWeekRhythm': {'ar': 'أيام الري في الأسبوع القادم: {n}', 'en': 'Watering days in the next week: {n}'},
   'addManually': {'ar': 'أضف نبتة يدوياً', 'en': 'Add a plant manually'},
   'phoneNumber': {'ar': 'رقم الجوال', 'en': 'Mobile number'},
   'phoneHint': {'ar': '05XXXXXXXX', 'en': '05XXXXXXXX'},
@@ -231,6 +341,7 @@ const Map<String, Map<String, String>> _strings = {
   'cartAdjusted': {'ar': 'عدّلنا سلتك لأن كمية بعض النباتات تغيّرت في المشتل', 'en': 'We updated your cart because a nursery\'s stock changed'},
   'srcRcrc': {'ar': 'الهيئة الملكية لمدينة الرياض — دليل نباتات الرياض', 'en': 'RCRC — Manual of Riyadh Plants'},
   'srcHouseplant': {'ar': 'نبات منزلي شائع؛ السمية من قائمة ASPCA', 'en': 'Common houseplant; toxicity from the ASPCA list'},
+  'srcNative': {'ar': 'نبات سعودي محلي', 'en': 'Native Saudi plant'},
   'nurseryPhoto': {'ar': 'صورة المشتل', 'en': 'Nursery photo'},
   'typeMaxPrice': {'ar': 'أو اكتب أعلى سعر', 'en': 'Or type a max price'},
   'anyPrice': {'ar': 'أي سعر', 'en': 'Any price'},
@@ -266,6 +377,11 @@ const Map<String, Map<String, String>> _strings = {
   'q.sun': {'ar': 'كم تجلس الشمس على المكان في اليوم؟', 'en': 'How long does the sun reach the spot each day?'},
   'q.space': {'ar': 'كم المساحة اللي عندك لها؟', 'en': 'How much room do you have for it?'},
   'q.watering': {'ar': 'كل كم تقدر تسقيها؟', 'en': 'How often can you water it?'},
+  'q.sunTime': {'ar': 'هالساعات من الشمس، الصبح ولا العصر؟', 'en': 'Are those hours of sun in the morning or the afternoon?'},
+  'q.sunTime.why': {'ar': 'شمس العصر في الرياض قوية وتحرق بعض النباتات.', 'en': "Riyadh's afternoon sun is harsh and burns some plants."},
+  'a.sunTime.morning': {'ar': 'الصبح', 'en': 'In the morning'},
+  'a.sunTime.afternoon': {'ar': 'الظهر والعصر', 'en': 'Midday and afternoon'},
+  'a.sunTime.unsure': {'ar': 'مو متأكد', 'en': 'Not sure'},
   'q.kidsOrPets': {'ar': 'هل في البيت أطفال أو حيوانات أليفة؟', 'en': 'Are there children or pets at home?'},
   'a.spot.inside': {'ar': 'داخل البيت', 'en': 'Inside the house'},
   'a.spot.balcony': {'ar': 'في البلكونة أو السطح', 'en': 'On a balcony or roof'},
@@ -342,6 +458,127 @@ const Map<String, Map<String, String>> _strings = {
   'field.water': {'ar': 'الماء', 'en': 'Water'},
   'field.wateringEveryDays': {'ar': 'الري كل (أيام)', 'en': 'Water every (days)'},
   'field.toxic': {'ar': 'سامة', 'en': 'Toxic'},
+  // Saved plants
+  'savedPlants': {'ar': 'المحفوظة', 'en': 'Saved'},
+  'savePlant': {'ar': 'احفظ النبتة', 'en': 'Save plant'},
+  'unsavePlant': {'ar': 'إزالة من المحفوظة', 'en': 'Remove from saved'},
+  'savedDone': {'ar': 'حُفظت في المحفوظة', 'en': 'Saved for later'},
+  'unsavedDone': {'ar': 'أُزيلت من المحفوظة', 'en': 'Removed from saved'},
+  'noSaved': {'ar': 'لا توجد نباتات محفوظة', 'en': 'No saved plants yet'},
+  'noSavedBody': {'ar': 'اضغط على القلب في أي نبتة لتعود إليها لاحقاً.', 'en': 'Tap the heart on any plant to come back to it later.'},
+  // Sharing a plant
+  'sharePlant': {'ar': 'شارك النبتة', 'en': 'Share plant'},
+  'shareWhatsApp': {'ar': 'أرسلها في واتساب', 'en': 'Send on WhatsApp'},
+  'copyLink': {'ar': 'انسخ الرابط', 'en': 'Copy link'},
+  'linkCopied': {'ar': 'نُسخ الرابط', 'en': 'Link copied'},
+  // Care tips on a garden plant: general advice from the plant's needs.
+  'careTips': {'ar': 'نصائح العناية', 'en': 'Care tips'},
+  'careTipsNote': {'ar': 'نصائح عامة مبنية على احتياجات النبتة.', 'en': 'General tips based on what this plant needs.'},
+  'tip.sun.full': {'ar': 'تحب الشمس المباشرة معظم النهار، فاختر لها أكثر مكان مشمس.', 'en': 'Loves direct sun most of the day: give it your sunniest spot.'},
+  'tip.sun.partial': {'ar': 'تناسبها شمس الصباح، مع ظلّ وقت الظهيرة والعصر.', 'en': 'Morning sun suits it best, with shade from the midday and afternoon sun.'},
+  'tip.sun.shade': {'ar': 'أبعدها عن الشمس المباشرة، ويكفيها الضوء غير المباشر.', 'en': 'Keep it out of direct sun; indirect light is enough.'},
+  'tip.water.low': {'ar': 'اترك التربة تجف بين كل سقاية والتي بعدها، فالماء الزائد يضرها أكثر من القليل.', 'en': 'Let the soil dry out between waterings: too much water harms it more than too little.'},
+  'tip.water.medium': {'ar': 'اسقها حين يجف سطح التربة عند لمسه.', 'en': 'Water when the top of the soil feels dry.'},
+  'tip.water.high': {'ar': 'حافظ على التربة رطبة من غير أن تتشبع بالماء.', 'en': 'Keep the soil moist, but never waterlogged.'},
+  'tip.heat': {'ar': 'في الصيف اسقها في الصباح الباكر أو بعد المغرب، حتى لا يتبخر الماء في الحر.', 'en': 'In summer, water early in the morning or after sunset, so less is lost to the heat.'},
+  'tip.ac': {'ar': 'أبعدها عن هواء المكيّف المباشر.', 'en': "Keep it out of the air conditioner's direct draft."},
+  'tip.drainage': {'ar': 'ازرعها في تربة رملية سريعة التصريف، وفي أصيص له فتحة تصريف.', 'en': 'Use sandy, fast-draining soil and a pot with a drainage hole.'},
+  // Care plan: where the plant lives, why the watering changed, the ring.
+  'home.ground': {'ar': 'في الأرض', 'en': 'In the ground'},
+  'home.bigPot': {'ar': 'حوض كبير', 'en': 'Big pot'},
+  'home.smallPot': {'ar': 'حوض صغير', 'en': 'Small pot'},
+  'home.indoor': {'ar': 'داخل البيت', 'en': 'Indoors'},
+  'whereLives': {'ar': 'وين حطيتها؟', 'en': 'Where is it?'},
+  'whereLivesBody': {'ar': 'عشان نضبط لك السقاية. إذا مو متأكد، اختيارنا يكفي.', 'en': "So we can set the watering. Not sure? Our pick is fine."},
+  'ourGuess': {'ar': 'اختيارنا', 'en': 'Our pick'},
+  'livesIn': {'ar': 'مكانها', 'en': 'Lives'},
+  'change': {'ar': 'غيّر', 'en': 'Change'},
+  'now': {'ar': 'حالياً', 'en': 'now'},
+  'inGardenSince': {'ar': 'في حديقتك من', 'en': 'In your garden since'},
+  'reason.newPlant': {'ar': 'نبتة جديدة', 'en': 'new plant'},
+  'reason.summer': {'ar': 'صيف', 'en': 'summer'},
+  'reason.winter': {'ar': 'شتاء', 'en': 'winter'},
+  'reason.smallPot': {'ar': 'حوض صغير', 'en': 'small pot'},
+  'reason.bigPot': {'ar': 'حوض كبير', 'en': 'big pot'},
+  'reason.learned': {'ar': 'حسب تربتك', 'en': 'learned from your soil'},
+  'soilMoist': {'ar': 'التربة فيها رطوبة', 'en': 'Soil should be moist'},
+  'checkSoilToday': {'ar': 'افحص التربة اليوم', 'en': 'Check the soil today'},
+  'checkSoilLate': {'ar': 'تنتظر الماء', 'en': 'Waiting for water'},
+  'holdToWater': {'ar': 'اضغط مطوّلاً للسقاية', 'en': 'Press and hold to water'},
+  'keepHolding': {'ar': 'استمر…', 'en': 'Keep holding…'},
+  'wateredRing': {'ar': 'سقيتها', 'en': 'Watered'},
+  'stillMoist': {'ar': 'التربة لسّا رطبة', 'en': 'Soil is still moist'},
+  'stillMoistDone': {'ar': 'تمام، بنذكرك تفحصها بعد كم يوم.', 'en': "Got it. We'll remind you to check again soon."},
+  'howToCheck': {'ar': 'كيف أعرف؟', 'en': 'How do I tell?'},
+  'howToCheckBody': {
+    'ar': 'أدخل إصبعك في التربة قدر عُقلتين. إذا كانت جافة اسقها ببطء وبعمق حتى تتشرب التربة (أو يطلع الماء من أسفل الحوض). إذا كانت رطبة لا تسقها اليوم.',
+    'en': "Push a finger two knuckles into the soil. If it's dry, water slowly and deeply until the soil is soaked (or water runs out of the pot's bottom). If it's moist, leave it for today."
+  },
+  'season.summer': {'ar': 'صيف الرياض: اسقِ الصبح بدري أو بعد المغرب.', 'en': 'Riyadh summer: water early morning or after sunset.'},
+  'season.winter': {'ar': 'شتاء: النباتات تحتاج ماء أقل.', 'en': 'Winter: plants need less water.'},
+  'season.mild': {'ar': 'جو معتدل: السقاية المعتادة.', 'en': 'Mild weather: the usual watering.'},
+  // Going away: plan the plants' care while the customer travels.
+  'goingAway': {'ar': 'مسافر؟', 'en': 'Going away?'},
+  'goingAwayRow': {'ar': 'مسافر؟ جهّز نباتاتك قبل ما تطلع', 'en': 'Going away? Get your plants ready'},
+  'awayTitle': {'ar': 'السفر والنباتات', 'en': 'Going away'},
+  'awayHowLong': {'ar': 'كم بتغيب؟', 'en': 'How long will you be away?'},
+  'away.3': {'ar': '3 أيام', 'en': '3 days'},
+  'away.7': {'ar': 'أسبوع', 'en': '1 week'},
+  'away.14': {'ar': 'أسبوعين', 'en': '2 weeks'},
+  'away.30': {'ar': 'شهر', 'en': '1 month'},
+  'awayPickDate': {'ar': 'تاريخ ثاني', 'en': 'Other date'},
+  'awayBackOn': {'ar': 'ترجع يوم', 'en': 'Back on'},
+  'awayHelperQ': {'ar': 'في أحد بالبيت يسقيها؟', 'en': 'Will someone at home water them?'},
+  'awayHelperYes': {'ar': 'نعم، أحد بالبيت', 'en': 'Yes, someone at home'},
+  'awayHelperYesBody': {'ar': 'العاملة أو أحد من الأهل. نجهز له خطة سقي بسيطة.', 'en': "A maid or family. We'll make them a simple watering plan."},
+  'awayHelperNo': {'ar': 'لا، بتكون لحالها', 'en': "No, they'll be on their own"},
+  'awayHelperNoBody': {'ar': 'نقول لك وش تسوي قبل ما تطلع.', 'en': "We'll tell you what to do before you leave."},
+  'awayPlanFor': {'ar': 'خطة اللي بيسقيها', 'en': 'Plan for whoever waters'},
+  'awayPlanLang': {'ar': 'لغة الرسالة', 'en': 'Message language'},
+  'awaySendPlan': {'ar': 'أرسل الخطة في واتساب', 'en': 'Send the plan on WhatsApp'},
+  'awayBefore': {'ar': 'قبل ما تطلع', 'en': 'Before you leave'},
+  'awayStep1': {'ar': 'اسقِ كل النباتات سقية عميقة قبل سفرك بيوم.', 'en': 'Water every plant deeply the day before you leave.'},
+  'awayStep2': {'ar': 'أبعد الأحواض عن شمس العصر، وقرّبها من بعض.', 'en': 'Move pots out of the afternoon sun and group them together.'},
+  'awayStep3': {'ar': 'نباتات البيت: بعيد عن الشباك المشمس وهواء المكيف.', 'en': 'Indoor plants: away from sunny windows and the AC draft.'},
+  'awayAtRisk': {'ar': 'ما تتحمل كل هالمدة لحالها', 'en': "Won't last the whole trip alone"},
+  'awayWaterOnce': {'ar': 'خل أحد يسقيها مرة يوم', 'en': 'Ask someone to water it once on'},
+  'awayWaterEvery': {'ar': 'تحتاج أحد يسقيها {every} وأنت مسافر، أو اتركها عند أحد تثق فيه.', 'en': "Needs someone to water it {every} while you're away, or leave it with someone you trust."},
+  'awayAllFine': {'ar': 'نباتاتك تتحمل هالمدة بعد سقية عميقة.', 'en': 'Your plants can last this long after a deep watering.'},
+  'awayStart': {'ar': 'شغّل وضع السفر', 'en': 'Turn on away mode'},
+  'awayStarted': {'ar': 'وضع السفر شغال. رحلة سعيدة!', 'en': 'Away mode is on. Have a good trip!'},
+  'awayUntil': {'ar': 'مسافر حتى', 'en': 'Away until'},
+  'awayWithHelper': {'ar': 'أحد بالبيت يسقي النباتات.', 'en': 'Someone at home is watering.'},
+  'awayAlone': {'ar': 'النباتات لحالها.', 'en': 'Your plants are on their own.'},
+  'awayBack': {'ar': 'رجعت', 'en': "I'm back"},
+  'welcomeBack': {'ar': 'الحمد لله على السلامة!', 'en': 'Welcome back!'},
+  'welcomeBackBody': {'ar': 'افحص تربة كل نبتة اليوم واسقِ الجافة.', 'en': 'Check the soil of every plant today and water the dry ones.'},
+  'done': {'ar': 'تم', 'en': 'Done'},
+  // Calendar reminders and growth photos.
+  'remindMe': {'ar': 'ذكّرني في تقويم جوالي', 'en': 'Remind me in my calendar'},
+  'reminderTitle': {'ar': 'افحص تربة {plant} واسقها إذا جافة', 'en': 'Check the soil of {plant}; water if dry'},
+  'reminderDetails': {'ar': 'تذكير من مشتل. الفترة تتغير مع الفصول، فحدّث التذكير من صفحة النبتة.', 'en': 'A reminder from Mashtal. The interval changes with the seasons, so update it from the plant page.'},
+  'growthPhotos': {'ar': 'صور النمو', 'en': 'Growth photos'},
+  'growthPhotosBody': {'ar': 'صورة كل شهر تقريباً، وشوف كيف كبرت.', 'en': 'A photo every month or so, and see how it grows.'},
+  'addGrowthPhoto': {'ar': 'أضف صورة', 'en': 'Add photo'},
+  'thenAndNow': {'ar': 'قبل وبعد', 'en': 'Then and now'},
+  'then': {'ar': 'قبل', 'en': 'Then'},
+  'nowLabel': {'ar': 'الحين', 'en': 'Now'},
+  'daysApart.one': {'ar': 'بعد يوم', 'en': '1 day later'},
+  'daysApart.two': {'ar': 'بعد يومين'},
+  'daysApart.few': {'ar': 'بعد {n} أيام'},
+  'daysApart.many': {'ar': 'بعد {n} يوماً', 'en': '{n} days later'},
+  'photoAdded': {'ar': 'أُضيفت الصورة إلى صور النمو', 'en': 'Photo added to growth photos'},
+  'h.photo': {'ar': 'صورة نمو', 'en': 'Growth photo'},
+  // Nursery listings grid.
+  'stockIn': {'ar': '{n} متوفر', 'en': '{n} in stock'},
+  'stockLow': {'ar': 'باقي {n}', 'en': 'Only {n} left'},
+  'soldOut': {'ar': 'نفد', 'en': 'Sold out'},
+  'filterAll': {'ar': 'الكل', 'en': 'All'},
+  'filterIn': {'ar': 'متوفر', 'en': 'In stock'},
+  'filterLow': {'ar': 'قارب ينفد', 'en': 'Running low'},
+  'filterOut': {'ar': 'نفد أو مخفي', 'en': 'Out or hidden'},
+  'noListingsHere': {'ar': 'ما فيه منتجات هنا', 'en': 'No listings here'},
+  'tip.toxic': {'ar': 'ضعها بعيداً عن متناول الأطفال والحيوانات الأليفة.', 'en': 'Keep it out of reach of children and pets.'},
 };
 
 const Map<String, Map<String, String>> _cities = {
@@ -390,6 +627,7 @@ const Map<String, Map<String, String>> _enums = {
 String sourceText(String lang, Plant p) => switch (p.source) {
       rcrcSource => translate(lang, 'srcRcrc'),
       houseplantSource => translate(lang, 'srcHouseplant'),
+      nativeSource => translate(lang, 'srcNative'),
       _ => p.source,
     };
 
@@ -405,6 +643,19 @@ extension Tr on BuildContext {
   String trEnum(Enum value) => _enums[value.name]?[lang] ?? value.name;
 
   String trCity(String id) => _cities[id]?[lang] ?? id;
+
+  /// [base] for a count [n], with {n} filled in: Arabic picks the one, two,
+  /// few (3–10) or many form; English the one or many form.
+  String trCount(String base, int n) {
+    final form = switch ((lang, n)) {
+      (_, 1) => 'one',
+      ('ar', 2) => 'two',
+      ('ar', >= 3 && <= 10) => 'few',
+      _ => 'many',
+    };
+    final text = _strings['$base.$form']?[lang] ?? _strings['$base.many']?[lang] ?? base;
+    return text.replaceAll('{n}', '$n');
+  }
 }
 
 String roleLabel(String lang, Role role) => _enums[role.name]?[lang] ?? role.name;

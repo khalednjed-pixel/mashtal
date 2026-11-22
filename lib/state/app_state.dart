@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/local_backend.dart';
+import '../logic/away.dart';
+import '../logic/notices.dart';
 import '../models/models.dart';
 
 /// App-wide UI state: language, carts and one-off notices.
@@ -21,13 +23,34 @@ class AppState extends ChangeNotifier {
         _carts[e.key] = Map<String, int>.from(e.value as Map);
       }
     }
+    final seen = _prefs.getString(_seenKey);
+    if (seen != null) {
+      for (final e in (jsonDecode(seen) as Map<String, dynamic>).entries) {
+        _seen[e.key] = {...List<String>.from(e.value as List)};
+      }
+    }
+    final saved = _prefs.getString(_savedKey);
+    if (saved != null) {
+      for (final e in (jsonDecode(saved) as Map<String, dynamic>).entries) {
+        _saved[e.key] = List<String>.from(e.value as List);
+      }
+    }
+    final away = _prefs.getString(_awayKey);
+    if (away != null) {
+      for (final e in (jsonDecode(away) as Map<String, dynamic>).entries) {
+        _away[e.key] = AwayTrip.fromJson(e.value as Map<String, dynamic>);
+      }
+    }
     _owner = _ownerFor(backend.currentUser);
     if (backend.loaded) _fitCartsToStock();
     backend.addListener(_onBackendChanged);
   }
 
   static const _langKey = 'mashtal.lang';
+  static const _seenKey = 'mashtal.seenNotices.v1';
   static const _cartsKey = 'mashtal.carts.v2';
+  static const _savedKey = 'mashtal.saved.v1';
+  static const _awayKey = 'mashtal.away.v1';
   static const _guest = 'guest';
 
   static Future<AppState> create(LocalBackend backend) async =>
@@ -51,20 +74,22 @@ class AppState extends ChangeNotifier {
 
   static String _ownerFor(AppUser? u) => u?.id ?? _guest;
 
-  /// Cart lines never ask for more than the nursery has (QA BUG-1): lines
-  /// whose listing was deleted, hidden or sold out are dropped, the rest are
-  /// capped at the listing's quantity. Returns true if anything changed.
+  /// Cart lines never ask for more than the nursery has (QA BUG-1): a line
+  /// whose listing was deleted is dropped, and a line is capped at the
+  /// listing's quantity. A line whose listing is hidden or sold out stays in
+  /// the cart, flagged as unavailable and left out of the reservation
+  /// (US-15 AC-02). Returns true if anything changed.
   bool _fitCartsToStock() {
-    final stock = {for (final l in backend.listings) if (l.isAvailable) l.id: l.quantity};
+    final byId = {for (final l in backend.listings) l.id: l};
     var changed = false;
     for (final c in _carts.values) {
       for (final id in c.keys.toList()) {
-        final max = stock[id];
-        if (max == null) {
+        final listing = byId[id];
+        if (listing == null) {
           c.remove(id);
           changed = true;
-        } else if (c[id]! > max) {
-          c[id] = max;
+        } else if (listing.isAvailable && c[id]! > listing.quantity) {
+          c[id] = listing.quantity;
           changed = true;
         }
       }
@@ -80,6 +105,13 @@ class AppState extends ChangeNotifier {
         final mine = _carts.putIfAbsent(owner, () => {});
         guestCart.forEach((id, q) => mine.update(id, (v) => v + q, ifAbsent: () => q));
       }
+      // Plants a guest saved move into the account too, like the cart.
+      final guestSaved = _saved.remove(_guest);
+      if (_owner == _guest && owner != _guest && guestSaved != null && user?.role == Role.customer) {
+        final mine = _saved.putIfAbsent(owner, () => []);
+        mine.insertAll(0, guestSaved.where((id) => !mine.contains(id)));
+      }
+      _saveSaved();
       _owner = owner;
     }
     // Online, stock is unknown until the first data arrives; carts wait.
@@ -131,12 +163,25 @@ class AppState extends ChangeNotifier {
     _saveCarts();
   }
 
-  /// US-16: sends the cart to the nurseries (one reservation each) and
-  /// empties it. Returns how many reservations were made.
+  /// Whether the cart line [listingId] can be reserved now (US-15 AC-02).
+  bool isReservable(String listingId) =>
+      backend.listings.where((l) => l.id == listingId).firstOrNull?.isAvailable ?? false;
+
+  /// The cart lines that can be reserved now: unavailable lines are left out.
+  Map<String, int> get reservableCart => {
+        for (final MapEntry(key: id, value: qty) in cart.entries)
+          if (isReservable(id)) id: qty,
+      };
+
+  /// US-16: sends the reservable lines to the nurseries (one reservation
+  /// each) and takes them out of the cart. Unavailable lines stay, flagged.
+  /// Returns how many reservations were made.
   Future<int> reserveCart() async {
-    final made = await backend.reserve(cart);
+    final lines = reservableCart;
+    if (lines.isEmpty) return 0;
+    final made = await backend.reserve(lines);
     if (made.isNotEmpty) {
-      _carts.remove(_owner);
+      lines.keys.forEach(_cart.remove);
       _saveCarts();
     }
     return made.length;
@@ -148,10 +193,88 @@ class AppState extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
+  // --------------------------------------------------------- Saved plants
+
+  /// Plants each account (or the guest) saved to come back to, newest
+  /// first. Kept on the device, like the cart.
+  final Map<String, List<String>> _saved = {};
+
+  /// Saved plant ids that still exist, newest first.
+  List<String> get savedPlantIds => [
+        for (final id in _saved[_owner] ?? const <String>[])
+          if (backend.plantById(id) != null) id,
+      ];
+
+  bool isSaved(String plantId) => _saved[_owner]?.contains(plantId) ?? false;
+
+  /// Saves [plantId], or un-saves it if it was saved. Returns true when the
+  /// plant is now saved.
+  bool toggleSaved(String plantId) {
+    final mine = _saved.putIfAbsent(_owner, () => []);
+    final now = !mine.remove(plantId);
+    if (now) mine.insert(0, plantId);
+    _saveSaved();
+    notifyListeners();
+    return now;
+  }
+
+  void _saveSaved() {
+    _saved.removeWhere((_, l) => l.isEmpty);
+    _prefs.setString(_savedKey, jsonEncode(_saved));
+  }
+
+  // ------------------------------------------------------------ Going away
+
+  /// Each customer's current trip, kept on the device.
+  final Map<String, AwayTrip> _away = {};
+
+  /// The signed-in customer's trip: on while away, and after it ends until
+  /// they say they are back (so the app can say "check every plant").
+  AwayTrip? get awayTrip => role == Role.customer ? _away[_owner] : null;
+
+  void startAway(AwayTrip trip) {
+    _away[_owner] = trip;
+    _saveAway();
+  }
+
+  /// Ends the trip early, or clears the "welcome back" once seen.
+  void endAway() {
+    if (_away.remove(_owner) != null) _saveAway();
+  }
+
+  void _saveAway() {
+    _prefs.setString(_awayKey, jsonEncode({for (final e in _away.entries) e.key: e.value.toJson()}));
+    notifyListeners();
+  }
+
   Future<void> resetDemo() async {
     _carts.clear();
+    _saved.clear();
+    _away.clear();
+    await _prefs.remove(_awayKey);
     await _prefs.remove(_cartsKey);
+    await _prefs.remove(_savedKey);
     await backend.resetDemoData();
+  }
+
+  // ------------------------------------------------- Reservation notices
+
+  /// Notice ids each account has seen (US-19), kept on the device.
+  final Map<String, Set<String>> _seen = {};
+
+  /// The signed-in customer's reservation notices at [now], newest first.
+  List<ReservationNotice> noticesAt(DateTime now) =>
+      role == Role.customer ? reservationNotices(backend.reservations, now) : const [];
+
+  bool isSeen(ReservationNotice n) => _seen[_owner]?.contains(n.id) ?? false;
+
+  int unseenCount(DateTime now) => noticesAt(now).where((n) => !isSeen(n)).length;
+
+  void markSeen(Iterable<ReservationNotice> notices) {
+    final mine = _seen.putIfAbsent(_owner, () => {});
+    if (!notices.any((n) => mine.add(n.id))) return;
+    _prefs.setString(_seenKey, jsonEncode({for (final e in _seen.entries) e.key: e.value.toList()}));
+    notifyListeners();
   }
 
   // -------------------------------------------------------------- Notices

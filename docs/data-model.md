@@ -13,10 +13,12 @@ The app talks to its backend through two interfaces in `lib/data/repositories.da
 | `partnerAccounts/{+966…}` | role, partnerId? | that number's user, admin | admin. Written by the app when the admin creates, edits or deletes a nursery or professional. The first admin is added by hand |
 | `meta/seed` | at | everyone | admin; marks that the demo data was uploaded |
 | `plants/{id}` | nameAr, nameEn, scientificName, category, placements[], sun, water, wateringEveryDays, toxic, descriptionAr/En, source, guideBacked, guideSection?, addedBy?, wikiTitle?, photo? | everyone | admin. A nursery may add a plant missing from the list (`guideBacked: false`, `addedBy` = its id) and delete the plants it added |
-| `nurseries/{id}` | nameAr, nameEn, city, district, phone, hours, status (`pending`, `verified`, `suspended`), rating, ratingCount | everyone if verified, otherwise the admin and the nursery itself | admin. New nurseries must start as `pending` |
+| `nurseries/{id}` | nameAr, nameEn, city, district, phone, hours, status (`pending`, `verified`, `suspended`), rating, ratingCount, lat?, lng? (map point for directions, US-18) | everyone if verified, otherwise the admin and the nursery itself | admin. New nurseries must start as `pending` |
 | `professionals/{id}` | nameAr, nameEn, cities[], services[], phone, status, rating, jobsDone | same as nurseries | admin. The professional may change only their own services and cities |
 | `listings/{id}` | nurseryId, plantId, price (SAR), quantity, hidden, public, photo? | everyone if `public`, plus the admin and the owning nursery | the owning nursery, which can also delete it. `public` must equal `!hidden && nursery verified` |
-| `reservations/{id}` | customerId, customerName, customerPhone, nurseryId, items[] (listingId, plantId, quantity, price), createdAt, status (`pending`, `accepted`, `rejected`, `pickedUp`), acceptedAt?, rejectReason? (`outOfStock`, `other`) | the customer, that nursery, admin | a customer creates their own, one per nursery, always `pending` (US-16). That nursery accepts it (sets `acceptedAt`; held 48 hours from then, OD-01) or rejects it with a reason, only while pending (US-17) |
+| `reservations/{id}` | customerId, customerName, customerPhone, nurseryId, items[] (listingId, plantId, quantity, price), createdAt, status (`pending`, `accepted`, `rejected`, `pickedUp`), acceptedAt?, rejectReason? (`outOfStock`, `other`), rejectedAt?, pickedUpAt? | the customer, that nursery, admin | a customer creates their own, one per nursery, always `pending` (US-16). That nursery accepts it (sets `acceptedAt`; held 48 hours from then, OD-01) or rejects it with a reason, only while pending (US-17). It marks an accepted one `pickedUp` (US-20) |
+| `garden/{id}` | ownerId, plantId, addedAt, source (`pickup`, `manual`), quantity, reservationId?, nurseryId?, lastWateredAt? | the owner | the owner adds plants bought elsewhere (`manual`), records waterings and removes plants (US-21). The owner's app also adds the plants of each of their reservations the nursery marked picked up (`pickup`, US-20): the nursery cannot write a customer's garden, and there are no Cloud Functions on the free plan. A removed picked-up plant keeps its document with `removedAt` so it is not added again |
+| `history/{id}` | ownerId, gardenPlantId, kind (`watered`, `note`; later `check`, `proFeedback`), at, text?, sourceName? | the owner | the owner adds waterings and notes to their own garden plants; entries are never changed (US-22). Ask Mashtal results and professionals' feedback join in Sprint 4; letting a professional with an accepted booking read a plant's history (US-22 AC-02) moved to Sprint 4 |
 | `priceRanges/{service}` | min, max (SAR) | everyone | admin, with min < max |
 | `plantEdits/{id}` | plantId, field, oldValue, newValue, editorId, editorName, at | admin | admin creates entries as themselves; entries can never be changed or deleted (US-14) |
 
@@ -30,7 +32,7 @@ The rules reject any write where `public` does not match those two facts. When t
 
 Seed data lives in `lib/data/seed/`:
 
-- `plants_seed.dart`: 37 species. 33 outdoor species are from the RCRC *Manual of Riyadh Plants*. 4 common houseplants are labelled "not guide-backed" (OD-03). Toxicity follows the ASPCA list (OD-10).
+- `plants_seed.dart`: 37 species. 30 outdoor species are from the RCRC *Manual of Riyadh Plants* and record their portrait page in `guideSection`. 3 native outdoor plants without a portrait in the manual and 4 common houseplants are labelled "not guide-backed" (OD-03). Toxicity follows the ASPCA list (OD-10). Online, a knowledge-base plant takes only the admin-editable fields from its Firestore document; names, descriptions and the citation come from the app.
 - `seed_data.dart`: invented demo data, namely 5 nurseries (one pending), 5 professionals (one pending), 43 listings, 4 price ranges and 5 demo accounts.
 
 ## Photos
@@ -40,3 +42,8 @@ Guide plants show a photo from Wikipedia, loaded in the browser from the article
 ## Sign-in
 
 The code is still shown on screen (no SMS). After a correct code the app signs in to a Firebase Email/Password account named after the number, e.g. `966500000001@phone.mashtal.app`, creating it on the first visit. The rules read the number from that email. This does not truly prove the user owns the phone; it was chosen so the demo needs no paid SMS.
+
+## Reservation notices (US-19)
+
+Push notifications need Cloud Functions, which need the paid Blaze plan, so Sprint 3 stays on the free plan with in-app notices instead. The customer's app works them out from the reservations it already receives (`lib/logic/notices.dart`): *accepted* at `acceptedAt`, *rejected* at `rejectedAt`, a reminder 6 hours before the hold ends, and *expired* once `acceptedAt` + 48 hours has passed (the expiry replaces the reminder). The app re-checks the clock every 30 seconds, so a notice appears within a minute while it is open. Which notices a customer has seen is kept on the device.
+

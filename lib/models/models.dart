@@ -203,6 +203,8 @@ class Nursery {
     required this.status,
     this.rating = 0,
     this.ratingCount = 0,
+    this.lat,
+    this.lng,
   });
 
   final String id;
@@ -216,10 +218,14 @@ class Nursery {
   final double rating;
   final int ratingCount;
 
+  /// Map location for directions (US-18), set by the admin.
+  final double? lat;
+  final double? lng;
+
   String name(String lang) => lang == 'ar' ? nameAr : nameEn;
   bool get isVerified => status == PartnerStatus.verified;
 
-  Nursery copyWith({String? id, String? nameAr, String? nameEn, String? city, String? district, String? phone, String? hours, PartnerStatus? status}) => Nursery(
+  Nursery copyWith({String? id, String? nameAr, String? nameEn, String? city, String? district, String? phone, String? hours, PartnerStatus? status, (double, double)? Function()? location}) => Nursery(
         id: id ?? this.id,
         nameAr: nameAr ?? this.nameAr,
         nameEn: nameEn ?? this.nameEn,
@@ -230,6 +236,8 @@ class Nursery {
         status: status ?? this.status,
         rating: rating,
         ratingCount: ratingCount,
+        lat: location != null ? location()?.$1 : lat,
+        lng: location != null ? location()?.$2 : lng,
       );
 
   Map<String, dynamic> toJson() => {
@@ -243,6 +251,8 @@ class Nursery {
         'status': status.name,
         'rating': rating,
         'ratingCount': ratingCount,
+        'lat': ?lat,
+        'lng': ?lng,
       };
 
   factory Nursery.fromJson(Map<String, dynamic> j) => Nursery(
@@ -256,6 +266,8 @@ class Nursery {
         status: _enumByName(PartnerStatus.values, j['status']),
         rating: (j['rating'] as num).toDouble(),
         ratingCount: j['ratingCount'],
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
       );
 }
 
@@ -485,6 +497,8 @@ class Reservation {
     this.status = ReservationStatus.pending,
     this.acceptedAt,
     this.rejectReason,
+    this.pickedUpAt,
+    this.rejectedAt,
   });
 
   /// How long an accepted reservation is held (OD-01).
@@ -505,6 +519,12 @@ class Reservation {
   final DateTime? acceptedAt;
   final RejectReason? rejectReason;
 
+  /// When the nursery marked it collected (US-20).
+  final DateTime? pickedUpAt;
+
+  /// When the nursery rejected it (US-19 notice time).
+  final DateTime? rejectedAt;
+
   DateTime? get expiresAt => acceptedAt?.add(holdFor);
 
   /// An accepted reservation that was not picked up in time.
@@ -513,7 +533,7 @@ class Reservation {
   double get total => items.fold(0, (sum, i) => sum + i.price * i.quantity);
   int get plantCount => items.fold(0, (sum, i) => sum + i.quantity);
 
-  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason}) => Reservation(
+  Reservation copyWith({ReservationStatus? status, DateTime? acceptedAt, RejectReason? rejectReason, DateTime? pickedUpAt, DateTime? rejectedAt}) => Reservation(
         id: id,
         customerId: customerId,
         customerName: customerName,
@@ -524,6 +544,8 @@ class Reservation {
         status: status ?? this.status,
         acceptedAt: acceptedAt ?? this.acceptedAt,
         rejectReason: rejectReason ?? this.rejectReason,
+        pickedUpAt: pickedUpAt ?? this.pickedUpAt,
+        rejectedAt: rejectedAt ?? this.rejectedAt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -537,6 +559,8 @@ class Reservation {
         'status': status.name,
         'acceptedAt': ?acceptedAt?.toUtc().toIso8601String(),
         'rejectReason': ?rejectReason?.name,
+        'pickedUpAt': ?pickedUpAt?.toUtc().toIso8601String(),
+        'rejectedAt': ?rejectedAt?.toUtc().toIso8601String(),
       };
 
   factory Reservation.fromJson(Map<String, dynamic> j) => Reservation(
@@ -550,5 +574,186 @@ class Reservation {
         status: _enumByName(ReservationStatus.values, j['status']),
         acceptedAt: j['acceptedAt'] == null ? null : DateTime.parse(j['acceptedAt']),
         rejectReason: j['rejectReason'] == null ? null : _enumByName(RejectReason.values, j['rejectReason']),
+        pickedUpAt: j['pickedUpAt'] == null ? null : DateTime.parse(j['pickedUpAt']),
+        rejectedAt: j['rejectedAt'] == null ? null : DateTime.parse(j['rejectedAt']),
+      );
+}
+
+/// How a plant came into My Garden.
+enum GardenSource { pickup, manual }
+
+/// Where a garden plant lives, in the customer's words: in the ground, a big
+/// pot on the floor, a small pot, or indoors.
+enum PlantHome { ground, bigPot, smallPot, indoor }
+
+/// One plant a customer owns (US-21). Picked-up reservations add these
+/// automatically (US-20); plants bought elsewhere are added by hand.
+class GardenPlant {
+  const GardenPlant({
+    required this.id,
+    required this.ownerId,
+    required this.plantId,
+    required this.addedAt,
+    required this.source,
+    this.quantity = 1,
+    this.reservationId,
+    this.nurseryId,
+    this.lastWateredAt,
+    this.removedAt,
+    this.home,
+    this.pace = 1.0,
+    this.lastCheckedAt,
+  });
+
+  final String id;
+  final String ownerId;
+  final String plantId;
+  final DateTime addedAt;
+  final GardenSource source;
+
+  /// Where it lives, once the customer has said; null means the app guesses.
+  final PlantHome? home;
+
+  /// The plant's own watering pace, learned from "the soil is still moist":
+  /// 1 is the usual interval, above 1 stretches it.
+  final double pace;
+
+  /// When the customer last checked and found the soil still moist.
+  final DateTime? lastCheckedAt;
+
+  /// How many of this plant came together (a reservation line of 3 is one card).
+  final int quantity;
+
+  /// The picked-up reservation and its nursery, for [GardenSource.pickup].
+  final String? reservationId;
+  final String? nurseryId;
+
+  /// When the customer last said they watered it; the schedule counts from
+  /// here, or from [addedAt] before the first watering.
+  final DateTime? lastWateredAt;
+
+  /// A picked-up plant the customer took out of the garden. It is kept, not
+  /// deleted, so the pickup does not add it again.
+  final DateTime? removedAt;
+
+  GardenPlant copyWith({DateTime? lastWateredAt, DateTime? removedAt, PlantHome? home, double? pace, DateTime? lastCheckedAt}) => GardenPlant(
+        id: id,
+        ownerId: ownerId,
+        plantId: plantId,
+        addedAt: addedAt,
+        source: source,
+        quantity: quantity,
+        reservationId: reservationId,
+        nurseryId: nurseryId,
+        lastWateredAt: lastWateredAt ?? this.lastWateredAt,
+        removedAt: removedAt ?? this.removedAt,
+        home: home ?? this.home,
+        pace: pace ?? this.pace,
+        lastCheckedAt: lastCheckedAt ?? this.lastCheckedAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'ownerId': ownerId,
+        'plantId': plantId,
+        'addedAt': addedAt.toUtc().toIso8601String(),
+        'source': source.name,
+        'quantity': quantity,
+        'reservationId': ?reservationId,
+        'nurseryId': ?nurseryId,
+        'lastWateredAt': ?lastWateredAt?.toUtc().toIso8601String(),
+        'removedAt': ?removedAt?.toUtc().toIso8601String(),
+        'home': ?home?.name,
+        if (pace != 1.0) 'pace': pace,
+        'lastCheckedAt': ?lastCheckedAt?.toUtc().toIso8601String(),
+      };
+
+  factory GardenPlant.fromJson(Map<String, dynamic> j) => GardenPlant(
+        id: j['id'],
+        ownerId: j['ownerId'],
+        plantId: j['plantId'],
+        addedAt: DateTime.parse(j['addedAt']),
+        source: _enumByName(GardenSource.values, j['source']),
+        quantity: j['quantity'] ?? 1,
+        reservationId: j['reservationId'],
+        nurseryId: j['nurseryId'],
+        lastWateredAt: j['lastWateredAt'] == null ? null : DateTime.parse(j['lastWateredAt']),
+        removedAt: j['removedAt'] == null ? null : DateTime.parse(j['removedAt']),
+        home: j['home'] == null ? null : _enumByName(PlantHome.values, j['home']),
+        pace: (j['pace'] as num?)?.toDouble() ?? 1.0,
+        lastCheckedAt: j['lastCheckedAt'] == null ? null : DateTime.parse(j['lastCheckedAt']),
+      );
+}
+
+/// Kinds of entries in a garden plant's history (US-22).
+enum HistoryKind {
+  /// Added by hand (from the garden plant itself, not stored).
+  added,
+
+  /// Collected from a nursery (from the garden plant itself, not stored).
+  pickedUp,
+  watered,
+  note,
+
+  /// A growth photo the customer took.
+  photo,
+
+  /// An Ask Mashtal photo check result (Sprint 4).
+  check,
+
+  /// A professional's feedback after a job (Sprint 4).
+  proFeedback,
+}
+
+/// One stored event in a garden plant's history (US-22).
+class HistoryEntry {
+  const HistoryEntry({
+    required this.id,
+    required this.ownerId,
+    required this.gardenPlantId,
+    required this.kind,
+    required this.at,
+    this.text,
+    this.sourceName,
+    this.photo,
+  });
+
+  final String id;
+
+  /// A growth photo, as base64 JPEG, for [HistoryKind.photo].
+  final String? photo;
+
+  /// The customer who owns the plant.
+  final String ownerId;
+  final String gardenPlantId;
+  final HistoryKind kind;
+  final DateTime at;
+
+  /// The note, the likely cause, or the feedback.
+  final String? text;
+
+  /// Who it came from when not the customer, e.g. the professional's name.
+  final String? sourceName;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'ownerId': ownerId,
+        'gardenPlantId': gardenPlantId,
+        'kind': kind.name,
+        'at': at.toUtc().toIso8601String(),
+        'text': ?text,
+        'sourceName': ?sourceName,
+        'photo': ?photo,
+      };
+
+  factory HistoryEntry.fromJson(Map<String, dynamic> j) => HistoryEntry(
+        id: j['id'],
+        ownerId: j['ownerId'],
+        gardenPlantId: j['gardenPlantId'],
+        kind: _enumByName(HistoryKind.values, j['kind']),
+        at: DateTime.parse(j['at']),
+        text: j['text'],
+        sourceName: j['sourceName'],
+        photo: j['photo'],
       );
 }

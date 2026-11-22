@@ -21,8 +21,13 @@ enum Factor { place, light, water, space }
 /// answer (US-09 AC-02).
 enum Blocker { place, light, water, space, safety }
 
-/// The questions of the suitability flow, in order (US-07).
-enum Question { city, spot, window, sun, space, watering, kidsOrPets }
+/// When a few hours of outdoor sun come. In Riyadh the afternoon sun is the
+/// hard one: plants that like part sun burn in it.
+enum SunTime { morning, afternoon, unsure }
+
+/// The questions of the suitability flow, in order (US-07). [sunTime] is
+/// only asked for a few hours of outdoor sun.
+enum Question { city, spot, window, sun, sunTime, space, watering, kidsOrPets }
 
 /// Cities with guide data (OD-04: Riyadh only at launch).
 const Set<String> coveredCities = {'riyadh'};
@@ -42,13 +47,16 @@ const Map<Factor, int> factorWeights = {
 };
 
 class SuitabilityAnswers {
-  const SuitabilityAnswers({this.city, this.spot, this.light, this.space, this.watering, this.kidsOrPets});
+  const SuitabilityAnswers({this.city, this.spot, this.light, this.sunTime, this.space, this.watering, this.kidsOrPets});
 
   final String? city;
   final Spot? spot;
 
   /// Window answer when [spot] is inside, sun answer otherwise.
   final Amount? light;
+
+  /// Morning or afternoon, for a few hours of outdoor sun.
+  final SunTime? sunTime;
   final Amount? space;
 
   /// How often the customer can water.
@@ -57,12 +65,20 @@ class SuitabilityAnswers {
 
   bool get isInside => spot == Spot.inside;
 
+  /// The sun-time question only matters for a few hours of outdoor sun.
+  bool get asksSunTime => !isInside && spot != null && light == Amount.some;
+
+  /// The light the plant really gets: a few hours of afternoon sun in
+  /// Riyadh is as harsh as sun all day.
+  Amount? get effectiveLight => asksSunTime && sunTime == SunTime.afternoon ? Amount.lots : light;
+
   /// The questions to ask for these answers. The window question is only
   /// asked inside the house, the sun question only outside (US-07 AC-02).
   List<Question> get questions => [
         Question.city,
         Question.spot,
         if (spot == null || isInside) Question.window else Question.sun,
+        if (asksSunTime) Question.sunTime,
         Question.space,
         Question.watering,
         Question.kidsOrPets,
@@ -72,6 +88,7 @@ class SuitabilityAnswers {
         Question.city => city != null,
         Question.spot => spot != null,
         Question.window || Question.sun => light != null,
+        Question.sunTime => sunTime != null,
         Question.space => space != null,
         Question.watering => watering != null,
         Question.kidsOrPets => kidsOrPets != null,
@@ -87,6 +104,7 @@ class SuitabilityAnswers {
       city: city,
       spot: value,
       light: sameSide ? light : null,
+      sunTime: sameSide ? sunTime : null,
       space: space,
       watering: watering,
       kidsOrPets: kidsOrPets,
@@ -96,6 +114,7 @@ class SuitabilityAnswers {
   SuitabilityAnswers copyWith({
     String? city,
     Amount? light,
+    SunTime? sunTime,
     Amount? space,
     Amount? watering,
     bool? kidsOrPets,
@@ -104,6 +123,7 @@ class SuitabilityAnswers {
         city: city ?? this.city,
         spot: spot,
         light: light ?? this.light,
+        sunTime: sunTime ?? this.sunTime,
         space: space ?? this.space,
         watering: watering ?? this.watering,
         kidsOrPets: kidsOrPets ?? this.kidsOrPets,
@@ -189,7 +209,7 @@ PlantScore? scorePlant(Plant plant, SuitabilityAnswers answers) {
   if (answers.kidsOrPets == true && plant.toxic) return null;
   final factors = {
     Factor.place: placeScore(plant, answers.spot!),
-    Factor.light: lightScore(lightNeedOf(plant), answers.light!),
+    Factor.light: lightScore(lightNeedOf(plant), answers.effectiveLight!),
     Factor.water: waterScore(waterNeedOf(plant), answers.watering!),
     Factor.space: spaceScore(sizeOf(plant), answers.space!),
   };
@@ -224,7 +244,7 @@ class NothingFits extends SuitabilityOutcome {
 /// The question to go back to for each blocker.
 Question questionFor(Blocker b, SuitabilityAnswers a) => switch (b) {
       Blocker.place => Question.spot,
-      Blocker.light => a.isInside ? Question.window : Question.sun,
+      Blocker.light => a.isInside ? Question.window : (a.asksSunTime && a.sunTime == SunTime.afternoon ? Question.sunTime : Question.sun),
       Blocker.water => Question.watering,
       Blocker.space => Question.space,
       Blocker.safety => Question.kidsOrPets,

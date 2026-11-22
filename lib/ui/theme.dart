@@ -32,6 +32,12 @@ abstract final class MashtalColors {
   /// Secondary text: forestDeep at reduced opacity (about 8:1 on white).
   static final muted = forestDeep.withValues(alpha: 0.72);
 
+  // Water, and only water (the watering ring, moisture rings, drops): the
+  // one colour outside the greens, so water reads as water at a glance.
+  static const water = Color(0xFF1A6FA3); // icons and text on white (AA)
+  static const waterLight = Color(0xFF6BBDE8); // the fill that rises in the ring
+  static const waterSoft = Color(0xFFE4F2FA); // tinted backgrounds
+
   /// Functional colour for errors and warnings only (not a brand accent).
   static const error = Color(0xFFA4372A);
   static const errorSoft = Color(0xFFF6E3DE);

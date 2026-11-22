@@ -11,6 +11,7 @@ import '../../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/plant_photo.dart';
+import '../widgets/save_button.dart';
 
 /// Buy Plants: search by plant or nursery with filters (US-05). Works for
 /// guests (US-01).
@@ -76,6 +77,18 @@ class _ShopScreenState extends State<ShopScreen> {
           child: Image.asset('assets/brand/logo_wordmark.png', height: 30, semanticLabel: context.tr('appName')),
         ),
         actions: [
+          // Saved plants, with how many there are.
+          if (app.canShop && app.role != Role.admin)
+            IconButton(
+              key: const Key('openSaved'),
+              tooltip: context.tr('savedPlants'),
+              onPressed: () => context.go('/saved'),
+              icon: Badge(
+                isLabelVisible: app.savedPlantIds.isNotEmpty,
+                label: Text('${app.savedPlantIds.length}'),
+                child: const Icon(Icons.favorite_border),
+              ),
+            ),
           const LanguageButton(),
           if (app.user == null) TextButton(onPressed: () => context.go('/login?from=/shop'), child: Text(context.tr('signIn'))),
         ],
@@ -384,7 +397,14 @@ class _PlantCard extends StatelessWidget {
               children: [
                 AspectRatio(
                   aspectRatio: 1,
-                  child: PlantPhoto.fill(plant: p, radius: MashtalSpace.radius),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PlantPhoto.fill(plant: p, radius: MashtalSpace.radius),
+                      // Save for later: a small white disc in the photo's corner.
+                      PositionedDirectional(top: 0, end: 0, child: SaveButton(plantId: p.id, onPhoto: true)),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: Padding(
@@ -402,7 +422,7 @@ class _PlantCard extends StatelessWidget {
                         ),
                         const SizedBox(height: MashtalSpace.xs),
                         Text(
-                          '${context.trEnum(p.sun)} · ${context.tr('water')}: ${context.trEnum(p.water)}${nurseries == 0 ? '' : ' · ${nurseries == 1 ? context.tr('oneNursery') : '$nurseries ${context.tr('nurseriesCount')}'}'}',
+                          '${context.trEnum(p.sun)} · ${context.tr('water')}: ${context.trEnum(p.water)}${nurseries == 0 ? '' : ' · ${context.trCount('nurseryCount', nurseries)}'}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: text.bodySmall,

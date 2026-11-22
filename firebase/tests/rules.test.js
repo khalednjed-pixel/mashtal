@@ -291,3 +291,106 @@ describe('US-14 plant data edits', () => {
     await assertFails(getDoc(doc(as('cust'), 'plantEdits/e4')));
   });
 });
+
+describe('US-21 My Garden', () => {
+  const plant = (extra = {}) => ({ ownerId: 'cust', plantId: 'p01', addedAt: '2026-11-20T10:00:00Z', source: 'manual', quantity: 1, ...extra });
+
+  test('a customer adds a plant by hand to their own garden', async () => {
+    await assertSucceeds(setDoc(doc(as('cust'), 'garden/g1'), plant()));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g2'), plant({ ownerId: 'someoneElse' })));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g3'), plant({ plantId: 'nope' })));
+    await assertFails(setDoc(doc(as('n1owner'), 'garden/g4'), plant({ ownerId: 'n1owner' })));
+  });
+
+  test('only the owner reads it or records a watering', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'garden/g1'), plant()));
+    await assertSucceeds(getDocs(query(collection(as('cust'), 'garden'), where('ownerId', '==', 'cust'))));
+    await assertFails(getDoc(doc(as('n1owner'), 'garden/g1')));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { lastWateredAt: '2026-11-21T08:00:00Z' }));
+    await assertFails(updateDoc(doc(as('cust'), 'garden/g1'), { plantId: 'p05' }));
+    await assertFails(deleteDoc(doc(as('n1owner'), 'garden/g1')));
+    await assertSucceeds(deleteDoc(doc(as('cust'), 'garden/g1')));
+  });
+
+  test('the owner sets where it lives and says the soil is still moist', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'garden/g1'), plant()));
+    await assertSucceeds(setDoc(doc(as('cust'), 'garden/g2'), plant({ home: 'smallPot' })));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g3'), plant({ home: 'roof' })));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { home: 'bigPot' }));
+    await assertFails(updateDoc(doc(as('cust'), 'garden/g1'), { home: 'roof' }));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { lastCheckedAt: '2026-11-21T08:00:00Z', pace: 1.15 }));
+    await assertFails(updateDoc(doc(as('cust'), 'garden/g1'), { lastCheckedAt: '2026-11-22T08:00:00Z', pace: 5 }));
+    await assertFails(updateDoc(doc(as('n1owner'), 'garden/g1'), { home: 'indoor' }));
+  });
+});
+
+describe('US-20 picked up into My Garden', () => {
+  const res = (status) => ({ customerId: 'cust', customerName: 'Sara', customerPhone: '0500000005', nurseryId: 'n1', items: [{ listingId: 'l1', plantId: 'p01', quantity: 1, price: 180 }], createdAt: '2026-11-20T10:00:00Z', status, acceptedAt: '2026-11-20T11:00:00Z' });
+  const fromPickup = (extra = {}) => ({ ownerId: 'cust', plantId: 'p01', addedAt: '2026-11-21T10:00:00Z', source: 'pickup', quantity: 1, reservationId: 'r1', nurseryId: 'n1', ...extra });
+
+  test('the nursery marks only an accepted reservation picked up', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reservations/r1'), res('accepted'));
+      await setDoc(doc(ctx.firestore(), 'reservations/r2'), res('pending'));
+    });
+    await assertFails(updateDoc(doc(as('n5owner'), 'reservations/r1'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+    await assertFails(updateDoc(doc(as('cust'), 'reservations/r1'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+    await assertFails(updateDoc(doc(as('n1owner'), 'reservations/r2'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'pickedUp', pickedUpAt: '2026-11-21T10:00:00Z' }));
+  });
+
+  test('the customer adds plants only from their own picked-up reservation', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reservations/r1'), res('pickedUp'));
+      await setDoc(doc(ctx.firestore(), 'reservations/r2'), res('accepted'));
+    });
+    await assertFails(setDoc(doc(as('cust'), 'garden/g2'), fromPickup({ reservationId: 'r2' })));
+    await assertFails(setDoc(doc(as('cust'), 'garden/g3'), fromPickup({ nurseryId: 'n5' })));
+    await assertSucceeds(setDoc(doc(as('cust'), 'garden/g1'), fromPickup()));
+    await assertSucceeds(updateDoc(doc(as('cust'), 'garden/g1'), { removedAt: '2026-11-22T10:00:00Z' }));
+  });
+});
+
+describe('US-22 plant history', () => {
+  const entry = (extra = {}) => ({ ownerId: 'cust', gardenPlantId: 'g1', kind: 'note', at: '2026-11-21T10:00:00Z', text: 'Moved it', ...extra });
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'garden/g1'), { ownerId: 'cust', plantId: 'p01', addedAt: '2026-11-20T10:00:00Z', source: 'manual', quantity: 1 });
+      await setDoc(doc(ctx.firestore(), 'garden/g9'), { ownerId: 'someoneElse', plantId: 'p01', addedAt: '2026-11-20T10:00:00Z', source: 'manual', quantity: 1 });
+    });
+  });
+
+  test('the owner adds waterings and notes to their own plants', async () => {
+    await assertSucceeds(setDoc(doc(as('cust'), 'history/h1'), entry()));
+    await assertSucceeds(setDoc(doc(as('cust'), 'history/h2'), { ownerId: 'cust', gardenPlantId: 'g1', kind: 'watered', at: '2026-11-21T10:00:00Z' }));
+    await assertFails(setDoc(doc(as('cust'), 'history/h3'), entry({ gardenPlantId: 'g9' })));
+    await assertFails(setDoc(doc(as('cust'), 'history/h4'), entry({ kind: 'proFeedback' })));
+    await assertFails(setDoc(doc(as('cust'), 'history/h5'), entry({ text: 'x'.repeat(281) })));
+  });
+
+  test('the owner adds growth photos, size-limited, only as photo entries', async () => {
+    const photo = { ownerId: 'cust', gardenPlantId: 'g1', kind: 'photo', at: '2026-11-21T10:00:00Z', photo: 'abc' };
+    await assertSucceeds(setDoc(doc(as('cust'), 'history/p1'), photo));
+    await assertFails(setDoc(doc(as('cust'), 'history/p2'), { ...photo, photo: 'x'.repeat(400001) }));
+    await assertFails(setDoc(doc(as('cust'), 'history/p3'), { ownerId: 'cust', gardenPlantId: 'g1', kind: 'photo', at: '2026-11-21T10:00:00Z' }));
+    await assertFails(setDoc(doc(as('cust'), 'history/p4'), entry({ photo: 'abc' })));
+    await assertFails(setDoc(doc(as('cust'), 'history/p5'), { ...photo, gardenPlantId: 'g9' }));
+  });
+
+  test('history is private and cannot be rewritten', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'history/h1'), entry()));
+    await assertFails(getDoc(doc(as('n1owner'), 'history/h1')));
+    await assertFails(updateDoc(doc(as('cust'), 'history/h1'), { text: 'changed' }));
+    await assertSucceeds(getDocs(query(collection(as('cust'), 'history'), where('ownerId', '==', 'cust'))));
+  });
+});
+
+describe('US-19 notice times', () => {
+  test('a rejection records when it happened', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'reservations/r1'), {
+      customerId: 'cust', customerName: 'Sara', customerPhone: '0500000005', nurseryId: 'n1',
+      items: [{ listingId: 'l1', plantId: 'p01', quantity: 1, price: 180 }], createdAt: '2026-11-20T10:00:00Z', status: 'pending',
+    }));
+    await assertSucceeds(updateDoc(doc(as('n1owner'), 'reservations/r1'), { status: 'rejected', rejectReason: 'other', rejectedAt: '2026-11-20T11:00:00Z' }));
+  });
+});

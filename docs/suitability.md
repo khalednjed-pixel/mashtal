@@ -13,8 +13,11 @@ One per screen with a progress bar. The window question is asked only for "insid
 | 3a | Near a window? (inside) | sunny window / bright, no direct sun / far from a window |
 | 3b | Sun hours? (outside) | most of the day / a few hours / little or none |
 | 4 | Room? | small pot / big pot on the floor / ground |
+| 3c | Morning or afternoon sun? (outside, a few hours only) | morning / midday and afternoon / not sure |
 | 5 | How often can you water? | every two weeks or less / weekly / every 2–3 days |
 | 6 | Children or pets? | yes / no |
+
+Afternoon sun counts as "most of the day" for the light score, because Riyadh's afternoon sun burns part-sun plants; "not sure" changes nothing.
 
 ## Score (US-09)
 
@@ -33,7 +36,7 @@ Plant size comes from its type: trees and palms large; shrubs and climbers mediu
 
 ## Sources and not covered (US-10, US-11)
 
-Guide-backed plants show the guide, edition and section, and "Why this score?" lists the plant values used next to the customer's answers. Plants outside the guide are labelled instead. Section is by plant type until TF-06 records each entry's exact section in `Plant.guideSection`.
+Guide-backed plants show the guide, edition and section, and "Why this score?" lists the plant values used next to the customer's answers. Plants outside the guide are labelled instead. The section is the plant's portrait in Part 2 of the manual with its printed page (`Plant.guideSection`), e.g. "Part 2: Plant portraits, p. 230".
 
 Cities other than Riyadh get "not covered yet" (OD-04). If no plant passes, the app names the answer that ruled out the most plants and links back to that question.
 

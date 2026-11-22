@@ -147,4 +147,40 @@ abstract interface class ReservationRepository {
   /// US-17, the reservation's nursery only, while it is pending. The customer
   /// sees [reason].
   Future<void> rejectReservation(String id, RejectReason reason);
+
+  /// US-20, the reservation's nursery only, while it is accepted and its hold
+  /// has not run out. The plants then appear in the customer's My Garden.
+  Future<void> markPickedUp(String id);
+}
+
+/// My Garden (US-21): the plants a customer owns.
+abstract interface class GardenRepository {
+  /// The signed-in customer's plants, newest first. Empty for anyone else.
+  List<GardenPlant> get garden;
+
+  /// Customer only: adds a plant bought outside the app.
+  Future<GardenPlant> addToGarden(String plantId, {PlantHome? home});
+
+  /// Customer only, own plants: records a watering now.
+  Future<void> markWatered(String gardenPlantId);
+
+  /// Customer only, own plants: the soil was still moist when checked, so
+  /// the next check comes a little later and the plant's pace stretches.
+  Future<void> markStillMoist(String gardenPlantId);
+
+  /// Customer only, own plants: where the plant lives.
+  Future<void> setHome(String gardenPlantId, PlantHome home);
+
+  /// Customer only, own plants.
+  Future<void> removeFromGarden(String gardenPlantId);
+
+  /// US-22: the stored history of one of the customer's plants, newest
+  /// first. How the plant arrived is not stored; see logic/history.dart.
+  List<HistoryEntry> historyOf(String gardenPlantId);
+
+  /// Customer only, own plants: a short note in the plant's history.
+  Future<void> addNote(String gardenPlantId, String text);
+
+  /// Customer only, own plants: a growth photo (base64 JPEG) in its history.
+  Future<void> addGrowthPhoto(String gardenPlantId, String photo);
 }

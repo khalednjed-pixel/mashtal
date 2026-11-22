@@ -27,13 +27,14 @@ class _ProHomeScreenState extends State<ProHomeScreen> {
       return;
     }
     setState(() => _busy = true);
-    final messenger = ScaffoldMessenger.of(context);
-    final saved = context.tr('saved');
-    await app.backend.updateProfessional(pro.copyWith(
-      services: {..._services!},
-      cities: [for (final c in cityIds) if (_cities!.contains(c)) c],
-    ));
-    messenger.showSnackBar(SnackBar(content: Text(saved)));
+    await trySave(
+      context,
+      () => app.backend.updateProfessional(pro.copyWith(
+        services: {..._services!},
+        cities: [for (final c in cityIds) if (_cities!.contains(c)) c],
+      )),
+      done: context.tr('saved'),
+    );
     if (mounted) setState(() => _busy = false);
   }
 

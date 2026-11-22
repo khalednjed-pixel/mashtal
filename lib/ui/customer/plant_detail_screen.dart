@@ -46,9 +46,8 @@ class PlantDetailScreen extends StatelessWidget {
               tooltip: context.tr('deletePlant'),
               icon: const Icon(Icons.delete_outline),
               onPressed: () async {
-                if (!await confirmDelete(context, plant.name(lang))) return;
-                await market.deletePlant(plant.id);
-                if (context.mounted) context.go('/shop');
+                if (!await confirmDelete(context, plant.name(lang)) || !context.mounted) return;
+                if (await trySave(context, () => market.deletePlant(plant.id)) && context.mounted) context.go('/shop');
               },
             ),
           const LanguageButton(),

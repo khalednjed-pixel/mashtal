@@ -143,7 +143,7 @@ class _PartnerRow extends StatelessWidget {
                       tooltip: context.tr('delete'),
                       icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                       onPressed: () async {
-                        if (await confirmDelete(context, title)) await onDelete();
+                        if (await confirmDelete(context, title) && context.mounted) await trySave(context, onDelete);
                       },
                     ),
                     if (status != PartnerStatus.verified)
@@ -151,16 +151,16 @@ class _PartnerRow extends StatelessWidget {
                         key: Key('verify-$id'),
                         icon: const Icon(Icons.verified_outlined),
                         label: Text(context.tr('verify_action')),
-                        onPressed: () => onStatus(PartnerStatus.verified),
+                        onPressed: () => trySave(context, () => onStatus(PartnerStatus.verified)),
                       ),
                     if (status == PartnerStatus.verified)
                       TextButton(
                         key: Key('suspend-$id'),
-                        onPressed: () => onStatus(PartnerStatus.suspended),
+                        onPressed: () => trySave(context, () => onStatus(PartnerStatus.suspended)),
                         child: Text(context.tr('suspend')),
                       ),
                     if (status == PartnerStatus.suspended)
-                      TextButton(onPressed: () => onStatus(PartnerStatus.pending), child: Text(context.tr('setPending'))),
+                      TextButton(onPressed: () => trySave(context, () => onStatus(PartnerStatus.pending)), child: Text(context.tr('setPending'))),
                   ],
                 ),
               ),
@@ -198,8 +198,9 @@ class _PriceRangeDialogState extends State<_PriceRangeDialog> {
       setState(() => _error = context.tr('invalidRange'));
       return;
     }
-    await context.read<AppState>().backend.updatePriceRange(widget.range.service, min: min, max: max);
-    if (mounted) Navigator.pop(context);
+    final backend = context.read<AppState>().backend;
+    final ok = await trySave(context, () => backend.updatePriceRange(widget.range.service, min: min, max: max));
+    if (ok && mounted) Navigator.pop(context);
   }
 
   @override

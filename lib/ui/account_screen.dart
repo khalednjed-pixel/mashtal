@@ -99,12 +99,7 @@ class AccountScreen extends StatelessWidget {
                 _Row(
                   icon: Icons.restart_alt,
                   title: context.tr('resetDemo'),
-                  onTap: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final done = context.tr('resetDone');
-                    await app.resetDemo();
-                    messenger.showSnackBar(SnackBar(content: Text(done)));
-                  },
+                  onTap: () => trySave(context, app.resetDemo, done: context.tr('resetDone')),
                 ),
             ]),
             const SizedBox(height: MashtalSpace.lg),
@@ -115,8 +110,7 @@ class AccountScreen extends StatelessWidget {
                 title: context.tr('signOut'),
                 danger: true,
                 onTap: () async {
-                  await market.signOut();
-                  if (context.mounted) context.go('/shop');
+                  if (await trySave(context, market.signOut) && context.mounted) context.go('/shop');
                 },
               ),
             ]),
@@ -312,8 +306,8 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
           key: const Key('saveProfile'),
           onPressed: () async {
             if (_name.text.trim().isEmpty) return;
-            await widget.app.backend.updateProfile(name: _name.text, city: _city);
-            if (context.mounted) Navigator.pop(context);
+            final ok = await trySave(context, () => widget.app.backend.updateProfile(name: _name.text, city: _city));
+            if (ok && context.mounted) Navigator.pop(context);
           },
           child: Text(context.tr('save')),
         ),

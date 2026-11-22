@@ -350,12 +350,7 @@ class WaterDot extends StatelessWidget {
         child: InkWell(
           key: Key('water-${garden.id}'),
           customBorder: const CircleBorder(),
-          onTap: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            final msg = '${context.tr('wateredDone')} ${plant.name(context.lang)}';
-            await app.backend.markWatered(garden.id);
-            messenger.showSnackBar(SnackBar(content: Text(msg)));
-          },
+          onTap: () => trySave(context, () => app.backend.markWatered(garden.id), done: '${context.tr('wateredDone')} ${plant.name(context.lang)}'),
           child: Ink(
             width: 52,
             height: 52,

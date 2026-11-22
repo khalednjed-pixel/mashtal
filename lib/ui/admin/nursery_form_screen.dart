@@ -58,12 +58,8 @@ class _NurseryFormScreenState extends State<NurseryFormScreen> {
       lat: point?.$1,
       lng: point?.$2,
     );
-    if (_existing == null) {
-      await backend.createNursery(draft);
-    } else {
-      await backend.updateNursery(draft);
-    }
-    if (mounted) context.go('/admin/nurseries');
+    final ok = await trySave(context, () => _existing == null ? backend.createNursery(draft) : backend.updateNursery(draft));
+    if (ok && mounted) context.go('/admin/nurseries');
   }
 
   @override

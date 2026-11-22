@@ -83,6 +83,7 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final saved = context.tr('saved');
     final full = context.tr('storageFull');
+    final failed = context.tr('saveFailed');
     try {
       if (_existing == null) {
         final l = await _app.backend.addListing(plantId: _plantId!, price: price, quantity: qty, photo: _photo);
@@ -94,6 +95,9 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
       if (mounted) context.go('/nursery');
     } on StorageFull {
       messenger.showSnackBar(SnackBar(content: Text(full)));
+    } catch (e) {
+      debugPrint('Saving the listing failed: $e');
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -101,9 +105,8 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
 
   Future<void> _delete() async {
     final plant = _app.backend.plantById(_existing!.plantId);
-    if (!await confirmDelete(context, plant?.name(context.lang) ?? '')) return;
-    await _app.backend.deleteListing(_existing.id);
-    if (mounted) context.go('/nursery');
+    if (!await confirmDelete(context, plant?.name(context.lang) ?? '') || !mounted) return;
+    if (await trySave(context, () => _app.backend.deleteListing(_existing.id)) && mounted) context.go('/nursery');
   }
 
   @override
@@ -237,7 +240,7 @@ class _PlantPickerState extends State<_PlantPicker> {
                           tooltip: context.tr('deletePlant'),
                           icon: const Icon(Icons.delete_outline),
                           onPressed: () async {
-                            if (await confirmDelete(context, p.name(context.lang))) await app.backend.deletePlant(p.id);
+                            if (await confirmDelete(context, p.name(context.lang)) && context.mounted) await trySave(context, () => app.backend.deletePlant(p.id));
                           },
                         )
                       : null,

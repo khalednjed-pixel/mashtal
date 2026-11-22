@@ -94,12 +94,7 @@ class GardenPlantScreen extends StatelessWidget {
             Center(
               child: WaterRing(
                 plan: plan,
-                onWatered: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final msg = '${context.tr('wateredDone')} ${plant.name(lang)}';
-                  await market.markWatered(g.id);
-                  messenger.showSnackBar(SnackBar(content: Text(msg)));
-                },
+                onWatered: () => trySave(context, () => market.markWatered(g.id), done: '${context.tr('wateredDone')} ${plant.name(lang)}'),
               ),
             ),
             const SizedBox(height: MashtalSpace.md),
@@ -143,16 +138,8 @@ class GardenPlantScreen extends StatelessWidget {
                         TextButton(
                           key: const Key('changeHome'),
                           onPressed: () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            final failed = context.tr('saveFailed');
                             final h = await pickHome(context, current: plan.home, guessed: plan.homeGuessed);
-                            if (h == null) return;
-                            try {
-                              await market.setHome(g.id, h);
-                            } catch (e) {
-                              debugPrint('setHome failed: $e');
-                              messenger.showSnackBar(SnackBar(content: Text(failed)));
-                            }
+                            if (h != null && context.mounted) await trySave(context, () => market.setHome(g.id, h));
                           },
                           child: Text(context.tr('change')),
                         ),
@@ -164,12 +151,7 @@ class GardenPlantScreen extends StatelessWidget {
                         key: const Key('stillMoist'),
                         icon: const Icon(Icons.back_hand_outlined),
                         label: Text(context.tr('stillMoist')),
-                        onPressed: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final msg = context.tr('stillMoistDone');
-                          await market.markStillMoist(g.id);
-                          messenger.showSnackBar(SnackBar(content: Text(msg)));
-                        },
+                        onPressed: () => trySave(context, () => market.markStillMoist(g.id), done: context.tr('stillMoistDone')),
                       ),
                     ],
                     // Reminders that arrive with the app closed: the phone's calendar.
@@ -275,7 +257,7 @@ class GardenPlantScreen extends StatelessWidget {
         ],
       ),
     );
-    if (note != null && note.trim().isNotEmpty) await market.addNote(id, note);
+    if (note != null && note.trim().isNotEmpty && context.mounted) await trySave(context, () => market.addNote(id, note));
   }
 
   Future<void> _remove(BuildContext context, AppState app, GardenPlant g, String name) async {
@@ -296,9 +278,8 @@ class GardenPlantScreen extends StatelessWidget {
         ],
       ),
     );
-    if (ok != true) return;
-    await app.backend.removeFromGarden(g.id);
-    router.go('/garden');
+    if (ok != true || !context.mounted) return;
+    if (await trySave(context, () => app.backend.removeFromGarden(g.id))) router.go('/garden');
   }
 }
 
@@ -313,12 +294,9 @@ class _GrowthPhotos extends StatelessWidget {
 
   Future<void> _add(BuildContext context) async {
     final market = context.read<AppState>().backend;
-    final messenger = ScaffoldMessenger.of(context);
-    final done = context.tr('photoAdded');
     final photo = await choosePhoto(context);
-    if (photo == null) return;
-    await market.addGrowthPhoto(garden.id, photo);
-    messenger.showSnackBar(SnackBar(content: Text(done)));
+    if (photo == null || !context.mounted) return;
+    await trySave(context, () => market.addGrowthPhoto(garden.id, photo), done: context.tr('photoAdded'));
   }
 
   void _open(BuildContext context, HistoryEntry e) {

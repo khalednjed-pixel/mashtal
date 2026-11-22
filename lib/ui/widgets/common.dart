@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositories.dart';
 import '../../l10n/strings.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
@@ -217,6 +218,26 @@ class Constrained extends StatelessWidget {
 }
 
 /// Asks before deleting. Returns true when the user confirms.
+/// Runs a save and tells the customer when it fails, instead of failing
+/// silently. Shows [done] when it works (if given) and returns whether it did.
+/// The real error goes to the console for debugging.
+Future<bool> trySave(BuildContext context, Future<void> Function() save, {String? done}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final failed = context.tr('saveFailed');
+  final full = context.tr('storageFull');
+  try {
+    await save();
+    if (done != null) messenger.showSnackBar(SnackBar(content: Text(done)));
+    return true;
+  } on StorageFull {
+    messenger.showSnackBar(SnackBar(content: Text(full)));
+  } catch (e) {
+    debugPrint('Save failed: $e');
+    messenger.showSnackBar(SnackBar(content: Text(failed)));
+  }
+  return false;
+}
+
 Future<bool> confirmDelete(BuildContext context, String what) async {
   final ok = await showDialog<bool>(
     context: context,

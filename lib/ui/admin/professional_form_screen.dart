@@ -54,12 +54,8 @@ class _ProfessionalFormScreenState extends State<ProfessionalFormScreen> {
       rating: _existing?.rating ?? 0,
       jobsDone: _existing?.jobsDone ?? 0,
     );
-    if (_existing == null) {
-      await backend.createProfessional(draft);
-    } else {
-      await backend.updateProfessional(draft);
-    }
-    if (mounted) context.go('/admin/professionals');
+    final ok = await trySave(context, () => _existing == null ? backend.createProfessional(draft) : backend.updateProfessional(draft));
+    if (ok && mounted) context.go('/admin/professionals');
   }
 
   @override

@@ -106,16 +106,18 @@ class _PlantEditScreenState extends State<PlantEditScreen> {
     }
     setState(() => _saving = true);
     final market = context.read<AppState>().backend;
-    await market.updatePlant(_original!.copyWith(
-      placements: _placements,
-      sun: _sun,
-      water: _water,
-      wateringEveryDays: int.parse(_days.text),
-      toxic: _toxic,
-    ));
-    if (!mounted) return;
-    setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('saved'))));
+    await trySave(
+      context,
+      () => market.updatePlant(_original!.copyWith(
+        placements: _placements,
+        sun: _sun,
+        water: _water,
+        wateringEveryDays: int.parse(_days.text),
+        toxic: _toxic,
+      )),
+      done: context.tr('saved'),
+    );
+    if (mounted) setState(() => _saving = false);
   }
 
   @override

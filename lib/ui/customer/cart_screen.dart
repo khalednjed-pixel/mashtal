@@ -56,7 +56,9 @@ class CartScreen extends StatelessWidget {
       final router = GoRouter.of(context);
       final reservedText = context.trCount;
       final nothing = context.tr('reserveNothing');
-      final made = await app.reserveCart();
+      var made = 0;
+      // A failed send keeps the cart as it was and says so.
+      if (!await trySave(context, () async => made = await app.reserveCart())) return;
       if (made == 0) {
         messenger.showSnackBar(SnackBar(content: Text(nothing)));
         return;
@@ -120,12 +122,7 @@ class CartScreen extends StatelessWidget {
                               style: text.bodySmall,
                             ),
                           const SizedBox(height: MashtalSpace.md),
-                          FilledButton.icon(
-                            key: const Key('reserve'),
-                            icon: const Icon(Icons.event_available),
-                            label: Text(context.tr('reserve')),
-                            onPressed: reserve,
-                          ),
+                          _ReserveButton(onReserve: reserve),
                         ],
                       ),
                     ),
@@ -373,4 +370,37 @@ class _DashPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DashPainter oldDelegate) => false;
+}
+
+/// Reserve, locked with a spinner while the reservations are sent, so a slow
+/// connection cannot send the same cart twice.
+class _ReserveButton extends StatefulWidget {
+  const _ReserveButton({required this.onReserve});
+  final Future<void> Function() onReserve;
+
+  @override
+  State<_ReserveButton> createState() => _ReserveButtonState();
+}
+
+class _ReserveButtonState extends State<_ReserveButton> {
+  bool _busy = false;
+
+  Future<void> _reserve() async {
+    setState(() => _busy = true);
+    try {
+      await widget.onReserve();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FilledButton.icon(
+        key: const Key('reserve'),
+        icon: _busy
+            ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.event_available),
+        label: Text(context.tr('reserve')),
+        onPressed: _busy ? null : _reserve,
+      );
 }

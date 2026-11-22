@@ -41,6 +41,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('err.${e.code}'))));
       context.go('/login');
+    } catch (e) {
+      debugPrint('completeProfile failed: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('err.network'))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -54,6 +54,7 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     final full = context.tr('storageFull');
+    final failed = context.tr('saveFailed');
     try {
       final plant = await context.read<AppState>().backend.addPlant(Plant(
             id: '',
@@ -75,6 +76,9 @@ class _NewPlantScreenState extends State<NewPlantScreen> {
       if (mounted) Navigator.of(context).pop(plant.id);
     } on StorageFull {
       messenger.showSnackBar(SnackBar(content: Text(full)));
+    } catch (e) {
+      debugPrint('Adding the plant failed: $e');
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

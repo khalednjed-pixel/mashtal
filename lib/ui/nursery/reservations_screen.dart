@@ -43,7 +43,7 @@ class ReservationsScreen extends StatelessWidget {
                             FilledButton(
                               key: Key('accept-${r.id}'),
                               style: FilledButton.styleFrom(minimumSize: const Size(88, 40)),
-                              onPressed: () => app.backend.acceptReservation(r.id),
+                              onPressed: () => trySave(context, () => app.backend.acceptReservation(r.id)),
                               child: Text(context.tr('accept')),
                             ),
                           ],
@@ -82,7 +82,7 @@ class ReservationsScreen extends StatelessWidget {
         ],
       ),
     );
-    if (ok == true) await app.backend.markPickedUp(r.id);
+    if (ok == true && context.mounted) await trySave(context, () => app.backend.markPickedUp(r.id));
   }
 
   Future<void> _reject(BuildContext context, AppState app, Reservation r) async {
@@ -100,6 +100,6 @@ class ReservationsScreen extends StatelessWidget {
         ],
       ),
     );
-    if (reason != null) await app.backend.rejectReservation(r.id, reason);
+    if (reason != null && context.mounted) await trySave(context, () => app.backend.rejectReservation(r.id, reason));
   }
 }

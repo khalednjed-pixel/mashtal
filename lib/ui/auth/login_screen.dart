@@ -54,6 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } on AuthException catch (e) {
       setState(() => _error = context.tr('err.${e.code}'));
       if (e.retryAfter != null) _startCountdown(e.retryAfter!);
+    } catch (e) {
+      debugPrint('sendCode failed: $e');
+      if (mounted) setState(() => _error = context.tr('err.network'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -89,6 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on AuthException catch (e) {
       setState(() => _error = context.tr('err.${e.code}'));
+    } catch (e) {
+      debugPrint('verifyCode failed: $e');
+      if (mounted) setState(() => _error = context.tr('err.network'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

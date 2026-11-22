@@ -143,8 +143,16 @@ class GardenPlantScreen extends StatelessWidget {
                         TextButton(
                           key: const Key('changeHome'),
                           onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final failed = context.tr('saveFailed');
                             final h = await pickHome(context, current: plan.home, guessed: plan.homeGuessed);
-                            if (h != null) await market.setHome(g.id, h);
+                            if (h == null) return;
+                            try {
+                              await market.setHome(g.id, h);
+                            } catch (e) {
+                              debugPrint('setHome failed: $e');
+                              messenger.showSnackBar(SnackBar(content: Text(failed)));
+                            }
                           },
                           child: Text(context.tr('change')),
                         ),

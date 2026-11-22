@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mashtal/logic/care_plan.dart';
 import 'package:mashtal/logic/watering.dart';
 import 'package:mashtal/models/models.dart';
+import 'package:mashtal/ui/widgets/home_picker.dart';
 
 import 'app_harness.dart';
 
@@ -45,6 +46,10 @@ void main() {
     expect(find.byKey(const Key('homePicker')), findsOneWidget);
     await tester.tap(find.byKey(const Key('home-bigPot')));
     await tester.pumpAndSettle();
+    // Choosing a tile only selects it; the one button adds the plant.
+    expect(app.backend.garden, isEmpty);
+    await tester.tap(find.byKey(const Key('homeConfirm')));
+    await tester.pumpAndSettle();
 
     expect(location(tester), '/garden');
     final g = app.backend.garden.single;
@@ -70,5 +75,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(app.backend.garden.single.lastWateredAt, isNotNull);
     expect(find.textContaining('Watering recorded'), findsOneWidget);
+  });
+
+  testWidgets('the "where is it?" sheet adds nothing until its button is pressed', (tester) async {
+    final app = await pumpMashtal(tester);
+    await signIn(tester, '0500000005');
+    go(tester, '/garden/add');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pick-p16')));
+    await tester.pumpAndSettle();
+    // Our pick is already selected and the button says what it does.
+    expect(find.text('Our pick'), findsOneWidget);
+    expect(find.text('Add to My Garden'), findsOneWidget);
+
+    // Closing the sheet without the button adds nothing.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('homePicker')), findsNothing);
+    expect(location(tester), '/garden/add');
+    expect(app.backend.garden, isEmpty);
+  });
+
+  testWidgets('a save that fails keeps the sheet open and says so', (tester) async {
+    await pumpMashtal(tester);
+    final context = tester.element(find.byType(Scaffold).first);
+    var tries = 0;
+    PlantHome? result;
+    pickHome(context, current: PlantHome.ground, guessed: true, onConfirm: (h) async {
+      tries++;
+      if (tries == 1) throw StateError('permission-denied');
+    }).then((h) => result = h);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('homeConfirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('homePicker')), findsOneWidget);
+    expect(find.text("Couldn't add it. Check your connection and try again."), findsOneWidget);
+    expect(result, isNull);
+
+    // Trying again works and closes the sheet with the answer.
+    await tester.tap(find.byKey(const Key('homeConfirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('homePicker')), findsNothing);
+    expect(result, PlantHome.ground);
   });
 }

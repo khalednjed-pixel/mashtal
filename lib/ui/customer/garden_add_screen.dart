@@ -72,11 +72,16 @@ class _GardenAddScreenState extends State<GardenAddScreen> {
                       final messenger = ScaffoldMessenger.of(context);
                       final router = GoRouter.of(context);
                       final msg = '${context.tr('addedToGarden')}: ${p.name(lang)}';
-                      // One question, with our guess marked, so watering fits
-                      // the pot or the ground from day one.
-                      final home = await pickHome(context, current: guessHome(p), guessed: true);
+                      // One question, with our guess already selected, so
+                      // watering fits the pot or the ground from day one. The
+                      // sheet saves and stays open if saving fails.
+                      final home = await pickHome(
+                        context,
+                        current: guessHome(p),
+                        guessed: true,
+                        onConfirm: (h) => app.backend.addToGarden(p.id, home: h),
+                      );
                       if (home == null) return;
-                      await app.backend.addToGarden(p.id, home: home);
                       router.go('/garden');
                       messenger.showSnackBar(SnackBar(content: Text(msg)));
                     },
